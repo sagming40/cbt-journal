@@ -34,3 +34,32 @@ CBT 저널 프로젝트를 진행하며 그날그날 배운 것, 겪은 문제, 
 - Phase 2: 일기 작성 (인지 왜곡 목록 조회 + CBT 일기 저장 API)
 
 ---
+
+## 2026-07-15 · Phase 2 일기 작성 (왜곡 목록 조회 + CBT 일기 저장)
+
+### 오늘 한 일
+- 인지 왜곡 유형 조회 API (`GET /api/distortions`) — cognitive_distortions 테이블 전체를 id 순으로 조회
+- CBT 일기 저장 API (`POST /api/diaries`) — diaries 본문 INSERT + diary_distortions 매핑 INSERT를 트랜잭션으로 묶어 처리
+- nodemon 설치 및 dev 스크립트 적용 (`node` → `nodemon`)
+- pgAdmin으로 diaries, diary_distortions 두 테이블에 데이터가 동시에 저장되는 것을 눈으로 확인
+
+### 겪었던 이슈들
+
+**1. `GET /api/distortions` 호출 시 `Cannot GET /api/distortions` (404)**
+컨트롤러, 라우터, app.js 등록까지 코드 자체는 처음부터 문제가 없었다. 원인은 `package.json`의 `dev` 스크립트가 `nodemon`이 아니라 그냥 `node src/app.js`였던 것. nodemon 없이 `node`로만 서버를 띄우면 파일을 아무리 고쳐도 서버가 그 사실을 전혀 모른다는 걸 알게 됐다. 코드를 고칠 때마다 서버를 수동으로 껐다 켜야 했던 거였고, 그래서 새로 만든 라우트가 반영이 안 됐던 것. `nodemon` 설치 후 `dev` 스크립트를 `nodemon src/app.js`로 바꿔서 해결했다.
+
+**2. `git add .`로 한 번에 커밋해버려서 커밋 단위가 뒤섞임**
+"인지 왜곡 API 추가"랑 "nodemon 설정 변경"을 따로 커밋하려 했는데, `git add .`로 전체 파일을 한 번에 스테이징한 뒤 `git commit`을 두 번 치니 첫 번째 커밋에서 5개 파일이 전부 들어가버렸다. `push`하기 전이라 `git reset --soft HEAD~1`로 커밋만 되돌리고, `git restore --staged .`로 스테이징을 풀어서 파일 단위로 다시 나눠 커밋했다. 앞으로는 커밋을 나눠야 할 때 `git add .` 대신 파일을 직접 지정해서 스테이징하는 습관을 들이기로 했다.
+
+**3. 트랜잭션(Transaction) 처음 적용**
+일기 저장 API는 `diaries`와 `diary_distortions` 두 테이블을 동시에 다뤄야 해서, 중간에 실패하면 데이터가 반쯤만 저장되는 문제가 생길 수 있었다. `BEGIN` → 여러 INSERT → `COMMIT`(성공 시) / `ROLLBACK`(실패 시) 구조로 묶어서 처리했고, 이때 `pool.query()`가 아니라 `pool.connect()`로 얻은 `client`를 계속 재사용해야 같은 트랜잭션으로 묶인다는 것도 배웠다. `client.release()`를 `finally` 블록에 넣어서 항상 커넥션을 반납하도록 한 것도 이번에 처음 신경 쓴 부분.
+
+### 오늘 배운 것 / 느낀 점
+- `nodemon` 없이 개발하면 "코드 고쳐도 반영 안 되는" 상황이 반복될 수밖에 없다는 걸 직접 겪고 나서야 왜 다들 nodemon을 기본으로 까는지 이해가 됐다.
+- Git에서 "스테이징(add)"과 "커밋(commit)"이 분리되어 있는 이유를 이번에 체감했다 — `add`를 세밀하게 하지 않으면 아무리 커밋 메시지를 나눠 써도 소용이 없다는 걸 알게 됐다.
+- 트랜잭션은 "여러 단계가 하나의 논리적 작업으로 묶여야 할 때" 쓰는 거라는 걸 diaries/diary_distortions 케이스로 직접 만들어보고 나서야 확실히 이해했다. 계좌이체처럼 "다 되거나, 하나도 안 되거나" 둘 중 하나여야 하는 상황에서 필수라는 게 이제 명확해졌다.
+
+### 다음에 할 일
+- Phase 3: 일기 조회 (목록 · 상세 보기)
+
+---
