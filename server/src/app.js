@@ -4,12 +4,14 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes'); // ⭐ route 연결
+const distortionsRoutes = require('./routes/distortionsRoutes'); // ⭐ route 연결
 
 const app = express();
 
 app.use(cors());          // React(다른 포트)에서 오는 요청 허용
 app.use(express.json());  // 요청 body를 JSON으로 자동 해석
 app.use('/api/auth', authRoutes); // ⭐ route 연결
+app.use('/api/distortions', distortionsRoutes); // ⭐ route 연결
 
 // 연결 테스트용 라우트
 app.get('/api/health', async (req, res) => {
