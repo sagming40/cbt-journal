@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import DiaryListPage from './pages/DiaryListPage';
 import DiaryDetailPage from './pages/DiaryDetailPage';
+import Login from './pages/Login';
 
 // 로그인 안 한 사람이 목록/상세 페이지에 못 들어오게 막는 경비원 역할
 const PrivateRoute = ({ children }) => {
@@ -38,7 +39,7 @@ function App() {
                 }
               />
               {/* 아직 만들지 않은 페이지들 ㅡ 나중에 채울 자리 */}
-              <Route path="/login" element={<div>로그인 페이지 (준비 중)</div>} />
+              <Route path="/login" element={<Login />} />
               <Route path="*" element={<Navigate to="/diaries" replace />} />   
             </Routes>  
         </BrowserRouter>
