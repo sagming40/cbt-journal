@@ -1,0 +1,79 @@
+/* client/src/pages/Login.css */
+
+/* 화면 전체를 가운데 정렬하기 위한 바깥 상자 */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* ViewPort(Browser 화면) 높이의 100% -> 세로로 화면 꽉 채우기 */ 
+  background-color: #f5f5f5; 
+}
+
+.login-page h2 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 28px;  
+}
+
+/* 로그인 폼을 감싸는 카드 느낌 */
+.login-page form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* 자식 요소들 사이 간격을 일괄로 줌 (margin 여러 번 안 써도 됨) */
+  width: 320px;
+  padding: 32px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); /* 은은한 그림자 -> 붕 떠있는 카드 느낌 */  
+}
+
+.login-page label {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 4px;
+  display: block;  
+}
+
+.login-page input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box; /* padding이 width를 밀어내지 않도록 계산 방식 고정 */  
+}
+
+/* 클릭(포커스)했을 때 테두리 색이 바뀌는 효과 */
+.login-page input:focus {
+  outline: none;
+  border-color: #6c5ce7;  
+}
+
+.login-page button {
+  padding: 12px;
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s; /* 색이 변할 때 뚝 끊기지 않고 부드럽게 */  
+}
+
+.login-page button:hover:not(:disabled) {
+  background-color: #5a4bd1;  
+}
+
+/* 로딩 중일 때 버튼 -> 흐릿하고 손가락 커서 대신 금지 커서 */
+.login-page button:disabled {
+  background-color: #b8b0f0;
+  cursor: not-allowed;  
+}
+
+.login-page .error-msg {
+  color: #e74c3c;
+  font-size: 13px;
+  margin: 0;  
+}
