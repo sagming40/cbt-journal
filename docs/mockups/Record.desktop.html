@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>S-04 사고 기록 · 데스크톱 (정리)</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  .side { width: 220px; flex: none; border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; background: var(--surface); }
+  .side .logo { font-weight: 800; font-size: 17px; padding: 4px 10px 18px; }
+  .side a { padding: 10px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 15px; }
+  .side a.on { background: var(--accent-tint); color: var(--accent-text); font-weight: 700; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .main .inner { width: 100%; max-width: 640px; margin: 0 auto; padding: 0 24px; }
+  .panel { width: 340px; flex: none; border-left: 1px solid var(--border); padding: 24px 20px; overflow: auto; background: var(--surface); }
+  .panel h2 { font-size: 14px; margin: 0 0 4px; }
+  .panel .item { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 8px; border-radius: 8px; cursor: pointer; }
+  .panel .item:hover { background: var(--surface-2); }
+  .panel .k { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .panel .v { font-size: 14px; margin-top: 3px; line-height: 1.5; }
+  .after-row { display: grid; grid-template-columns: 80px 1fr 90px; align-items: center; gap: 16px; min-height: 56px; border-bottom: 1px solid var(--border); }
+  .after-row input[type=range] { width: 100%; accent-color: var(--accent); }
+  .before-mark { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div>
+    <p class="caption">S-04 · 데스크톱 정리 단계 — 오른쪽 "앞에서 쓴 답" 패널 (DESIGN 4.3). 도구 막대에서 5단계 / 8단계 전환</p>
+    <div class="desktop" id="screen">
+      <nav class="side">
+        <div class="logo">CBT 저널</div>
+        <a class="on" href="#">오늘</a><a href="#">기록</a><a href="#">통계</a><a href="#">설정</a>
+      </nav>
+      <div class="main">
+        <div class="inner">
+          <div class="hdr" style="padding:20px 0 8px">
+            <button class="icon-btn" aria-label="뒤로">←</button>
+            <h1>사고 기록</h1>
+            <span class="save">저장됨 · 방금</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
+            <div class="progress" style="flex:1" id="progress"></div>
+            <span class="muted num" style="font-size:13px" id="stepn"></span>
+          </div>
+          <div id="step"></div>
+          <div style="display:flex;gap:8px;margin-top:24px">
+            <button class="btn">이전</button>
+            <span style="flex:1"></span>
+            <button class="btn btn-ghost">나중에 이어 쓰기</button>
+            <button class="btn btn-primary" id="next" style="min-width:120px">다음</button>
+          </div>
+        </div>
+      </div>
+      <aside class="panel">
+        <h2>앞에서 쓴 답</h2>
+        <p class="muted" style="font-size:12px;margin:0 0 12px">누르면 그 단계로 이동</p>
+        <div id="prev"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ANSWERS = [
+    ['1 · 상황', '오늘 11:20 · 주간 회의에서 발표하다가 매출 숫자를 잘못 말함. 팀장님이 바로 정정함'],
+    ['2 · 감정 (전)', '불안 80 · 수치심 60'],
+    ['3 · 자동 사고', '다들 내가 준비 안 한 걸 알아챘을 거야. 또 망쳤다. 이번 평가 끝났네'],
+    ['4 · 인지 왜곡', '성급한 결론(독심술/예언자적 오류) · 파국화'],
+    ['5 · 근거', '숫자를 틀린 건 사실. 팀장님이 정정할 때 몇 명이 나를 봤음'],
+    ['6 · 반대 근거', '나머지 발표는 문제없이 끝남. 회의 뒤 질문도 받았음. 지난 분기 평가는 좋았음'],
+    ['7 · 대안 사고', '숫자 하나 틀린 건 실수지 준비를 안 했다는 증거는 아니야. 정정된 걸로 끝난 일이고, 평가는 한 번으로 정해지지 않아'],
+  ];
+  const STEPS = {
+    5: `<p class="q">이 생각이 맞다고 볼 수 있는 사실은?</p>
+        <p class="help">느낌 말고, 다른 사람도 확인할 수 있는 사실로. 없으면 비워 둬도 돼.</p>
+        <textarea class="input" aria-label="근거">숫자를 틀린 건 사실. 팀장님이 정정할 때 몇 명이 나를 봤음</textarea>`,
+    8: `<p class="q">지금은 얼마나 느껴져?</p>
+        <p class="help">처음 강도는 흐리게 같이 보여 줄게. 안 줄었어도 괜찮아.</p>
+        <div id="after"></div>`,
+  };
+  let step = new URLSearchParams(location.search).get('step') === '8' ? 8 : 5;
+
+  function paint() {
+    applyTheme(document.getElementById('screen'), state.palette, state.dark);
+    document.getElementById('progress').innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="${i < step ? 'on' : ''}"></span>`).join('');
+    document.getElementById('stepn').textContent = `${step} / 8`;
+    document.getElementById('step').innerHTML = STEPS[step];
+    document.getElementById('next').textContent = step === 8 ? '완료' : '다음';
+    document.getElementById('prev').innerHTML = ANSWERS.slice(0, step - 1)
+      .map(([k, v]) => `<button class="item"><div class="k">${k}</div><div class="v">${v}</div></button>`).join('');
+    if (step === 8) {
+      const before = [['불안', 80, 35], ['수치심', 60, 50]];
+      const box = document.getElementById('after');
+      box.innerHTML = before.map(([e, b, a]) => `
+        <div class="after-row">
+          <span><span class="int-dot" style="background:${intensityColor(a)}"></span>${e}</span>
+          <div><input type="range" min="0" max="100" step="5" value="${a}" aria-label="${e} 지금 강도">
+               <div class="before-mark num">처음 ${b}</div></div>
+          <span class="num" style="text-align:right"><span class="muted">${b} →</span> <b>${a}</b></span>
+        </div>`).join('');
+      box.querySelectorAll('input').forEach((r, i) => (r.oninput = () => {
+        const [, b] = before[i];
+        r.closest('.after-row').lastElementChild.innerHTML = `<span class="muted">${b} →</span> <b>${r.value}</b>`;
+        r.closest('.after-row').querySelector('.int-dot').style.background = intensityColor(+r.value);
+      }));
+    }
+  }
+  renderToolbar(paint, [{ label: '단계', value: String(step), options: [['5', '5 · 근거'], ['8', '8 · 다시 매기기']],
+    onChange: (v) => { step = +v; paint(); } }]);
+  paint();
+</script>
+</body>
+</html>

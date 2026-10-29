@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>S-04 사고 기록 · 모바일 (붙잡기)</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  .prev { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-bottom: 18px; }
+  .prev summary { list-style: none; padding: 12px 14px; font-size: 14px; color: var(--muted); cursor: pointer; display: flex; justify-content: space-between; }
+  .prev summary::-webkit-details-marker { display: none; }
+  .prev dl { margin: 0; padding: 0 14px 12px; font-size: 14px; }
+  .prev dt { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .prev dd { margin: 2px 0 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div>
+    <p class="caption">S-04 · 3단계 (붙잡기의 마지막). 도구 막대에서 저장 상태를 바꿔 볼 수 있다 (DESIGN 4.3)</p>
+    <div class="phone" id="screen">
+      <div class="statusbar"></div>
+      <div class="hdr">
+        <button class="icon-btn" aria-label="뒤로">←</button>
+        <h1>사고 기록</h1>
+        <span class="save" id="save"></span>
+      </div>
+      <div style="padding:0 16px 12px;display:flex;align-items:center;gap:10px">
+        <div class="progress" style="flex:1" id="progress"></div>
+        <span class="muted num" style="font-size:13px">3 / 8</span>
+      </div>
+      <div class="body">
+        <details class="prev">
+          <summary><span>앞에서 쓴 답</span><span>▾</span></summary>
+          <dl>
+            <dt>상황 · 오늘 11:20</dt><dd>주간 회의에서 발표하다가 매출 숫자를 잘못 말함. 팀장님이 바로 정정함</dd>
+            <dt>감정</dt><dd class="num">불안 80 · 수치심 60</dd>
+          </dl>
+        </details>
+        <p class="q">그때 머릿속에 스친 생각은?</p>
+        <p class="help">떠오른 그대로 써도 돼.</p>
+        <textarea class="input" aria-label="자동 사고">다들 내가 준비 안 한 걸 알아챘을 거야. 또 망쳤다. 이번 평가 끝났네</textarea>
+      </div>
+      <div class="bottom" style="flex-direction:column">
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="flex:1">이전</button>
+          <button class="btn btn-primary" style="flex:2">다음</button>
+        </div>
+        <button class="btn btn-ghost btn-block">나중에 이어 쓰기</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="caption">[나중에 이어 쓰기] 뒤 S-02 — 다른 기기에서도 같은 초안이 보인다</p>
+    <div class="phone" id="home">
+      <div class="statusbar"></div>
+      <div class="hdr"><h1>10월 29일 수요일</h1></div>
+      <div class="body">
+        <div class="card" style="text-align:center;padding:24px 16px">
+          <p class="q" style="margin-bottom:14px">지금 기분 어때?</p>
+          <button class="btn btn-primary" style="min-width:180px">체크인</button>
+        </div>
+        <button class="btn btn-block" style="margin-top:10px">사고 기록 쓰기</button>
+        <p class="label" style="margin-top:24px">이어 쓰기</p>
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="min-width:0">
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">주간 회의에서 발표하다가 매출 숫자를…</div>
+            <div class="muted num" style="font-size:13px;margin-top:4px">3 / 8단계 · 방금</div>
+          </div>
+          <span style="color:var(--accent-text);font-weight:600;white-space:nowrap">이어 쓰기 ›</span>
+        </div>
+        <p class="label" style="margin-top:24px">오늘</p>
+        <div class="card num"><span class="muted">09:12</span>&nbsp; 불안 60 · 무기력 40</div>
+      </div>
+      <div class="bottom" style="justify-content:space-around;font-size:13px;padding-top:10px">
+        <span style="color:var(--accent-text);font-weight:700">오늘</span><span class="muted">기록</span><span class="muted">통계</span><span class="muted">설정</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SAVE = {
+    ok: '저장됨 · 방금',
+    saving: '저장 중…',
+    fail: '저장 안 됨 <button class="retry">다시 시도</button>',
+  };
+  let saveState = new URLSearchParams(location.search).get('save') || 'ok';
+  document.getElementById('progress').innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="${i < 3 ? 'on' : ''}"></span>`).join('');
+  function paint() {
+    applyTheme(document.getElementById('screen'), state.palette, state.dark);
+    applyTheme(document.getElementById('home'), state.palette, state.dark);
+    const s = document.getElementById('save');
+    s.innerHTML = SAVE[saveState];
+    s.className = 'save' + (saveState === 'fail' ? ' fail' : '');
+  }
+  renderToolbar(paint, [{ label: '저장 상태', value: saveState, options: [['ok', '저장됨'], ['saving', '저장 중'], ['fail', '저장 실패']],
+    onChange: (v) => { saveState = v; paint(); } }]);
+  paint();
+</script>
+</body>
+</html>

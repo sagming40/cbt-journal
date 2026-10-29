@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>컬러 시안</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  .board { width: 1360px; margin: 32px auto; display: flex; flex-direction: column; gap: 28px; }
+  .board > header { color: #fff; }
+  .board > header h1 { margin: 0 0 4px; font-size: 26px; }
+  .board > header p { margin: 0; font-size: 14px; opacity: .85; }
+  .row h2 { color: #fff; font-size: 18px; margin: 0 0 10px; }
+  .halves { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .half { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: grid;
+    grid-template-columns: 1fr 1fr; gap: 16px; }
+  .half .full { grid-column: 1 / -1; }
+  .ramp { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; }
+  .ramp div { height: 28px; border-radius: 6px; }
+  .ramp-n { display: grid; grid-template-columns: repeat(11, 1fr); font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .change { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .change:last-child { border: 0; }
+  .contrast { font-size: 12px; color: var(--muted); }
+  svg text { fill: var(--muted); font-size: 10px; }
+</style>
+</head>
+<body>
+<div class="board">
+  <header>
+    <h1>컬러 시안</h1>
+    <p>포인트 색 하나 + 무채색 · 강도는 포인트 색의 명도 단계 · 빨강 · 주황 · 초록 제외 (DESIGN 6장). 숫자는 WCAG 대비 (글자 4.5:1 이상 통과)</p>
+  </header>
+  <div id="rows"></div>
+</div>
+
+<template id="half">
+  <div class="half">
+    <div class="card">
+      <p class="label">버튼 · 칩</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary">체크인</button>
+        <button class="btn">이전</button>
+        <button class="btn btn-ghost">나중에 이어 쓰기</button>
+      </div>
+      <div class="chips">
+        <button class="chip" aria-pressed="true">불안</button>
+        <button class="chip">슬픔</button>
+        <button class="chip" aria-pressed="true">짜증</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="label">강도 슬라이더</p>
+      <div class="int-row"><span>불안</span><input type="range" min="0" max="100" step="5" value="80"><span class="v num">80</span></div>
+      <div class="int-row"><span>짜증</span><input type="range" min="0" max="100" step="5" value="30"><span class="v num">30</span></div>
+    </div>
+    <div class="card full">
+      <p class="label">강도 단계 (0 → 100) — 감정 종류와 상관없이 같은 색</p>
+      <div class="ramp"></div>
+      <div class="ramp-n num"></div>
+    </div>
+    <div class="card">
+      <p class="label">전 → 후 (무채색 숫자만)</p>
+      <div class="change"><span>불안</span><span class="num"><b>80</b> → <b>35</b> <span class="muted">−45</span></span></div>
+      <div class="change"><span>수치심</span><span class="num"><b>60</b> → <b>65</b> <span class="muted">+5</span></span></div>
+    </div>
+    <div class="card">
+      <p class="label">감정 추이</p>
+      <svg viewBox="0 0 260 90" width="100%" height="90" class="chart"></svg>
+    </div>
+    <div class="full contrast"></div>
+  </div>
+</template>
+
+<script>
+  const rows = document.getElementById('rows');
+  const tpl = document.getElementById('half');
+  const pts = [70, 55, 80, 60, 45, 50, 35];
+  for (const [key, p] of Object.entries(PALETTES)) {
+    const row = document.createElement('section');
+    row.className = 'row';
+    row.innerHTML = `<h2>${p.name}</h2><div class="halves"></div>`;
+    for (const dark of [false, true]) {
+      const half = tpl.content.firstElementChild.cloneNode(true);
+      applyTheme(half, key, dark);
+      half.querySelector('.ramp').innerHTML = Array.from({ length: 11 }, (_, i) => `<div style="background:${intensityColor(i * 10)}"></div>`).join('');
+      half.querySelector('.ramp-n').innerHTML = Array.from({ length: 11 }, (_, i) => `<span>${i * 10}</span>`).join('');
+      const xs = pts.map((v, i) => [10 + i * 40, 80 - v * 0.7]);
+      half.querySelector('.chart').innerHTML =
+        `<polyline points="${xs.map((x) => x.join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>` +
+        xs.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent)"/>`).join('') +
+        `<text x="10" y="89">10/23</text><text x="225" y="89">10/29</text>`;
+      const n = dark ? NEUTRAL.dark : NEUTRAL.light;
+      const t = dark ? p.text.dark : p.text.light;
+      half.querySelector('.contrast').textContent =
+        `${dark ? '다크' : '라이트'} · 버튼 글자 ${contrast(p.onAccent, p.accent).toFixed(1)}:1 · 포인트 글자/배경 ${contrast(t, n.bg).toFixed(1)}:1 · 보조 글자 ${contrast(n.muted, n.bg).toFixed(1)}:1`;
+      half.querySelectorAll('input[type=range]').forEach((r) => (r.oninput = () => (r.nextElementSibling.textContent = r.value)));
+      row.querySelector('.halves').append(half);
+    }
+    rows.append(row);
+  }
+</script>
+</body>
+</html>

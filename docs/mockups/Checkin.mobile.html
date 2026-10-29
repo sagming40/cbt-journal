@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>S-03 체크인 · 모바일</title>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+</head>
+<body>
+<div class="stage">
+  <div>
+    <p class="caption">S-03 체크인 · 칩을 눌러 보면 강도 줄이 50에서 생긴다 (DESIGN 4.2)</p>
+    <div class="phone" id="screen">
+      <div class="statusbar"></div>
+      <div class="hdr">
+        <button class="icon-btn" aria-label="닫기">×</button>
+        <h1>체크인</h1>
+        <span class="muted num" style="font-size:13px">10월 29일 13:40</span>
+      </div>
+      <div class="body">
+        <p class="q">지금 어떤 감정이야?</p>
+        <p class="help">여러 개 골라도 돼.</p>
+        <div class="chips" id="chips"></div>
+
+        <div id="ints" style="margin-top:20px;display:flex;flex-direction:column;gap:4px"></div>
+
+        <div style="margin-top:24px">
+          <p class="label">메모 (선택)</p>
+          <input id="memo" placeholder="한 줄로" maxlength="200"
+            style="width:100%;min-height:44px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:16px">
+        </div>
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+          <span class="label" style="margin:0">시각</span>
+          <button class="btn" style="min-height:36px">지금 ▾</button>
+        </div>
+      </div>
+      <div class="bottom">
+        <button class="btn btn-primary btn-block" id="save" disabled>저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="caption">저장 뒤 S-02 (토스트 + 사고 기록으로 이어 가기, C3)</p>
+    <div class="phone" id="after">
+      <div class="statusbar"></div>
+      <div class="hdr"><h1>10월 29일 수요일</h1></div>
+      <div class="body">
+        <div class="card" style="text-align:center;padding:24px 16px">
+          <p class="q" style="margin-bottom:14px">지금 기분 어때?</p>
+          <button class="btn btn-primary" style="min-width:180px">체크인</button>
+        </div>
+        <button class="btn btn-block" style="margin-top:10px">사고 기록 쓰기</button>
+        <p class="label" style="margin-top:24px">오늘</p>
+        <div class="card" style="display:flex;flex-direction:column;gap:10px">
+          <div class="num"><span class="muted">09:12</span>&nbsp; 불안 60 · 무기력 40</div>
+          <div class="num"><span class="muted">13:40</span>&nbsp; 불안 80 · 짜증 30</div>
+        </div>
+      </div>
+      <div style="position:absolute;left:16px;right:16px;bottom:96px;background:var(--text);color:var(--bg);border-radius:12px;
+        padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px">
+        <span>기록했어.</span>
+        <button class="btn" style="min-height:36px;background:transparent;color:inherit;border-color:currentColor">사고 기록 쓰기</button>
+      </div>
+      <div class="bottom" style="justify-content:space-around;font-size:13px;padding-top:10px">
+        <span style="color:var(--accent-text);font-weight:700">오늘</span><span class="muted">기록</span><span class="muted">통계</span><span class="muted">설정</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const EMOTIONS = ['불안', '두려움', '슬픔', '무기력', '분노', '짜증', '수치심', '죄책감', '외로움', '좌절'];
+  const picked = new Map([['불안', 80], ['짜증', 30]]);   // 예시 상태로 시작
+  const chips = document.getElementById('chips');
+  const ints = document.getElementById('ints');
+
+  function render() {
+    chips.innerHTML = EMOTIONS.map((e) => `<button class="chip" aria-pressed="${picked.has(e)}">${e}</button>`).join('');
+    chips.querySelectorAll('.chip').forEach((b) => (b.onclick = () => {
+      const e = b.textContent;
+      picked.has(e) ? picked.delete(e) : picked.set(e, 50);   // 새로 고르면 50에서 시작
+      render();
+    }));
+    ints.innerHTML = [...picked].map(([e, v]) => `
+      <div class="int-row">
+        <span><span class="int-dot" style="background:${intensityColor(v)}"></span>${e}</span>
+        <input type="range" min="0" max="100" step="5" value="${v}" aria-label="${e} 강도">
+        <span class="v num">${v}</span>
+      </div>`).join('');
+    ints.querySelectorAll('input').forEach((r, i) => (r.oninput = () => {
+      const e = [...picked.keys()][i];
+      picked.set(e, +r.value);
+      r.nextElementSibling.textContent = r.value;
+      r.previousElementSibling.firstElementChild.style.background = intensityColor(+r.value);
+    }));
+    document.getElementById('save').disabled = picked.size === 0;
+  }
+
+  const paint = () => { applyTheme(document.getElementById('screen'), state.palette, state.dark);
+    applyTheme(document.getElementById('after'), state.palette, state.dark); render(); };
+  renderToolbar(paint);
+  paint();
+</script>
+</body>
+</html>
