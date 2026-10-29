@@ -45,8 +45,13 @@ erDiagram
 
 ### 3.2 `sessions`
 - 토큰 원문은 쿠키에만 있다. DB에는 **SHA-256 해시**(`token_hash`, `UNIQUE`)만 (ARCHITECTURE 4절).
-- **기한: 마지막 사용 후 30일.** 요청마다 쓰지 않도록, `last_seen_at`이 하루 넘게 지났을 때만 `last_seen_at` · `expires_at`을 갱신한다.
-- 비밀번호 변경 → 지금 세션을 뺀 그 사용자의 세션 전부 삭제. 탈퇴 → CASCADE.
+- `remember`(로그인 유지 여부, REQUIREMENTS A1)에 따라 기한이 다르다.
+  | | 쿠키 | 서버 기한 |
+  |---|---|---|
+  | 로그인 유지 | `Max-Age` 30일 | 마지막 사용 후 **30일** |
+  | 유지 안 함 | 세션 쿠키(브라우저를 닫으면 사라짐) | 마지막 사용 후 **12시간** — 브라우저를 안 닫고 자리를 떠도 반나절이면 끝난다 |
+- 요청마다 쓰지 않도록, `last_seen_at`이 일정 시간(유지 1일 / 비유지 10분) 넘게 지났을 때만 `last_seen_at` · `expires_at`을 갱신한다. 갱신은 Valkey 캐시를 놓쳐 Postgres를 읽을 때 한다.
+- 비밀번호 변경 · 다른 기기 모두 로그아웃(A8) → 지금 세션을 뺀 그 사용자의 세션 전부 삭제. 탈퇴 → CASCADE. **어느 경우든 지운 `token_hash`로 Valkey `sess:` 키도 지운다**(ARCHITECTURE 4절, 4.5절).
 - 만료된 행은 worker가 하루 한 번 지운다.
 
 ### 3.3 마스터: `emotions` · `distortions`
@@ -70,7 +75,7 @@ erDiagram
 - 칸: `occurred_at`(T6) · `situation` · `automatic_thought` · `evidence_for` · `evidence_against` · `alternative_thought`.
   - 필수: 상황 · 자동 사고 · 대안 사고. 근거 · 반대 근거는 빈 문자열 허용(못 찾는 날도 있다). `NULL` 대신 `''`로 통일한다.
   - 글자 수 제한은 앱 검증(OpenAPI 스펙에 `maxLength`)으로.
-- `record_emotions`: 기본 키 `(record_id, emotion_id)`, **`intensity_before` · `intensity_after` 둘 다 NOT NULL** — 고른 감정마다 전 · 후를 전부 매긴다(2026-10-29 결정). D2(평균 감소율)는 이 두 칸으로 계산한다.
+- `record_emotions`: 기본 키 `(record_id, emotion_id)`, **`intensity_before` · `intensity_after` 둘 다 NOT NULL** — 고른 감정마다 전 · 후를 전부 매긴다(2026-10-29 결정). D2(평균 변화, 점)는 감정별 `intensity_after − intensity_before`의 평균이다. 비율로 나누지 않으므로 전 강도가 0이어도 계산된다.
 - `record_distortions`: 기본 키 `(record_id, distortion_id)`. 0개도 허용(왜곡을 못 찾는 날도 기록은 남긴다).
 - 수정(T5)은 한 트랜잭션에서 본문 `UPDATE` + 자식 테이블 지우고 다시 넣기.
 
@@ -118,12 +123,13 @@ erDiagram
 | `draft:{user_id}:{draft_id}` | string(JSON) | 14일 | 작성 중 사고 기록 전체 + `rev` | **초안 손실** (유일하게 잃는 것) |
 | `drafts:{user_id}` | sorted set | 14일 | 그 사용자의 초안 id (점수 = 마지막 저장 시각) | 초안 목록을 못 찾음 |
 | `stats:ver:{user_id}` | string(숫자) | 30일 | 통계 캐시 버전 | 캐시 미스 (다시 계산) |
-| `stats:{user_id}:{ver}:{종류}:{기간}` | string(JSON) | 1시간 | 대시보드 집계 결과 | 다시 계산 |
+| `stats:{user_id}:{ver}:{현지 날짜}:{종류}:{기간}` | string(JSON) | 1시간 | 대시보드 집계 결과. 현지 날짜(사용자 시간대의 오늘)를 키에 넣어 자정이 지나면 새로 계산된다 | 다시 계산 |
 
 ### 4.3 초안 자동저장 (T3)
 - 화면이 몇 초마다(입력이 멈추면) 초안 전체를 보낸다 → `draft:` 덮어쓰기 + `drafts:` 점수 갱신 + TTL 연장.
 - **동시 편집 충돌**: 초안마다 `rev`(정수)를 둔다. 클라이언트는 받은 `rev`를 같이 보내고, 서버의 `rev`와 다르면 409 → "다른 기기에서 수정됨" 안내. 같으면 저장하고 `rev + 1`.
 - 사용자당 초안 최대 10개. 넘으면 새 초안을 거절한다(오래된 걸 몰래 지우지 않는다).
+- **만료된 초안 정리**: 초안 키는 각자 14일 TTL로 사라지지만 `drafts:` 목록에는 id가 남는다. 목록을 읽을 때(목록 조회 · 10개 검사) 키가 없는 id는 `ZREM`으로 지운 뒤 센다 — 유령 초안이 개수를 차지하지 않게.
 - 완료 → Postgres 트랜잭션 커밋이 **성공한 뒤에** 초안 키를 지운다(실패하면 초안이 남아 다시 시도 가능).
 - 완료한 기록을 수정할 때는 초안을 쓰지 않는다(수정 화면에서 바로 저장).
 
@@ -140,3 +146,4 @@ Postgres CASCADE와 별도로 지운다: 그 사용자의 `sess:*`(삭제 전에
 | 날짜 | 내용 |
 |---|---|
 | 2026-10-29 | v2 첫 작성. 감정 10개 seed, 왜곡 설명은 사용자가 직접 작성, 후 강도는 감정마다 전부 (사용자 결정) |
+| 2026-10-29 | 문서 검토 반영: 3.2 로그인 유지 여부별 기한(30일 / 12시간), 세션 삭제 시 Valkey 캐시 삭제(빠져 있으면 비밀번호를 바꿔도 옛 세션이 최대 10분 살아 있었음), 3.5 D2를 평균 변화(점)로, 4.2 통계 키에 현지 날짜, 4.3 만료된 초안 id 정리 |
