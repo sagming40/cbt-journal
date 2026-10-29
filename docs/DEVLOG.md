@@ -6,11 +6,11 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | M0 설계 문서 · 목업 (PLAN 2장) |
-| 끝난 것 | 결정 기록 6개, REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN · PLAN, 목업 4장, 색 확정(B), CLAUDE.md |
-| 진행 중 | README |
-| 다음에 할 일 | README 작성 → M1 시작 (개념 설명부터) |
-| 기기별로 할 일 | 없음 (아직 설치할 도구 없음) |
+| 단계 | M0 완료 → M1 개발 환경 · 뼈대 시작 전 (PLAN 2장) |
+| 끝난 것 | 결정 기록 6개, REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN · PLAN, 목업 4장, 색 확정(B), CLAUDE.md, README |
+| 진행 중 | 없음 |
+| 다음에 할 일 | M1 시작: 개념 설명(Go 기초 · Valkey · SvelteKit SPA) → 도구 설치(사용자 직접, 두 PC) |
+| 기기별로 할 일 | M1에서 Go · pnpm · Task 설치 (집 PC · 회사 PC 둘 다) |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
@@ -46,8 +46,7 @@
 - 해결: 받아도 되고, conda 환경이면 `python -m http.server 5199`로 받지 않고 띄운다. 목업 README에 둘 다 적음.
 
 ### 이번 세션 커밋
-`387c9cd` 결정 기록 · REQUIREMENTS / `3c6debe` ARCHITECTURE / `5103e58` DATA_MODEL / `95779fd` DESIGN / `d677587` 사용 기기 기준 / `13ba562` 목업 / `0dc20c5` 색 확정 / (이 커밋) PLAN · DEVLOG
+`387c9cd` 결정 기록 · REQUIREMENTS / `3c6debe` ARCHITECTURE / `5103e58` DATA_MODEL / `95779fd` DESIGN / `d677587` 사용 기기 기준 / `13ba562` 목업 / `0dc20c5` 색 확정 / `998e3d6` PLAN · DEVLOG / `1122489` CLAUDE.md / (이 커밋) README
 
 ### 다음에 할 일
-- CLAUDE.md · README 작성 → M0 끝
 - M1: 개념 설명(Go 기초 · Valkey · SvelteKit SPA) → 도구 설치(사용자 직접)
