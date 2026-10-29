@@ -7,9 +7,9 @@
 | 항목 | 내용 |
 |---|---|
 | 단계 | M0 설계 문서 · 목업 (PLAN 2장) |
-| 끝난 것 | 결정 기록 6개, REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN · PLAN, 목업 4장, 색 확정(B) |
-| 진행 중 | CLAUDE.md, README |
-| 다음에 할 일 | CLAUDE.md · README 작성 → M1 시작 (개념 설명부터) |
+| 끝난 것 | 결정 기록 6개, REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN · PLAN, 목업 4장, 색 확정(B), CLAUDE.md |
+| 진행 중 | README |
+| 다음에 할 일 | README 작성 → M1 시작 (개념 설명부터) |
 | 기기별로 할 일 | 없음 (아직 설치할 도구 없음) |
 
 ## 작성 규칙

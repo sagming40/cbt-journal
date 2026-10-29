@@ -11,7 +11,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 ## 2. 진행 현황
 | 단계 | 내용 | 상태 |
 |---|---|---|
-| M0 | 설계 문서 · 목업 | 🔄 CLAUDE.md · README 남음 |
+| M0 | 설계 문서 · 목업 | 🔄 README 남음 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ⬜ |
 | M2 | 인증 | ⬜ |
 | M3 | 체크인 | ⬜ |
@@ -33,7 +33,8 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN
 - [x] 목업 4장, 색 확정(B · 차분한 남색)
 - [x] PLAN (이 문서), DEVLOG 새로 시작
-- [ ] CLAUDE.md, README 새로 쓰기
+- [x] CLAUDE.md
+- [ ] README 새로 쓰기
 - **완료 기준**: CLAUDE.md "문서 지도"의 모든 링크가 실제 파일을 가리킨다.
 
 ### M1 · 개발 환경 · 뼈대
