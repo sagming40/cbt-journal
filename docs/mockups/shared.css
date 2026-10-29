@@ -29,7 +29,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .icon-btn:hover { background: var(--surface-2); }
 
 /* 버튼 */
-.btn { min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+.btn { min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid var(--input); background: var(--surface);
   font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; }
 .btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
@@ -38,7 +38,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 /* 칩 */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+.chip { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--input); background: var(--surface);
   font-size: 15px; cursor: pointer; }
 .chip[aria-pressed="true"] { background: var(--accent-tint); border-color: var(--accent-line); color: var(--accent-text); font-weight: 600; }
 
@@ -48,7 +48,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .label { font-size: 13px; color: var(--muted); font-weight: 600; margin: 0 0 8px; }
 .q { font-size: 20px; font-weight: 700; margin: 0 0 6px; line-height: 1.4; }
 .help { font-size: 14px; color: var(--muted); margin: 0 0 16px; }
-textarea.input { width: 100%; min-height: 160px; resize: none; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+textarea.input { width: 100%; min-height: 160px; resize: none; padding: 12px; border-radius: 8px; border: 1px solid var(--input);
   background: var(--surface); font-size: 16px; line-height: 1.6; }
 textarea.input:focus, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 

@@ -4,22 +4,22 @@
 
 // ─── 무채색 (모든 시안 공통) ───────────────────────────────
 const NEUTRAL = {
-  light: { bg: '#F7F7F5', surface: '#FFFFFF', surface2: '#EFEFEC', border: '#E3E3DF', text: '#1B1B1F', muted: '#5F5F66' },
-  dark:  { bg: '#111214', surface: '#191A1D', surface2: '#24252A', border: '#2E2F35', text: '#EDEDF0', muted: '#A3A3AD' },
+  light: { bg: '#F7F7F5', surface: '#FFFFFF', surface2: '#EFEFEC', border: '#E3E3DF', input: '#8A8A93', text: '#1B1B1F', muted: '#5F5F66' },
+  dark:  { bg: '#111214', surface: '#191A1D', surface2: '#24252A', border: '#2E2F35', input: '#6B6C75', text: '#EDEDF0', muted: '#A3A3AD' },
 };
 
 // ─── 포인트 색 시안 (DESIGN 6장: 빨강 · 주황 · 초록 제외) ────────
 // accent = 버튼 바탕, text = 배경 위 포인트 글자 (4.5:1 이상이어야 함)
 const PALETTES = {
   A: { name: 'A · 깊은 청록', accent: '#2C7A7B', onAccent: '#FFFFFF', text: { light: '#22676A', dark: '#6CC5C4' } },
-  B: { name: 'B · 차분한 남색', accent: '#4457C2', onAccent: '#FFFFFF', text: { light: '#3949A8', dark: '#9AA6F0' } },
+  B: { name: 'B · 차분한 남색 (채택)', accent: '#4457C2', onAccent: '#FFFFFF', text: { light: '#3949A8', dark: '#9AA6F0' } },
   C: { name: 'C · 라벤더',     accent: '#7357B8', onAccent: '#FFFFFF', text: { light: '#64489F', dark: '#B9A5EE' } },
   D: { name: 'D · 모래',       accent: '#8A6D45', onAccent: '#FFFFFF', text: { light: '#75592F', dark: '#D2B48A' } },
 };
 
 const params = new URLSearchParams(location.search);
 const state = {
-  palette: PALETTES[params.get('palette')] ? params.get('palette') : 'A',
+  palette: PALETTES[params.get('palette')] ? params.get('palette') : 'B',   // B = 채택안 (DESIGN 6장)
   dark: params.has('dark') ? params.get('dark') === '1' : matchMedia('(prefers-color-scheme: dark)').matches,
 };
 
@@ -28,7 +28,7 @@ function applyTheme(el, paletteKey, dark) {
   const p = PALETTES[paletteKey];
   const n = dark ? NEUTRAL.dark : NEUTRAL.light;
   const vars = {
-    '--bg': n.bg, '--surface': n.surface, '--surface-2': n.surface2, '--border': n.border,
+    '--bg': n.bg, '--surface': n.surface, '--surface-2': n.surface2, '--border': n.border, '--input': n.input,
     '--text': n.text, '--muted': n.muted,
     '--accent': p.accent, '--on-accent': p.onAccent, '--accent-text': dark ? p.text.dark : p.text.light,
     '--accent-tint': `color-mix(in oklab, ${p.accent} ${dark ? 18 : 9}%, ${n.surface})`,
