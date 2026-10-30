@@ -148,7 +148,9 @@ Taskfile.yml           자주 쓰는 명령 모음
 - **휴대폰 확인은 배포 서버로 한다**(PLAN M3 이후). 개발 서버에 휴대폰을 붙이려 하지 않는다 — `Secure` 쿠키는 `http://IP주소`에서 저장되지 않는다.
 - 자주 쓰는 명령은 `Taskfile.yml`에 모은다 (`task dev` · `task test` · `task lint` · `task gen` · `task migrate`). 정확한 목록은 CLAUDE.md.
 
-## 7. 빌드
+## 7. 빌드 · 배포 · 운영
+
+### 7.1 빌드
 1. `web/`에서 `pnpm build` → `web/build/` (정적 파일)
 2. 결과를 `internal/webdist/dist/`로 복사 → `//go:embed all:dist` (`go:embed`는 자기 폴더 아래만 넣을 수 있어서 복사한다. `all:`이 없으면 밑줄로 시작하는 `_app/`이 빠진다)
 3. `go build ./cmd/app` → 실행 파일 하나
@@ -156,7 +158,64 @@ Taskfile.yml           자주 쓰는 명령 모음
 - `internal/webdist/dist/`에는 `.gitkeep`만 커밋한다. 프론트를 빌드하지 않은 PC · CI에서도 `go build` · `go test`가 되고, 그 상태로 화면 주소에 들어오면 503 안내를 준다.
 - 캐시: `_app/immutable/`(파일 이름에 내용 해시)은 1년 immutable, `index.html`은 `no-cache`.
 
-배포 환경: Vultr 서울 서버 한 대 + Caddy(HTTPS) + 도메인 `cbt.sagming.com`(Cloudflare, DNS만) — [decisions/0007](decisions/0007-deploy-vultr-seoul.md). 서버 구성 · 배포 순서는 M3 진행하며 이 절에 채운다.
+- 운영용은 `task build:linux` — 같은 순서에 `GOOS=linux GOARCH=amd64 CGO_ENABLED=0`, 그리고 **커밋 번호를 실행 파일에 새긴다**(`-ldflags "-X main.version=<커밋>"`). `app version`과 `serve` 시작 로그에 나온다. 의존성이 전부 순수 Go(pgx · argon2)라 Windows에서 바로 Linux용을 만든다.
+
+### 7.2 운영 구성
+배포 환경: Vultr 서울 서버 한 대 + 도메인 `cbt.sagming.com`(Cloudflare, DNS만) — [decisions/0007](decisions/0007-deploy-vultr-seoul.md). 서버 접속 · 실제로 친 명령은 [SERVER.md](SERVER.md).
+
+```
+바깥 ─ 443 · 80 ─▶ Caddy (인증서 자동 · 보안 헤더 · http→https)
+                     │ 127.0.0.1:8080
+                     ▼
+                   app serve  ← systemd 서비스 cbt, 로그인 불가 계정 cbt로 실행
+                     │ 127.0.0.1만
+                     ▼
+              docker compose: Postgres(5432) · Valkey(6379, 비밀번호)
+```
+
+| 서버 위치 | 내용 |
+|---|---|
+| `/opt/cbt/releases/<커밋>/app` | 배포한 실행 파일. 최근 5개만 남긴다 |
+| `/opt/cbt/current` | 지금 버전을 가리키는 링크. 되돌리기 = 링크만 바꾸고 재시작 |
+| `/etc/cbt/cbt.env` | 앱 비밀값 · 설정(`root:cbt`, 640). systemd가 읽는다 |
+| `/srv/cbt/compose.yaml` · `/srv/cbt/.env` | 운영 Postgres · Valkey와 그 비밀번호(600) |
+| `/var/backups/cbt/` | 암호화된 DB 백업. 최근 14개 |
+| `/usr/local/bin/cbtctl` | 운영 env를 읽고 `cbt` 계정으로 `app`을 실행하는 도우미 — `sudo cbtctl user create …` · `sudo cbtctl migrate status` |
+
+운영 env: `APP_ENV=production` · `HTTP_ADDR=127.0.0.1:8080` · `TRUSTED_PROXIES=127.0.0.1` · `ALLOW_SIGNUP=false` · DB · Valkey 주소(비밀번호는 서버에서 무작위로 만든다).
+
+저장소의 운영 파일: `deploy/`(운영 compose · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 · 백업 스크립트 · env 예시)와 `scripts/deploy.ps1`(PC 쪽). 서버에는 배포 때 필요한 것만 복사된다.
+
+**Caddy가 하는 일**
+- `cbt.sagming.com`만 받는다. IP로 들어오거나 다른 이름이면 앱을 보여 주지 않는다.
+- 보안 헤더: `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` · `Referrer-Policy: strict-origin-when-cross-origin` · HSTS(**처음엔 하루짜리**, 확인 뒤 1년). CSP는 화면이 생긴 뒤(M4~) 인라인 스크립트 해시와 함께 붙인다.
+- 바깥에서 온 `X-Forwarded-For`는 버리고 자기가 새로 붙인다 → 3.3절 규칙으로 실제 접속 IP가 나온다. `Host`도 그대로 넘겨 교차 출처 차단(3.1절)이 동작한다.
+- 접근 로그는 남기지 않는다(앱 로그로 충분하고, 남기는 곳을 늘리지 않는다 — REQUIREMENTS 5.1절). 인증서 알림 이메일은 서버 env(`ACME_EMAIL`)에서 읽는다 — 저장소에 이메일을 쓰지 않는다.
+
+### 7.3 배포 흐름 (`task deploy`, PC에서)
+1. **확인**: 작업 트리가 깨끗하고, 지금 커밋이 `origin/main`과 같아야 한다(push 안 된 코드 · 커밋 안 된 변경은 거부). 두 PC가 서로 다른 버전을 덮어쓰지 않는다.
+2. **빌드**: `task build:linux` → `bin/app-linux-amd64`(커밋 번호 포함).
+3. **복사** 1번: 실행 파일 + 서버 쪽 배포 스크립트를 서버 임시 폴더로(`scp`).
+4. **서버에서 실행** 1번(`ssh` → `sudo`): 아래를 한 번에 한다.
+   1. `releases/<커밋>/`에 넣는다
+   2. **배포 직전 DB 백업**(7.4절과 같은 방식)
+   3. 새 실행 파일로 `migrate up`
+   4. `current` 링크 교체 → `systemctl restart cbt`
+   5. `127.0.0.1:8080/api/health`가 200인지 확인 — **실패하면 옛 링크로 되돌리고 재시작**, 실패로 끝낸다
+   6. 오래된 release 정리(5개 남김)
+- 열쇠 passphrase는 복사 · 실행에 한 번씩, sudo 비밀번호는 한 번 묻는다.
+
+### 7.4 백업 · 복원
+- 서버: systemd 타이머가 **하루 한 번** `pg_dump`(compose 안 Postgres) → **`age`로 암호화** → `/var/backups/cbt/`. 서버에는 **잠그는 열쇠(공개키)만** 있다.
+- PC: `task backup:pull`이 최신 백업을 가져온다. **여는 열쇠(개인키)는 PC에만** — 만들자마자 비밀번호 관리자나 종이에 따로 보관한다. **잃으면 모든 백업을 못 연다.** 두 PC 모두 복원할 수 있게 같은 개인키를 둔다.
+- 복원 연습: 백업을 풀어 로컬(또는 빈 DB)에 넣고 건수를 비교한다(PLAN M3 완료 기준).
+
+### 7.5 운영 규칙
+- **마이그레이션은 옛 버전과도 맞게 쓴다**: 컬럼 · 테이블 추가 위주. 지우기 · 이름 바꾸기는 새 버전이 안 쓰게 된 **다음 배포에**. 배포가 실패해 옛 버전으로 되돌려도 DB가 맞아야 한다.
+- **첫 배포 순서는 DNS → Caddy**: `cbt` 레코드를 만들고 `nslookup cbt.sagming.com`으로 서버 IP가 나오는 걸 본 뒤 Caddy 사이트를 켠다. DNS 없이 켜면 인증서 발급이 계속 실패하고, Let's Encrypt가 실패가 반복된 이름을 한 시간 동안 막는다.
+- **재부팅하면 저절로 살아나야 한다**: compose `restart: unless-stopped`, systemd `Restart=always`. 앱은 DB가 아직 안 떴으면 시작을 거부하고(1절 serve), systemd가 몇 초 뒤 다시 띄운다.
+- **새벽 자동 재부팅은 아직 끈다**: 재부팅 뒤 자동 복구를 실제로 확인한 다음 켤지 정한다(그 전까지는 SERVER.md 5장 "재부팅이 필요한지"를 가끔 본다).
+- 스왑 1GB(메모리 1GB에 네 프로세스), Docker 로그는 컨테이너마다 크기 제한.
 
 ## 8. 테스트
 | 층 | 도구 | 무엇을 |
@@ -179,3 +238,4 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-30 | 1절 라우팅(`GET /`로 SPA, 없는 `/api/*` GET은 JSON 404), 7절 embed 세부(`dist/` · `all:` · `.gitkeep` · 캐시) |
 | 2026-10-30 | M2 사전 검증: 1절 API mux 분리, 2절 `clientip/` · `db/dbgen/` · `testutil/` · handler 임베드, 3.1절 미들웨어 줄(본문 제한 · IP), 요청 제한은 handler에서, 기본 잠금을 openapi `security`로, 3.2절 429 `Retry-After` · 봉투 범위, 4절 쿠키 재발급 · 요청 제한 표 · Valkey 장애 · 만료 세션 정리 · 401 예외 · `next` 규칙 |
 | 2026-10-30 | M2 구현 중: 1절 바깥 라우팅을 경로 앞부분으로(mux 패턴 충돌), 3.2절 413 · 오류 code 목록 |
+| 2026-10-31 | 7절을 "빌드 · 배포 · 운영"으로 넓힘: 7.1 운영용 빌드(커밋 번호), 7.2 운영 구성(Caddy · systemd · compose · 서버 위치 · `cbtctl`), 7.3 배포 흐름, 7.4 백업(`age`, 개인키는 PC에만), 7.5 운영 규칙(옛 버전과 맞는 마이그레이션 · DNS 먼저 · 재부팅 자동 복구 · 자동 재부팅 보류). 사전 검증에서 시나리오를 돌려 찾은 것 반영 (사용자 결정: 결정 3개 추천안) |

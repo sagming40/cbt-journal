@@ -16,7 +16,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
 | M2 | 인증 | ✅ 2026-10-30 |
-| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 서버 · 기본 보안 · Docker 끝, 다음은 운영 구성(compose · Caddy · 앱) 설계 |
+| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 운영 구성 결정 · 설계 문서 끝, 운영 파일 타이핑 중 |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
 | M6 | 기록 목록 · 통계 → **혼자 쓰기 시작** | ⬜ |
@@ -86,17 +86,20 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] SSH 키(PC마다 따로, 집 PC = `home-pc`) → Vultr 서버 `cbt-1`(Shared CPU `vc2-1c-1gb` · 서울 · Ubuntu 24.04 · IPv4만 · 자동 백업 켬) → 서버 기본 보안: 보안 업데이트 · 재부팅, ufw(22 · 80 · 443만), 일반 계정 + sudo, SSH 잠금(root 금지 · 비밀번호 금지) (사용자 직접, 2026-10-30)
 - [x] 자동 보안 업데이트 확인(`20auto-upgrades` 둘 다 "1", `unattended-upgrades` active), **Docker Engine 29.9.2 · Compose v5.6.1**(공식 저장소, `hello-world` 확인). 사용자를 `docker` 그룹에 넣지 않는다(= root 권한) — 서버에서는 `sudo docker` (사용자 직접)
 - [ ] 회사 PC SSH 키 추가 (서버 `authorized_keys`에 직접)
-- [ ] Caddy + 앱(systemd 또는 compose) + Postgres · Valkey(compose, Valkey 비밀번호) 구성, `cbt.sagming.com` DNS(회색 구름)
-- [ ] 운영 설정: HTTPS, 비밀값, DB · Valkey 포트 외부 차단, 보안 헤더
-- [ ] 리버스 프록시 뒤 실제 클라이언트 IP 규칙 (`TRUSTED_PROXIES`, ARCHITECTURE 3.3절)
-- [ ] Postgres 백업 · 복원 스크립트, **백업 파일 암호화**(서버 밖에 둘 때), 복원 연습
-- [ ] 새 버전 올리는 순서를 README에
+- [x] 운영 구성 결정(실행 파일 + systemd · PC에서 `task deploy` · `age` 암호화 백업을 PC로) · 설계 문서(ARCHITECTURE 7절) (사용자 결정, 2026-10-31)
+- [ ] **저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수)**: `app version`(커밋 번호) · `task build:linux` → `deploy/`(운영 compose · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 · 백업 스크립트 · 타이머 · env 예시) → `scripts/deploy.ps1` · `task deploy` · `task backup:pull`
+- [ ] 서버: 스왑 1GB · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관)
+- [ ] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저")
+- [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정
+- [ ] 백업 타이머 · `task backup:pull` · 복원 연습, README "배포" · SERVER.md 갱신
 - **완료 기준**
   - 휴대폰(모바일 데이터)과 회사 PC에서 접속해 로그인 · 로그아웃이 된다.
   - 바깥에서 DB · Valkey 포트 접속이 실패한다.
   - 로그인 요청 제한이 프록시 IP가 아니라 실제 접속 IP 기준으로 걸린다(휴대폰 · PC가 서로의 제한에 걸리지 않음).
   - 백업 파일로 빈 DB에 복원해 사용자 건수가 같다.
   - README 순서대로 새 버전을 한 번 올려 본다.
+  - 서버를 재부팅하면 손대지 않아도 앱 · DB · Caddy가 다시 살아나 health가 200이다.
+  - 배포 중 health가 실패하면 옛 버전으로 저절로 돌아간다(일부러 실패시켜 한 번 확인).
 
 ### M4 · 체크인
 - [ ] `emotions`(seed 10개) · `checkins` · `checkin_emotions` 마이그레이션
