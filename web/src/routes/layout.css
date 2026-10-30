@@ -1,0 +1,136 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+/* 글꼴은 npm 패키지에서: 빌드 결과에 같이 들어가 외부 CDN 요청이 없다 (DESIGN 6장 "서체") */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* 색 토큰: DESIGN 6장 "B · 차분한 남색"이 원본이다. 화면 코드에서는 hex를 쓰지 않고 이 변수만 쓴다.
+   shadcn 변수 ↔ 우리 토큰 짝은 DESIGN 6장 "shadcn-svelte 변수 연결" 표를 따른다. */
+:root {
+	--radius: 0.625rem; /* 아래 @theme의 배율로 md = 8px (버튼 · 입력, DESIGN 6장 "모양") */
+
+	--background: #f7f7f5; /* bg */
+	--foreground: #1b1b1f; /* text */
+	--card: #ffffff; /* surface */
+	--card-foreground: #1b1b1f;
+	--popover: #ffffff;
+	--popover-foreground: #1b1b1f;
+	--primary: #4457c2; /* accent */
+	--primary-foreground: #ffffff; /* on-accent */
+	--secondary: #efefec; /* surface-2 */
+	--secondary-foreground: #1b1b1f;
+	--muted: #efefec;
+	--muted-foreground: #5f5f66; /* muted */
+	--accent: #efefec; /* shadcn의 accent는 hover 바탕이다 — 우리 accent와 이름만 같다 */
+	--accent-foreground: #1b1b1f;
+	--destructive: #1b1b1f; /* 오류도 빨강이 아니라 text 색 (DESIGN 6장 "오류 표시") */
+	--border: #e3e3df; /* 장식 테두리 */
+	--input: #8a8a93; /* 입력칸 · 버튼 테두리 3.4:1 */
+	--ring: #4457c2;
+
+	/* 우리 토큰 중 shadcn에 짝이 없는 것 */
+	--accent-text: #3949a8;
+	--accent-tint: color-mix(in oklab, var(--primary) 9%, var(--card));
+	--accent-line: color-mix(in oklab, var(--primary) 45%, var(--card));
+
+	/* 차트도 포인트 색 하나의 명도 단계로만 (감정마다 다른 색 금지, DESIGN 6장 "색 원칙") */
+	--chart-1: var(--primary);
+	--chart-2: color-mix(in oklab, var(--primary) 75%, var(--secondary));
+	--chart-3: color-mix(in oklab, var(--primary) 55%, var(--secondary));
+	--chart-4: color-mix(in oklab, var(--primary) 35%, var(--secondary));
+	--chart-5: color-mix(in oklab, var(--primary) 20%, var(--secondary));
+
+	--sidebar: var(--card);
+	--sidebar-foreground: var(--foreground);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--sidebar-accent: var(--accent-tint); /* 활성 메뉴 바탕 */
+	--sidebar-accent-foreground: var(--accent-text);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--ring);
+}
+
+.dark {
+	--background: #111214;
+	--foreground: #ededf0;
+	--card: #191a1d;
+	--card-foreground: #ededf0;
+	--popover: #191a1d;
+	--popover-foreground: #ededf0;
+	--primary: #4457c2;
+	--primary-foreground: #ffffff;
+	--secondary: #24252a;
+	--secondary-foreground: #ededf0;
+	--muted: #24252a;
+	--muted-foreground: #a3a3ad;
+	--accent: #24252a;
+	--accent-foreground: #ededf0;
+	--destructive: #ededf0;
+	--border: #2e2f35;
+	--input: #6b6c75;
+	--ring: #4457c2;
+
+	--accent-text: #9aa6f0;
+	--accent-tint: color-mix(in oklab, var(--primary) 18%, var(--card));
+	--accent-line: color-mix(in oklab, var(--primary) 60%, var(--card));
+}
+
+@theme inline {
+	--font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+	/* 우리 토큰을 Tailwind 클래스로 쓰게 등록한다: text-accent-text, bg-accent-tint, border-accent-line */
+	--color-accent-text: var(--accent-text);
+	--color-accent-tint: var(--accent-tint);
+	--color-accent-line: var(--accent-line);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+	html {
+		@apply font-sans;
+	}
+}

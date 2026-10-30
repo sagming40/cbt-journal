@@ -1,0 +1,13 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Miscellaneous
+/static/
+
+# 생성 코드는 손대지 않는다 (CLAUDE.md "생성 코드는 고치지 않는다") — 포매터도 건드리지 않게
+src/lib/components/ui/
+src/lib/api/schema.d.ts
