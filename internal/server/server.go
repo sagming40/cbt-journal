@@ -5,6 +5,7 @@ package server
 
 import (
 	"context"
+	"io/fs"
 	"log/slog"
 	"net/http"
 
@@ -22,12 +23,16 @@ type Checks struct {
 }
 
 // New는 모든 경로를 등록한 핸들러 하나를 돌려준다.
-func New(logger *slog.Logger, checks Checks) http.Handler {
+// web: 프론트 빌드 결과 (운영은 webdist.FS(), 테스트는 가짜 파일 묶음).
+func New(logger *slog.Logger, checks Checks, web fs.FS) http.Handler {
 	mux := http.NewServeMux()
 	h := &handler{logger: logger, checks: checks}
 	// 생성된 코드가 openapi.yaml의 경로를 mux에 등록한다. 경로를 손으로 적지 않으니 문서와 코드가 어긋날 수 없다.
 	// 비유: 안내 데스크 직원이 계약서(openapi.yaml)에 적힌 방 번호만 보고 손님을 보낸다.
 	apigen.HandlerFromMux(apigen.NewStrictHandler(h, nil), mux)
+	// 나머지 GET은 프론트가 받는다. "GET /"는 가장 덜 구체적인 패턴이라 GET /api/health 같은 경로가 먼저 고른다.
+	// GET으로만 여는 이유: 메서드 없이 "/"로 열면 POST /api/health도 여기로 빠져 405 대신 404가 된다.
+	mux.Handle("GET /", spa(web))
 	return mux
 }
 

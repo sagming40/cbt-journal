@@ -11,6 +11,7 @@ import (
 	"github.com/sagming40/cbt-journal/internal/config"
 	"github.com/sagming40/cbt-journal/internal/db"
 	"github.com/sagming40/cbt-journal/internal/server"
+	"github.com/sagming40/cbt-journal/internal/webdist"
 )
 
 // serve는 API 서버를 띄운다. 추가 인자는 받지 않는다(_).
@@ -36,7 +37,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 			Postgres: pool.Ping,
 			// go-redis의 Ping은 결과 상자를 돌려줘서, 에러만 꺼내는 작은 어댑터를 씌운다.
 			Valkey: func(ctx context.Context) error { return rdb.Ping(ctx).Err() },
-		}),
+		}, webdist.FS()),
 		// 헤더를 아주 느리게 보내 연결을 붙잡아 두는 공격(Slowloris)을 막는다.
 		ReadHeaderTimeout: 5 * time.Second,
 	}

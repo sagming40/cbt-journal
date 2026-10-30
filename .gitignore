@@ -10,10 +10,17 @@ web/.svelte-kit/
 web/build/
 
 # === Go ===
+
 # go build 결과 실행 파일, air(Hot Reload)가 쓰는 임시 폴더
 /bin/
 /tmp/
 *.exe
+
+# 프론트 빌드 결과를 embed용으로 복사해두는 곳 (ARCHITECTURE 7절)
+# .gitkeep만 커밋해서, 프론트를 빌드하지 않은 PC · CI에서도 go build가 되게 한다
+/internal/webdist/dist/*
+!/internal/webdist/dist/.gitkeep
+
 
 # === 에디터 / OS ===
 .vscode/
