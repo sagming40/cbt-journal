@@ -16,6 +16,7 @@ Go(`net/http` · pgx · sqlc · goose) + PostgreSQL + Valkey(asynq) / SvelteKit 
 | 무엇을 어디에 저장하고 왜? (Postgres · Valkey) | [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) |
 | 화면은 어떻게 생겼고 왜? 색은? | [`docs/DESIGN.md`](docs/DESIGN.md) (색 토큰은 6장), 그림은 [`docs/mockups/`](docs/mockups/README.md) |
 | 왜 이 스택 · 이 방식이야? | [`docs/decisions/`](docs/decisions/README.md) |
+| 운영 서버에 어떻게 들어가고, 어떻게 세팅돼 있어? 무슨 명령을 쳤어? | [`docs/SERVER.md`](docs/SERVER.md) (비밀값 · 서버 IP는 적지 않는다) |
 | API 모양은? | `api/openapi.yaml` (M1부터. 마크다운 API 명세는 따로 쓰지 않는다) |
 | 겪은 문제와 해결은? | [`docs/DEVLOG.md`](docs/DEVLOG.md) 날짜 기록 (최신이 위) |
 | 이게 뭐고 어떻게 실행해? | [`README.md`](README.md) |

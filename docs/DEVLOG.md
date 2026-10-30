@@ -10,7 +10,7 @@
 | 끝난 것 | M0 · M1 · M2 전부(두 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | M3: 운영 구성(운영용 compose · Caddy · 앱 실행 방식 · 배포 스크립트) 설계를 사용자에게 먼저 보여 주고 구현 |
 | 다음에 할 일 | 운영 구성 설계 → 저장소에 운영 파일 추가 → 서버에 올리기 → `cbt.sagming.com` DNS(회색 구름) → M3 완료 기준 확인 (PLAN M3) |
-| 기기별로 할 일 | **회사 PC**: SSH 키를 따로 만들어(`-C "cbt-journal company-pc"`, 파일 `cbt_vultr`) Vultr가 아니라 **서버의 `~/.ssh/authorized_keys`에 추가**해야 접속된다(서버가 이미 만들어져서 Vultr 등록만으로는 안 들어감). 접속: `ssh -i "$HOME.sshcbt_vultr" sagming40@<서버 IP>` |
+| 기기별로 할 일 | **회사 PC**: 서버 접속용 SSH 키를 따로 만들어 서버 `authorized_keys`에 추가 — 순서는 [SERVER.md](SERVER.md) 3.4절 (Vultr에 등록만 해서는 이미 만든 서버에 안 들어간다) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
 ## 작성 규칙

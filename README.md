@@ -148,6 +148,7 @@ docker compose down -v     # 볼륨까지 삭제 = 로컬 DB · Valkey 데이터
 | [DATA_MODEL](docs/DATA_MODEL.md) | PostgreSQL 테이블 · Valkey 키와 설계 이유 |
 | [DESIGN](docs/DESIGN.md) | 화면 설계, 색 · 테마 ([목업](docs/mockups/README.md)) |
 | [PLAN](docs/PLAN.md) | 단계별 작업과 완료 기준, 진행 상황 |
+| [SERVER](docs/SERVER.md) | 운영 서버 접속 · 세팅 기록 · 자주 쓰는 명령 (런북) |
 | [DEVLOG](docs/DEVLOG.md) | 개발 일지 |
 | [decisions/](docs/decisions/README.md) | 결정 기록 (ADR) |
 | [CLAUDE.md](CLAUDE.md) | 이 저장소에서 작업할 때 지키는 규칙 |
