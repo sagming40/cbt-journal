@@ -43,11 +43,25 @@
 - 다시 돌려 봐도 문제없던 것: Caddy가 `X-Forwarded-For`를 새로 붙여 `TRUSTED_PROXIES=127.0.0.1`로 실제 IP가 나옴, `Host` 그대로라 CSRF 차단 · `Secure` 쿠키 동작, 순수 Go라 Windows에서 Linux용 빌드, push된 커밋만 배포해 두 PC가 덮어쓰지 않음.
 - 배운 것: 사전 검증 보고에는 **어떤 기준 · 어떤 시나리오까지 돌렸는지**를 같이 적는다.
 
+### 타이핑 1단계: `app version` · `task build:linux`
+- 사용자가 치고 Claude가 검수. 확인: `go run ./cmd/app version` → `dev`, `bin/app-linux-amd64` 첫 4바이트 `ELF`, 버전 문자열 `<커밋>-dirty` 포함, `task lint` 0 issues · `task test` 통과.
+
+### 막혔던 일
+**`-X flag requires argument of the form importpath.name=value`**
+- 원인: `-X main.version{{.COMMIT}}` — `=`를 빠뜨렸다(타이핑). 같은 로그에서 버전이 `v1-legacy-56-g…`로 나온 것도 발견 — `git describe`가 가장 가까운 태그(`v1-legacy`)를 앞에 붙였다(Claude가 준 코드의 실수).
+- 해결: `=` 추가, `git describe … --exclude="*"`(태그를 안 쓰고 커밋 번호만).
+
+**빌드는 성공했는데 `bin/app-linux-amd64`가 Windows 실행 파일**
+- 증상: 파일 첫 바이트가 `MZ`(Windows .exe 표시). Linux 실행 파일이면 `ELF`.
+- 원인: Claude가 준 코드에서 `GOOS · GOARCH · CGO_ENABLED`를 명령(`cmd`) 하나에 `env:`로 걸었는데, Task는 그 자리의 env를 **오류 없이 무시**한다. GOOS가 안 들어가 Go가 지금 PC(Windows)용으로 만들었다.
+- 해결: `env`를 작업(task) 단위로 올림. 같은 작업의 `web:build` · `embed`는 GOOS를 안 봐서 영향 없음.
+- 배운 것: "빌드 성공"은 결과물이 맞다는 뜻이 아니다. **만들어진 파일 자체를 연다**(첫 바이트 · 버전 문자열). 검수에서 코드만 읽었으면 놓쳤다.
+
 ### 이번 세션 커밋
-(이 커밋) 설계 문서
+`bc32fc1` 설계 문서 / (직전 커밋) `app version` · `task build:linux` / (이 커밋) 문서 반영
 
 ### 다음에 할 일
-- 운영 파일 타이핑 1단계: `app version` · `task build:linux`
+- 타이핑 2단계: `deploy/compose.prod.yaml` + env 예시
 
 ---
 

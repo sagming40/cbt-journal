@@ -87,7 +87,8 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] 자동 보안 업데이트 확인(`20auto-upgrades` 둘 다 "1", `unattended-upgrades` active), **Docker Engine 29.9.2 · Compose v5.6.1**(공식 저장소, `hello-world` 확인). 사용자를 `docker` 그룹에 넣지 않는다(= root 권한) — 서버에서는 `sudo docker` (사용자 직접)
 - [ ] 회사 PC SSH 키 추가 (서버 `authorized_keys`에 직접)
 - [x] 운영 구성 결정(실행 파일 + systemd · PC에서 `task deploy` · `age` 암호화 백업을 PC로) · 설계 문서(ARCHITECTURE 7절) (사용자 결정, 2026-10-31)
-- [ ] **저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수)**: `app version`(커밋 번호) · `task build:linux` → `deploy/`(운영 compose · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 · 백업 스크립트 · 타이머 · env 예시) → `scripts/deploy.ps1` · `task deploy` · `task backup:pull`
+- [x] `app version`(커밋 번호) · `task build:linux` (타이핑 학습 모드, 2026-10-31)
+- [ ] **저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수)**: `deploy/`(운영 compose · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 · 백업 스크립트 · 타이머 · env 예시) → `scripts/deploy.ps1` · `task deploy` · `task backup:pull`
 - [ ] 서버: 스왑 1GB · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관)
 - [ ] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저")
 - [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정
