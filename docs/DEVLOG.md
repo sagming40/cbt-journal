@@ -8,8 +8,8 @@
 |---|---|
 | 단계 | **M3 첫 배포 진행 중** — 서버 `cbt-1` · 기본 보안 · Docker 끝, 다음은 운영 구성 설계 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(두 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
-| 진행 중 | M3: 운영 구성(운영용 compose · Caddy · 앱 실행 방식 · 배포 스크립트) 설계를 사용자에게 먼저 보여 주고 구현 |
-| 다음에 할 일 | 운영 구성 설계 → 저장소에 운영 파일 추가 → 서버에 올리기 → `cbt.sagming.com` DNS(회색 구름) → M3 완료 기준 확인 (PLAN M3) |
+| 진행 중 | M3: **운영 구성 설계안을 사용자에게 보여 줌 — 결정 3개 대기** (아래 2026-10-30 "운영 구성 설계안" 블록) |
+| 다음에 할 일 | 결정 3개 받기 → 설계 문서(ARCHITECTURE 7절 · SERVER.md · PLAN) 먼저 → 저장소 운영 파일(`deploy/`) · `task build:linux` · `task deploy` · `task backup:pull` (Claude 자동) → 서버 작업(사용자) → DNS → 첫 배포 → 완료 기준 확인 |
 | 기기별로 할 일 | **회사 PC**: 서버 접속용 SSH 키를 따로 만들어 서버 `authorized_keys`에 추가 — 순서는 [SERVER.md](SERVER.md) 3.4절 (Vultr에 등록만 해서는 이미 만든 서버에 안 들어간다) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
@@ -18,6 +18,47 @@
 - 막혔던 일은 해결됐어도 남긴다. 형식: **증상 / 원인 / 해결 / 배운 것**.
 - 구현 중에 설계를 바꿨으면 `[설계]` 항목으로 이유를 적고, 해당 설계 문서의 변경 이력도 고친다.
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
+
+---
+
+## 2026-10-30 · M3 운영 구성 설계안 (결정 대기)
+
+> 대화에서 사용자에게 보여 준 설계안이다. 결정이 나면 ARCHITECTURE 7절 · SERVER.md · PLAN에 옮기고 이 블록은 그대로 둔다.
+
+### 구성
+```
+바깥 ─ 443/80 ─▶ Caddy(인증서 자동 · 보안 헤더) ─ 127.0.0.1:8080 ─▶ app serve(systemd, 전용 계정 cbt)
+                                                        └─ 127.0.0.1만 ─▶ docker compose: Postgres · Valkey(비밀번호)
+```
+- 서버 위치: `/opt/cbt/releases/<커밋>/app` + `/opt/cbt/current`(지금 버전 링크, 되돌리기 쉬움), 비밀값 `/etc/cbt/cbt.env`(600), 데이터 `/srv/cbt/compose.yaml`
+- 운영 env: `APP_ENV=production` · `HTTP_ADDR=127.0.0.1:8080` · `TRUSTED_PROXIES=127.0.0.1` · `ALLOW_SIGNUP=false` · DB · Valkey 주소(비밀번호는 서버에서 무작위 생성)
+
+### 결정할 것 (추천)
+1. **앱 실행**: 실행 파일 + systemd (추천) / 전부 Docker compose — 0002 "실행 파일 하나"와 맞고, 이미지 레지스트리 · 서버 빌드가 필요 없다. DB · Valkey만 compose.
+2. **배포**: PC에서 `task deploy` (추천) / GitHub Actions 자동 — 서버 열쇠를 GitHub에 맡기지 않는다. 스크립트는 작업 트리가 깨끗하고 push된 상태가 아니면 거부, 실행 파일에 커밋 번호를 새긴다. 흐름: Linux용 빌드 → 복사 → migrate → 재시작 → health 확인.
+3. **서버 밖 백업**: 매일 `pg_dump` → `age`로 암호화(공개키만 서버, 개인키는 PC) → `task backup:pull`로 PC에 가져오기 (추천) / Cloudflare R2.
+
+### 사전 검증에서 넣은 것
+- 스왑 1GB(지금 0 — 메모리 1GB에 넷이 돌다 업데이트 때 강제 종료 위험)
+- Docker 로그 크기 제한(기본은 무제한으로 쌓여 디스크가 찬다)
+- IP로 직접 접속하면 앱을 보여 주지 않음(`cbt.sagming.com`으로만 응답)
+- HSTS는 하루짜리로 시작 → 확인 뒤 1년
+- CSP는 보류(SvelteKit 인라인 스크립트 해시 필요, M4 이후). nosniff · 프레임 금지 · Referrer는 지금
+- 앱 전용 로그인 불가 계정 `cbt` + systemd 보호 옵션
+- 그대로 되는 것: Caddy가 Host · X-Forwarded-For를 넘겨 CSRF 차단 · 실제 IP 규칙이 동작
+
+### 진행 순서
+1. Claude(자동): 설계 문서 → `deploy/`(compose · Caddyfile · systemd 유닛 · 운영 env 예시 · 백업 스크립트) → Taskfile(`build:linux` · `deploy` · `backup:pull`) → 로컬 검증
+2. 사용자(서버): 스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose · Caddy 설치
+3. 사용자(Cloudflare): `cbt` A 레코드, 회색 구름
+4. 같이: 첫 `task deploy` → 서버에서 내 계정 만들기
+5. 같이: 완료 기준(PLAN M3) 확인
+
+### 같은 날 한 일
+- 서버 명령을 정리한 런북 [SERVER.md](SERVER.md) 새로 만듦(`78d1f26`).
+
+### 다음에 할 일
+- 위 결정 3개 → 진행 순서 1부터. 회사 PC에서 이어 하면 먼저 [SERVER.md](SERVER.md) 3.4절로 회사 PC 열쇠를 서버에 추가(집 PC로 접속해 둔 상태가 아니면, 회사에서 Vultr 웹 콘솔 비상구로 넣거나 집에서 미리 추가).
 
 ---
 
