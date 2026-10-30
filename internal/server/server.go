@@ -1,54 +1,42 @@
 // Package server는 HTTP 라우터를 조립한다 (ARCHITECTURE 2절).
+// 경로와 요청 · 응답 모양은 api/openapi.yaml이 원본이고, 여기서는 생성된 인터페이스를 채우기만 한다.
 // 미들웨어 · 오류 봉투(3.1 · 3.2절)는 M2에서 붙인다.
 package server
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"time"
+
+	"github.com/sagming40/cbt-journal/internal/apigen"
 )
 
-// Checker는 연결 하나(Postgres, Valkey …)가 살아 있는지 확인한다. 살아 있으면 nil.
+// Checker는 연결 하나가 살아 있는지 확인한다. 살아 있으면 nil.
 // 함수 타입으로 둬서 테스트에서는 가짜를 쉽게 꽂는다 (콘센트 규격만 맞으면 된다).
 type Checker func(ctx context.Context) error
 
+// Checks는 health가 확인할 연결들이다. 칸은 openapi.yaml의 Health 스키마와 짝을 이룬다.
+type Checks struct {
+	Postgres Checker
+	Valkey   Checker
+}
+
 // New는 모든 경로를 등록한 핸들러 하나를 돌려준다.
-// checks: 이름 → 확인 함수. health가 이것들을 차례로 불러 본다.
-func New(logger *slog.Logger, checks map[string]Checker) http.Handler {
+func New(logger *slog.Logger, checks Checks) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/health", handleHealth(logger, checks))
+	h := &handler{logger: logger, checks: checks}
+	// 생성된 코드가 openapi.yaml의 경로를 mux에 등록한다. 경로를 손으로 적지 않으니 문서와 코드가 어긋날 수 없다.
+	// 비유: 안내 데스크 직원이 계약서(openapi.yaml)에 적힌 방 번호만 보고 손님을 보낸다.
+	apigen.HandlerFromMux(apigen.NewStrictHandler(h, nil), mux)
 	return mux
 }
 
-// handleHealth는 각 연결을 확인해 {"postgres":"ok","status":"ok","valkey":"ok"}처럼 답한다.
-// 하나라도 실패하면 503. 로그인 없이 열리는 경로라 응답에는 ok / error만 싣는다 (ARCHITECTURE 3.1절).
-func handleHealth(logger *slog.Logger, checks map[string]Checker) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// 한쪽이 멈춰도 health 요청 자체가 매달리지 않게 2초로 자른다.
-		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-		defer cancel()
-
-		code := http.StatusOK
-		body := map[string]string{"status": "ok"}
-		for name, check := range checks {
-			if err := check(ctx); err != nil {
-				// 원인(주소 · 사용자 이름이 섞일 수 있음)은 로그에만 남긴다.
-				logger.Error("health 확인 실패", "target", name, "err", err)
-				body[name] = "error"
-				body["status"] = "error"
-				code = http.StatusServiceUnavailable
-				continue
-			}
-			body[name] = "ok"
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		// WriteHeader는 본문을 쓰기 전에 불러야 한다. 본문을 먼저 쓰면 200으로 확정된다.
-		w.WriteHeader(code)
-		if err := json.NewEncoder(w).Encode(body); err != nil {
-			logger.Error("health 응답 쓰기 실패", "err", err)
-		}
-	}
+// handler는 생성된 StrictServerInterface의 빈칸(메서드)을 채운다. 경로마다 파일 하나에 메서드 하나.
+type handler struct {
+	logger *slog.Logger
+	checks Checks
 }
+
+// 컴파일할 때 확인: handler가 인터페이스의 메서드를 다 갖췄는가.
+// openapi.yaml에 경로를 추가하고 생성을 다시 돌리면, 구현하기 전까지 여기서 빌드가 깨진다(일부러).
+var _ apigen.StrictServerInterface = (*handler)(nil)

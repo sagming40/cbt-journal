@@ -31,11 +31,11 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
-		Handler: server.New(logger, map[string]server.Checker{
+		Handler: server.New(logger, server.Checks{
 			// 메서드 값: pool.Ping 자체가 "ctx를 받아 error를 돌려주는 함수"라 그대로 꽂힌다.
-			"postgres": pool.Ping,
+			Postgres: pool.Ping,
 			// go-redis의 Ping은 결과 상자를 돌려줘서, 에러만 꺼내는 작은 어댑터를 씌운다.
-			"valkey": func(ctx context.Context) error { return rdb.Ping(ctx).Err() },
+			Valkey: func(ctx context.Context) error { return rdb.Ping(ctx).Err() },
 		}),
 		// 헤더를 아주 느리게 보내 연결을 붙잡아 두는 공격(Slowloris)을 막는다.
 		ReadHeaderTimeout: 5 * time.Second,

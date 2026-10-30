@@ -1,0 +1,49 @@
+# CBT 저널 API 계약서. API 모양의 원본은 이 파일 하나다 (CLAUDE.md "문서 지도").
+# 고친 뒤에는 코드 생성을 다시 돌린다 → internal/apigen/ (직접 고치지 않는 생성 코드).
+openapi: 3.0.3
+info:
+  title: CBT 저널 API
+  version: 0.1.0
+  description: |
+    인지행동치료 사고 기록 연습 앱의 API.
+    JSON 필드는 snake_case, 시각은 RFC 3339 UTC (ARCHITECTURE 3.2절).
+
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: 서버와 저장소 연결 확인
+      description: |
+        Postgres · Valkey에 실제로 붙어 보고 결과를 답한다. 하나라도 실패하면 503.
+        로그인 없이 열리는 경로라 응답에는 ok / error만 싣는다 (ARCHITECTURE 3.1절).
+      tags: [system]
+      responses:
+        "200":
+          description: 모두 정상
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: 하나 이상 연결 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, postgres, valkey]
+      properties:
+        status:
+          $ref: "#/components/schemas/CheckStatus"
+        postgres:
+          $ref: "#/components/schemas/CheckStatus"
+        valkey:
+          $ref: "#/components/schemas/CheckStatus"
+    CheckStatus:
+      type: string
+      enum: [ok, error]
+      description: 연결 하나의 상태. 원인은 서버 로그에만 남긴다.

@@ -1,0 +1,7 @@
+# oapi-codegen 설정. 저장소 맨 위에서 실행한다고 보고 경로를 적는다.
+package: apigen
+output: internal/apigen/apigen.gen.go
+generate:
+  models: true          # 스키마 → Go 타입 (Health, CheckStatus)
+  std-http-server: true # Go 표준 net/http(1.22+ ServeMux)에 경로 등록
+  strict-server: true   # 요청 · 응답을 타입으로 받는 "빈칸 채우기" 인터페이스

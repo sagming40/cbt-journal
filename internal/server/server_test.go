@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/sagming40/cbt-journal/internal/apigen"
 )
 
 // 가짜 확인 함수들: 진짜 DB 없이 "살아 있음 / 죽음"을 흉내 낸다.
@@ -24,38 +27,55 @@ func do(h http.Handler, method string) *httptest.ResponseRecorder {
 func TestHealth(t *testing.T) {
 	discard := slog.New(slog.DiscardHandler)
 
-	t.Run("모두 살아 있으면 200", func(t *testing.T) {
-		h := New(discard, map[string]Checker{"postgres": okCheck, "valkey": okCheck})
-		rec := do(h, http.MethodGet)
+	tests := []struct {
+		name     string
+		checks   Checks
+		wantCode int
+		want     apigen.Health
+	}{
+		{
+			name:     "모두 살아 있으면 200",
+			checks:   Checks{Postgres: okCheck, Valkey: okCheck},
+			wantCode: http.StatusOK,
+			want:     apigen.Health{Status: "ok", Postgres: "ok", Valkey: "ok"},
+		},
+		{
+			name:     "Valkey가 죽으면 503",
+			checks:   Checks{Postgres: okCheck, Valkey: failCheck},
+			wantCode: http.StatusServiceUnavailable,
+			want:     apigen.Health{Status: "error", Postgres: "ok", Valkey: "error"},
+		},
+		{
+			name:     "Postgres가 죽으면 503",
+			checks:   Checks{Postgres: failCheck, Valkey: okCheck},
+			wantCode: http.StatusServiceUnavailable,
+			want:     apigen.Health{Status: "error", Postgres: "error", Valkey: "ok"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := do(New(discard, tt.checks), http.MethodGet)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("상태 코드 = %d, 200이어야 한다", rec.Code)
-		}
-		want := `{"postgres":"ok","status":"ok","valkey":"ok"}` + "\n"
-		if got := rec.Body.String(); got != want {
-			t.Errorf("본문 = %q, 기대 = %q", got, want)
-		}
-	})
-
-	t.Run("하나라도 죽으면 503이고 어느 쪽인지 알려 준다", func(t *testing.T) {
-		h := New(discard, map[string]Checker{"postgres": okCheck, "valkey": failCheck})
-		rec := do(h, http.MethodGet)
-
-		if rec.Code != http.StatusServiceUnavailable {
-			t.Fatalf("상태 코드 = %d, 503이어야 한다", rec.Code)
-		}
-		want := `{"postgres":"ok","status":"error","valkey":"error"}` + "\n"
-		if got := rec.Body.String(); got != want {
-			t.Errorf("본문 = %q, 기대 = %q", got, want)
-		}
-		// 에러 원문(주소 등)이 응답으로 새면 안 된다.
-		if strings.Contains(rec.Body.String(), "6380") {
-			t.Errorf("응답에 내부 주소가 섞였다: %s", rec.Body.String())
-		}
-	})
+			if rec.Code != tt.wantCode {
+				t.Fatalf("상태 코드 = %d, %d이어야 한다", rec.Code, tt.wantCode)
+			}
+			// 글자 그대로 비교하지 않고 계약서 타입으로 풀어서 비교한다: 필드 순서가 바뀌어도 깨지지 않게.
+			var got apigen.Health
+			if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+				t.Fatalf("응답이 Health 모양이 아니다: %v (본문 %q)", err, rec.Body.String())
+			}
+			if got != tt.want {
+				t.Errorf("본문 = %+v, 기대 = %+v", got, tt.want)
+			}
+			// 에러 원문(주소 등)이 응답으로 새면 안 된다.
+			if strings.Contains(rec.Body.String(), "6380") {
+				t.Errorf("응답에 내부 주소가 섞였다: %s", rec.Body.String())
+			}
+		})
+	}
 
 	t.Run("POST는 405", func(t *testing.T) {
-		h := New(discard, map[string]Checker{"postgres": okCheck})
+		h := New(discard, Checks{Postgres: okCheck, Valkey: okCheck})
 		if rec := do(h, http.MethodPost); rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("상태 코드 = %d, 405여야 한다", rec.Code)
 		}
