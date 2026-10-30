@@ -19,6 +19,7 @@ const usage = `사용법: app <명령>
 명령:
   serve                    API 서버를 띄운다
   migrate up|down|status   DB 마이그레이션 (goose)
+  user create|reset-password  계정 만들기 · 비밀번호 재설정 (가입이 막힌 동안)
 `
 
 // command는 서브커맨드 하나가 하는 일이다. args는 명령 이름 뒤에 붙은 나머지 인자다.
@@ -28,6 +29,7 @@ type command func(ctx context.Context, cfg config.Config, logger *slog.Logger, a
 var commands = map[string]command{
 	"serve":   serve,
 	"migrate": migrate,
+	"user":    user,
 }
 
 func main() {
