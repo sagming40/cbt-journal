@@ -2,15 +2,9 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"io/fs"
 	"log/slog"
-
-	// 밑줄 import: 이름은 안 쓰고 "pgx"라는 database/sql 드라이버를 등록만 한다.
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
 
 	"github.com/sagming40/cbt-journal/internal/config"
 	"github.com/sagming40/cbt-journal/internal/db"
@@ -22,24 +16,11 @@ func migrate(ctx context.Context, cfg config.Config, logger *slog.Logger, args [
 		return errors.New("사용법: app migrate up|down|status")
 	}
 
-	// goose는 표준 database/sql 연결을 받는다. pgx가 그 어댑터(stdlib)를 같이 준다.
-	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
-	if err != nil {
-		return fmt.Errorf("postgres 연결: %w", err)
-	}
-	defer sqlDB.Close()
-
-	// embed한 파일들은 "migrations/00001_init.sql"처럼 폴더 이름이 붙어 있다.
-	// goose는 맨 위에서 파일을 찾으므로 migrations 폴더 안을 맨 위로 잘라 넘긴다.
-	files, err := fs.Sub(db.Migrations, "migrations")
+	provider, sqlDB, err := db.OpenMigrator(cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
-
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files)
-	if err != nil {
-		return fmt.Errorf("goose 준비: %w", err)
-	}
+	defer sqlDB.Close()
 
 	switch args[0] {
 	case "up":
