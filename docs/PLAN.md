@@ -48,8 +48,9 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task — 회사 PC 끝(2026-10-30), 집 PC 남음
 - [x] v1 코드(`client/`, `server/`) 삭제, `.gitattributes`로 줄바꿈 통일
 - [x] `compose.yaml`: Postgres 18(5436) · Valkey(6380, AOF 켬)
-- [ ] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example` — `migrate`만 남음(goose와 함께)
-- [ ] goose 설정 + 첫 마이그레이션(빈 것), `GET /api/health` (Postgres · Valkey 연결 확인)
+- [x] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example`
+- [x] goose 설정 + 첫 마이그레이션(빈 것), `GET /api/health` (Postgres · Valkey 연결 확인)
+- [x] README "실행"에 지금 쓰는 터미널 명령 · 자주 막히는 것 정리 *(계획에 없던 작업)*
 - [ ] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결
 - [ ] SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, **DESIGN 6장 토큰으로 테마**, 라이트/다크 전환
 - [ ] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)

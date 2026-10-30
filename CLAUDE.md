@@ -121,7 +121,7 @@ task lint                # golangci-lint + ESLint
 task migrate             # goose up
 task build               # 프론트 빌드 → embed → 실행 파일 하나
 ```
-> M1에서 Taskfile을 만들면서 실제 명령과 맞춘다. 다르면 이 절을 고친다.
+> 위 `task` 명령은 M1에서 Taskfile을 만들 때 생긴다. 그 전까지 쓰는 실제 명령(`.env` 불러오기, `go run ./cmd/app …`, `docker compose exec …`)과 자주 막히는 것은 README "실행"에 있다. Taskfile을 만들면 이 절과 README "실행"을 같이 고친다.
 
 ## 함정 (고치기 전에 확인)
 - **5432는 이미 차 있다**: 두 PC 모두 PostgreSQL을 직접 설치해 둬서 기본 포트를 쓴다. compose Postgres는 `5436`. 접속 문자열 포트를 헷갈리면 엉뚱한 DB(직접 설치한 쪽)에 붙는다.
