@@ -89,6 +89,13 @@ tasks:
       # -- 뒤에 적은 글자가 CLI_ARGS로 들어온다. 비어 있으면 up.
       - go run ./cmd/app migrate {{.CLI_ARGS | default "up"}}
 
+  user:
+    desc: 계정 관리 — task user -- create --email 이메일 --nickname 닉네임 · task user -- reset-password --email 이메일 (비밀번호는 실행 중에 물어본다)
+    # 비밀번호를 화면에 안 보이게 입력받으려면 터미널을 그대로 넘겨야 한다.
+    interactive: true
+    cmds:
+      - go run ./cmd/app user {{.CLI_ARGS}}
+
   # ── 아래는 내부용 (task --list에 안 보인다) ──
 
   web:install:

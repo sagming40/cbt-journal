@@ -596,7 +596,18 @@ func TestBreachedPasswordCheck(t *testing.T) {
 		t.Errorf("가짜 서버가 받은 경로 %q — 해시 앞 5글자만 보내야 한다", p)
 	}
 
+	// 비밀번호 변경도 같은 검사를 거친다 (PLAN M2 완료 기준 "유출 비밀번호로 변경 400").
+	a.createUser(testEmail, testPassword)
+	c := a.device()
+	a.login(c, testEmail, testPassword, false)
+	if r := a.call(c, "PUT", "/api/me/password", map[string]string{"current_password": testPassword, "new_password": leaked}); r.status != http.StatusBadRequest || r.fields()["new_password"] == "" {
+		t.Errorf("유출 비밀번호로 변경: %d %s, 400이어야 한다", r.status, r.body)
+	}
+
 	mode.Store("fail")
+	if r := a.call(c, "PUT", "/api/me/password", map[string]string{"current_password": testPassword, "new_password": leaked}); r.status != http.StatusNoContent {
+		t.Errorf("확인 서버가 500이어도 변경은 돼야 한다: %d %s", r.status, r.body)
+	}
 	if r := signup("b@example.com"); r.status != http.StatusCreated {
 		t.Errorf("확인 서버가 500이어도 가입은 돼야 한다: %d %s", r.status, r.body)
 	}
