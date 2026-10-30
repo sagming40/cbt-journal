@@ -1,7 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+// vitest/config의 defineConfig는 vite 설정에 test 칸을 더한 것이다 (vite 설정은 그대로 쓴다).
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	plugins: [
@@ -17,6 +18,10 @@ export default defineConfig({
 			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
+	// 프론트 단위 테스트 (ARCHITECTURE 8절). 화면 없이 도는 순수 함수만(예: safeNext).
+	test: {
+		include: ['src/**/*.test.ts']
+	},
 	server: {
 		// 포트를 고정한다: 5176이 차 있으면 다른 포트로 몰래 옮기지 말고 실패한다 (ARCHITECTURE 6절).
 		port: 5176,
