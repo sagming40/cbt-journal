@@ -1,0 +1,20 @@
+# air: Go 파일이 바뀌면 다시 빌드하고 서버를 재시작한다 (task dev, ARCHITECTURE 6절)
+# 비유 ─ 저장할 때마다 자동으로 새로 굽는 토스터
+# 두 PC 모두 Windows라 실행파일 이름에 .exe를 붙인다 → CI에서는 air를 사용하지 않는다
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/app.exe ./cmd/app"
+  # 실행 파일 + 인자 (air v1.67부터 bin · args_bin 대신 이것을 쓴다)
+  entrypoint = ["./tmp/app.exe", "serve"]
+  # sql: 마이그레이션 파일도 실행 파일에 embed되므로 바뀌면 다시 빌드한다
+  include_ext = ["go", "sql"]
+  # air는 경로를 운영체제 구분자(Windows는 \)로 만들어 글자 그대로 비교한다. TOML에서 \는 \\로 적는다.
+  exclude_dir = ["web", "tmp", "bin", "docs", "internal\\webdist\\dist"]
+  # 저장 직후 연달아 바뀌는 파일을 한 번에 모아 빌드한다 (밀리초)
+  delay = 500
+
+[misc]
+  # 끝날 때 tmp/를 지운다
+  clean_on_exit = true
