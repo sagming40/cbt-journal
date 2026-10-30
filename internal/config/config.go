@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/netip"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -18,6 +20,10 @@ type Config struct {
 	DatabaseURL string
 	ValkeyURL   string
 	LogLevel    slog.Level
+	// AllowSignup이 false면 가입 API가 403이다. 혼자 쓰는 동안은 끄고 첫 계정은 app user create로 만든다 (REQUIREMENTS A2).
+	AllowSignup bool
+	// TrustedProxies에서 온 요청만 X-Forwarded-For를 믿는다. 비어 있으면 프록시 없음 (ARCHITECTURE 3.3절).
+	TrustedProxies []netip.Prefix
 }
 
 // IsProduction은 운영 환경인지 알려 준다. 로그 형식 등을 고를 때 쓴다.
@@ -69,6 +75,21 @@ func load(getenv func(string) string) (Config, error) {
 		errs = append(errs, errors.New("LOG_LEVEL: debug · info · warn · error 중 하나여야 한다"))
 	}
 
+	// 오타("ture")를 조용히 false로 넘기면 가입이 열렸다고 착각한다 → 못 읽으면 시작을 거부한다.
+	if v := optional("ALLOW_SIGNUP", "false"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("ALLOW_SIGNUP: true 또는 false여야 한다 (지금: %q)", v))
+		}
+		cfg.AllowSignup = b
+	}
+
+	proxies, err := parseTrustedProxies(optional("TRUSTED_PROXIES", ""))
+	if err != nil {
+		errs = append(errs, err)
+	}
+	cfg.TrustedProxies = proxies
+
 	// 주의: 에러 문구에 DATABASE_URL 같은 값을 넣지 않는다. 비밀번호가 들어 있다 (CLAUDE.md "데이터 취급").
 
 	// errors.Join은 여러 에러를 하나로 묶는다. errs가 비어 있으면 nil을 돌려준다.
@@ -76,4 +97,30 @@ func load(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// parseTrustedProxies는 "10.0.0.1, 172.16.0.0/12"처럼 쉼표로 나눈 IP · CIDR 목록을 읽는다.
+// IP 하나는 그 주소만(/32 · /128) 뜻한다.
+func parseTrustedProxies(raw string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, item := range strings.Split(raw, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if strings.Contains(item, "/") {
+			p, err := netip.ParsePrefix(item)
+			if err != nil {
+				return nil, fmt.Errorf("TRUSTED_PROXIES: %q는 CIDR 형식이 아니다", item)
+			}
+			out = append(out, p.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(item)
+		if err != nil {
+			return nil, fmt.Errorf("TRUSTED_PROXIES: %q는 IP 주소가 아니다", item)
+		}
+		out = append(out, netip.PrefixFrom(a, a.BitLen()))
+	}
+	return out, nil
 }
