@@ -63,7 +63,7 @@
 			}
 			if (response.status === 429) {
 				const wait = retryAfterText(response);
-				message = wait ? `잠시 뒤에 다시 시도해 줘 (${wait})` : '잠시 뒤에 다시 시도해 줘';
+				message = wait ? `잠시 뒤에 다시 시도해 주세요 (${wait})` : '잠시 뒤에 다시 시도해 주세요';
 			} else {
 				fields = fieldErrors(error);
 				message = Object.keys(fields).length > 0 ? '' : errorMessage(error);
@@ -80,7 +80,7 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title class="text-xl">CBT 저널</Card.Title>
-			<Card.Description>로그인하고 이어서 기록해</Card.Description>
+			<Card.Description>로그인하고 이어서 기록해 보세요</Card.Description>
 		</Card.Header>
 		<Card.Content>
 			<form class="space-y-4" onsubmit={submit} novalidate>
@@ -115,7 +115,7 @@
 						<Checkbox id="remember" bind:checked={remember} />
 						<Label for="remember">로그인 유지</Label>
 					</div>
-					<p class="text-xs text-muted-foreground">공용 · 회사 PC에서는 체크하지 마</p>
+					<p class="text-xs text-muted-foreground">공용 · 회사 PC에서는 체크하지 마세요</p>
 				</div>
 				<FormError {message} />
 				<Button type="submit" class="min-h-11 w-full" disabled={submitting}>
@@ -126,7 +126,7 @@
 		{#if allowSignup}
 			<Card.Footer class="justify-center text-sm">
 				<a href={resolve('/signup')} class="text-accent-text underline-offset-4 hover:underline"
-					>처음이야? 가입하기</a
+					>처음이세요? 가입하기</a
 				>
 			</Card.Footer>
 		{/if}

@@ -1,11 +1,11 @@
 // API 오류 봉투(ARCHITECTURE 3.2절)에서 화면에 보여 줄 것을 꺼낸다.
-// 서버 message는 이미 화면용 반말이라(DESIGN 8장) 그대로 쓴다.
+// 서버 message는 이미 화면용 해요체라(DESIGN 8장) 그대로 쓴다.
 import type { components } from './schema.js';
 
 type ApiError = components['schemas']['Error'];
 
-export const NETWORK_ERROR = '연결이 안 돼';
-const FALLBACK = '잠시 문제가 생겼어. 다시 시도해 줘';
+export const NETWORK_ERROR = '연결이 안 돼요';
+const FALLBACK = '잠시 문제가 생겼어요. 다시 시도해 주세요';
 
 function isApiError(e: unknown): e is ApiError {
 	return typeof e === 'object' && e !== null && 'error' in e;

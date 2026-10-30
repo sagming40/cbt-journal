@@ -32,7 +32,7 @@
 			if (data) {
 				auth.set(data);
 				nickname = data.nickname;
-				toast.success('저장했어');
+				toast.success('저장했어요');
 			} else {
 				nicknameError = fieldErrors(error).nickname ?? errorMessage(error);
 			}
@@ -58,7 +58,7 @@
 			const { data, error } = await api.PATCH('/api/me', { body: { timezone } });
 			if (data) {
 				auth.set(data);
-				toast.success('시간대를 바꿨어');
+				toast.success('시간대를 바꿨어요');
 			} else {
 				timezoneError = fieldErrors(error).timezone ?? errorMessage(error);
 			}
@@ -80,7 +80,7 @@
 		pwFields = {};
 		pwMessage = '';
 		if (newPassword !== confirmPassword) {
-			pwFields = { confirm: '두 비밀번호가 달라' };
+			pwFields = { confirm: '두 비밀번호가 달라요' };
 			return;
 		}
 		changingPassword = true;
@@ -90,10 +90,12 @@
 			});
 			if (response.status === 204) {
 				currentPassword = newPassword = confirmPassword = '';
-				toast.success('비밀번호를 바꿨어. 다른 기기는 로그아웃됐어');
+				toast.success('비밀번호를 바꿨어요. 다른 기기는 로그아웃됐어요');
 			} else if (response.status === 429) {
 				const wait = retryAfterText(response);
-				pwMessage = wait ? `잠시 뒤에 다시 시도해 줘 (${wait})` : '잠시 뒤에 다시 시도해 줘';
+				pwMessage = wait
+					? `잠시 뒤에 다시 시도해 주세요 (${wait})`
+					: '잠시 뒤에 다시 시도해 주세요';
 			} else {
 				pwFields = fieldErrors(error);
 				pwMessage = Object.keys(pwFields).length > 0 ? '' : errorMessage(error);
@@ -117,8 +119,8 @@
 			if (data) {
 				toast.success(
 					data.revoked > 0
-						? `다른 기기 ${data.revoked}곳을 로그아웃했어`
-						: '다른 기기에 로그인된 곳이 없어'
+						? `다른 기기 ${data.revoked}곳을 로그아웃했어요`
+						: '다른 기기에 로그인된 곳이 없어요'
 				);
 			} else {
 				revokeMessage = errorMessage(error);
@@ -202,7 +204,7 @@
 						aria-invalid={pwFields.new_password ? 'true' : undefined}
 					/>
 					{#if !pwFields.new_password}<p class="text-xs text-muted-foreground">
-							12자 이상. 바꾸면 다른 기기는 로그아웃돼
+							12자 이상이에요. 바꾸면 다른 기기는 로그아웃돼요
 						</p>{/if}
 					<FormError message={pwFields.new_password} />
 				</div>
@@ -232,7 +234,7 @@
 
 			<div class="space-y-1.5">
 				<p class="text-sm font-medium">다른 기기 모두 로그아웃</p>
-				<p class="text-xs text-muted-foreground">이 기기만 남기고 로그인된 곳을 전부 끊어</p>
+				<p class="text-xs text-muted-foreground">이 기기만 남기고 로그인된 곳을 모두 끊어요</p>
 				<Button variant="outline" class="min-h-11" onclick={logoutOthers} disabled={revoking}>
 					{revoking ? '끊는 중…' : '다른 기기 로그아웃'}
 				</Button>
@@ -258,7 +260,7 @@
 						<option value={zone}>{zone}</option>
 					{/each}
 				</select>
-				<p class="text-xs text-muted-foreground">"오늘"의 시작과 끝을 이 시간대로 정해</p>
+				<p class="text-xs text-muted-foreground">"오늘"의 시작과 끝을 이 시간대로 정해요</p>
 				<FormError message={timezoneError} />
 			</div>
 

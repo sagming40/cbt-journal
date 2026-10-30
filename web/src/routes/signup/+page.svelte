@@ -37,7 +37,7 @@
 		fields = {};
 		// 비밀번호 확인은 화면에서만 본다 — 오타로 모르는 비밀번호가 되지 않게.
 		if (password !== confirm) {
-			fields = { confirm: '두 비밀번호가 달라' };
+			fields = { confirm: '두 비밀번호가 달라요' };
 			return;
 		}
 		submitting = true;
@@ -52,7 +52,7 @@
 			}
 			if (response.status === 429) {
 				const wait = retryAfterText(response);
-				message = wait ? `잠시 뒤에 다시 시도해 줘 (${wait})` : '잠시 뒤에 다시 시도해 줘';
+				message = wait ? `잠시 뒤에 다시 시도해 주세요 (${wait})` : '잠시 뒤에 다시 시도해 주세요';
 			} else {
 				fields = fieldErrors(error);
 				message = Object.keys(fields).length > 0 ? '' : errorMessage(error);
@@ -72,7 +72,7 @@
 		</Card.Header>
 		<Card.Content>
 			{#if allowSignup === false}
-				<FormError message={message || '지금은 가입을 받지 않아'} />
+				<FormError message={message || '지금은 가입을 받지 않아요'} />
 			{:else if allowSignup}
 				<form class="space-y-4" onsubmit={submit} novalidate>
 					<div class="space-y-1.5">
@@ -107,7 +107,7 @@
 							aria-invalid={fields.password ? 'true' : undefined}
 						/>
 						{#if !fields.password}<p class="text-xs text-muted-foreground">
-								12자 이상. 문장처럼 길게 써도 돼
+								12자 이상이에요. 문장처럼 길게 써도 돼요
 							</p>{/if}
 						<FormError message={fields.password} />
 					</div>

@@ -41,14 +41,14 @@
 </script>
 
 <header class="mb-4">
-	<h1 class="text-xl font-bold">안녕, {auth.user?.nickname}</h1>
-	<p class="text-sm text-muted-foreground">체크인과 사고 기록은 곧 여기에 생겨.</p>
+	<h1 class="text-xl font-bold">{auth.user?.nickname}님, 안녕하세요</h1>
+	<p class="text-sm text-muted-foreground">체크인과 사고 기록은 곧 여기에 생겨요.</p>
 </header>
 
 <Card.Root>
 	<Card.Header>
 		<Card.Title>서버 상태</Card.Title>
-		<Card.Description>브라우저 → Go → Postgres · Valkey 줄기 확인용이야</Card.Description>
+		<Card.Description>브라우저 → Go → Postgres · Valkey 줄기 확인용이에요</Card.Description>
 	</Card.Header>
 
 	<Card.Content>
@@ -57,7 +57,7 @@
 		{:else if unreachable}
 			<!-- 오류는 빨강이 아니라 아이콘 + 굵은 글자 (DESIGN 6장 "오류 표시") -->
 			<p class="flex items-center gap-2 font-semibold">
-				<CircleAlert class="size-4" aria-hidden="true" /> 연결이 안 돼
+				<CircleAlert class="size-4" aria-hidden="true" /> 연결이 안 돼요
 			</p>
 		{:else if health}
 			<ul class="space-y-2">
