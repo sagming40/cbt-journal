@@ -7,9 +7,9 @@
 | 항목 | 내용 |
 |---|---|
 | 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행" |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버 |
 | 진행 중 | 없음 |
-| 다음에 할 일 | `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결 (PLAN M1 일곱째 항목) |
+| 다음에 할 일 | SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, DESIGN 6장 토큰 테마, `openapi-typescript` 연결 (PLAN M1 여덟째 항목 + 일곱째의 남은 반) |
 | 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `go mod download` → `migrate up`) |
 
 ## 작성 규칙
@@ -33,6 +33,9 @@
 - 타이핑 학습 모드로 Go 첫 코드: `go.mod`, `internal/config`(필수 값 모아서 한 번에 거부, 에러에 비밀값 없음), `internal/server`(`GET /api/health`), `cmd/app`(서브커맨드 표 · slog · 우아한 종료). 확인: 테스트 config 4 · server 1 함수 통과, GET 200 / POST 405, Ctrl+C → "서버 종료" 로그.
 - 타이핑 학습 모드로 goose · DB 연결: 의존성 pgx · go-redis · goose(사용자 `go get`), `internal/db`(embed 마이그레이션 · pgxpool), `internal/cache`, `app migrate up|down|status`, health가 확인별 ok/error · 503. 확인: migrate pending → applied → down → up, `goose_db_version` 2행(0 · 1), health 200 → Valkey stop 503 → start 200.
 - 지금 쓰는 터미널 명령을 README "실행"에 정리했다(사용자 요청). Taskfile이 생기면 같이 고친다.
+- 타이핑 학습 모드로 `api/openapi.yaml` 첫 판 + oapi-codegen(`go get -tool`로 go.mod에 고정, strict · std-http). 경로 등록을 생성 코드에 맡기고 `var _ apigen.StrictServerInterface = (*handler)(nil)`로 컴파일 시 확인. 확인: `operationId`를 바꿔 재생성하면 `go build`가 "missing method GetHealthz"로 깨짐 → 되돌리면 통과, server 테스트 4 케이스, curl 200 / 405.
+- [설계] `openapi-typescript`는 이번 항목에서 빼고 SvelteKit 항목에서 연결: 아직 `web/`이 없어 설치할 곳이 없다. PLAN 항목에 표시.
+- 안내한 `go get github.com/oapi-codegen/runtime`은 필요 없었다: health처럼 파라미터가 없는 경로만 있으면 생성 코드가 runtime을 import하지 않아서 `go mod tidy`가 지웠다. 경로 · 쿼리 파라미터가 생기는 M2 이후에 다시 들어온다.
 - `.env`는 Go가 읽지 않는다. Taskfile을 만들기 전까지는 PowerShell 한 줄로 터미널에 불러온다(Taskfile에서 `dotenv`로 대체 예정).
 
 ### 막혔던 일
@@ -60,10 +63,10 @@
 - Valkey를 끄면 `redis: ... pool.go:770: ... failed to dial` 줄이 slog 형식이 아니라 그대로 나온다. go-redis 내부 로거라서다. 기록 내용은 없어서 지금은 그대로 두고, 운영 로그를 JSON으로 모을 때(M3) 정리할지 본다.
 
 ### 이번 세션 커밋
-`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / (이 커밋) README "실행" · 문서 갱신
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / (이 커밋) 문서 갱신
 
 ### 다음에 할 일
-- `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결
+- SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, DESIGN 6장 토큰 테마 · 라이트/다크, `openapi-typescript` 연결 (개념 설명부터)
 - 집 PC: 위 "기기별로 할 일"
 
 ---

@@ -51,7 +51,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example`
 - [x] goose 설정 + 첫 마이그레이션(빈 것), `GET /api/health` (Postgres · Valkey 연결 확인)
 - [x] README "실행"에 지금 쓰는 터미널 명령 · 자주 막히는 것 정리 *(계획에 없던 작업)*
-- [ ] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결
+- [ ] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결 — Go 쪽 끝, `openapi-typescript`는 `web/`을 만들 때 (다음 항목)
 - [ ] SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, **DESIGN 6장 토큰으로 테마**, 라이트/다크 전환
 - [ ] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
 - [ ] Taskfile: `dev` · `gen` · `test` · `lint` · `build` · `migrate`

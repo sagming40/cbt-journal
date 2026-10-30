@@ -73,6 +73,13 @@ go test ./...     # 테스트
 go mod tidy       # import를 추가 · 삭제한 뒤 go.mod · go.sum 정리
 ```
 
+### 코드 생성 (`api/openapi.yaml`을 고친 뒤)
+```powershell
+go tool oapi-codegen -config api/oapi-codegen.yaml api/openapi.yaml   # → internal/apigen/apigen.gen.go
+go build ./...   # 새 경로를 아직 구현하지 않았으면 여기서 "missing method"로 깨진다 (일부러)
+```
+생성된 파일은 직접 고치지 않고, 생성 결과도 커밋한다 (CLAUDE.md "코드 규칙").
+
 ### 마이그레이션 (goose)
 ```powershell
 go run ./cmd/app migrate status   # 파일별 pending / applied
