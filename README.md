@@ -48,7 +48,11 @@ Copy-Item .env.example .env
 docker compose up -d
 task setup
 task migrate
+
+# 4. 내 계정 만들기 (가입이 꺼져 있어서 명령으로 만든다. 비밀번호는 실행 중에 물어본다 — 12자 이상)
+task user -- create --email 내이메일 --nickname 내닉네임
 ```
+- 계정과 기록은 PC마다 따로다(DB가 기기마다 따로 — CLAUDE.md "기기 둘"). 두 PC에서 같은 계정을 쓰려면 각각 만든다. 실제로 쓰는 계정은 배포(M3) 뒤 서버에 하나만 둔다.
 - 비밀번호는 영문 · 숫자 · `-` · `_`만 쓰는 게 편하다. `@` `:` `/` `?` `#` `%`가 있으면 `DATABASE_URL` 안에서 URL 인코딩해야 한다.
 - Postgres 비밀번호는 **볼륨을 처음 만들 때 한 번만** 정해진다. 나중에 `.env`의 `POSTGRES_PASSWORD`만 바꾸면 DB에는 반영되지 않는다(바꾸려면 볼륨을 지우고 다시 만든다 — 아래 "멈추기 · 지우기").
 
@@ -64,7 +68,7 @@ task dev        # API(air, 8080) + 프론트(Vite, 5176)를 한 터미널에. �
 
 ### 확인 · 검사
 ```powershell
-task test        # Go 테스트
+task test        # Go 테스트(통합 테스트는 Docker Desktop이 켜져 있어야 돈다 — 꺼져 있으면 건너뜀) + 프론트 Vitest
 task lint        # golangci-lint(govet · staticcheck · gosec …) + 프론트 타입 검사 · Prettier · ESLint
 task fmt         # 형식 자동 맞추기 (gofmt · goimports · Prettier) — lint가 형식 오류를 내면
 curl.exe -i http://127.0.0.1:8080/api/health   # 200 {"postgres":"ok","status":"ok","valkey":"ok"}, 하나라도 죽으면 503
@@ -80,16 +84,16 @@ task serve       # 화면은 http://127.0.0.1:8080 (Vite 필요 없음). 끌 때
 ```
 프론트를 고쳤으면 `task build`를 다시 해야 실행 파일에 들어간다. 개발 중에는 `task dev`(5176)로 보면 된다.
 
-### 코드 생성 (`api/openapi.yaml`을 고친 뒤)
+### 코드 생성 (`api/openapi.yaml` · `internal/db/queries/*.sql`을 고친 뒤)
 ```powershell
-task gen         # → internal/apigen/apigen.gen.go (Go) + web/src/lib/api/schema.d.ts (TS)
+task gen         # → internal/apigen (Go) + internal/db/dbgen (sqlc, Docker로 실행) + web/src/lib/api/schema.d.ts (TS)
 go build ./...   # 새 경로를 아직 구현하지 않았으면 여기서 "missing method"로 깨진다 (일부러)
 task lint        # 프론트에서 계약서와 맞지 않는 호출이 있으면 타입 오류
 
 # shadcn-svelte 부품 추가 → web/src/lib/components/ui/
 Set-Location web; pnpm dlx shadcn-svelte@latest add <부품 이름>; Set-Location ..
 ```
-생성된 파일은 직접 고치지 않고, 생성 결과도 커밋한다 (CLAUDE.md "코드 규칙").
+생성된 파일은 직접 고치지 않고, 생성 결과도 커밋한다 (CLAUDE.md "코드 규칙"). CI가 `task gen` 뒤 바뀐 파일이 없는지 확인한다.
 
 ### 마이그레이션 (goose)
 ```powershell
@@ -97,7 +101,7 @@ task migrate -- status   # 파일별 pending / applied
 task migrate             # 남은 것 전부 적용 (= up)
 task migrate -- down     # 마지막 하나만 되돌림
 ```
-- 새 파일은 `internal/db/migrations/`에 다음 번호로 만든다: `00002_users.sql`. 파일 안에 `-- +goose Up` / `-- +goose Down` 표시가 있어야 한다.
+- 새 파일은 `internal/db/migrations/`에 다음 번호로 만든다: `00003_checkins.sql`. 파일 안에 `-- +goose Up` / `-- +goose Down` 표시가 있어야 한다.
 - **push한 마이그레이션 파일은 고치지 않는다.** 바꿀 게 있으면 새 번호로 만든다. 스키마는 고친 PC에서만 만든다 (CLAUDE.md "기기 둘").
 
 ### Postgres · Valkey 직접 보기
@@ -131,6 +135,9 @@ docker compose down -v     # 볼륨까지 삭제 = 로컬 DB · Valkey 데이터
 | 8080에 "프론트 빌드가 없다" (503) | 프론트를 빌드 · 복사하지 않고 `go build` 했다 → `task build` |
 | 화면에 "연결이 안 돼" | Go 서버가 꺼져 있다. `web`에서 `pnpm dev`만 띄우면 `/api`가 안 된다 → `task dev` |
 | VS Code가 `layout.css`의 `@theme` · `@apply`에 경고 | Tailwind CSS IntelliSense 확장 + `"files.associations": { "*.css": "tailwindcss" }` 설정. `web/.vscode/settings.json`은 VS Code로 `web` 폴더를 직접 열 때만 읽힌다 |
+| 로그인이 "잠시 뒤에 다시 시도해 줘" | 요청 제한(같은 이메일 실패 5번 · 같은 IP 20번 / 15분). 기다리거나, 개발 중이면 `docker compose exec valkey valkey-cli --scan --pattern "rl:*"`로 보고 `del`로 지운다 |
+| 비밀번호를 잊었다 | `task user -- reset-password --email 내이메일` (그 계정의 세션도 전부 끊긴다) |
+| `task test`에서 통합 테스트가 `SKIP` | Docker Desktop이 꺼져 있다. 켜고 다시. CI에서는 건너뛰지 않고 실패한다 |
 
 ## 문서
 | 문서 | 내용 |

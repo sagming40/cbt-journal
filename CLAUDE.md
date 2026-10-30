@@ -52,7 +52,8 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 - **기본은 자동**: Claude가 코드를 쓰고, 실행 · 검증하고, 커밋 · push까지 한다.
 - **사용자가 직접 하는 것** (Claude는 명령 · 코드와 "왜 필요한지"를 보여 주고, 사용자가 친 뒤 결과를 확인한다):
   - 사용자가 "직접 칠게"라고 할 때 — **타이핑 학습 모드**. Claude는 파일에 쓰지 않고, 비유를 곁들인 주석을 단 코드를 보여 준 뒤 "코드 검수!"로 보여 주면 오타 · 버그를 리뷰한다. 수정 지시는 "파일 위치 + 지금 코드 + 바꿀 코드"로.
-  - 도구 설치(Go, pnpm, Task 등 PC에 까는 것)와 새 의존성 추가(`go get`, `pnpm add`) — 처음 쓰는 스택이라 무엇이 들어오는지 사용자가 직접 보고 친다.
+  - 도구 설치(Go, pnpm, Task 등 PC에 까는 것)와 새 의존성 추가(`go get`, `pnpm add`) — 처음 쓰는 스택이라 무엇이 들어오는지 사용자가 직접 보고 친다. 큰 작업을 시작할 때 필요한 의존성 목록을 먼저 보여 준다.
+    - **예외: 자동 작업 중에 미리 못 본 의존성이 더 필요해지면** 멈추고 묻지 않고 Claude가 설치해서 진행한다. 끝난 뒤 무엇을 · 왜 설치했는지 보고와 커밋 본문에 적는다 (2026-10-30 사용자 지시).
   - 그 밖에 사용자가 "이건 내가 쳐 볼게"라고 한 명령.
 - 학습 포인트가 큰 새 기능은 시작 전에 "내가 바로 할까, 직접 칠래?"를 한 줄로 물어봐도 된다. 이미 정해 줬으면 묻지 않는다.
 - **새 도구 · 개념이 처음 나오는 단계는 설명부터** (PLAN 1장). 설명은 짧게, 일상 비유를 섞어서, 이 프로젝트에서 어디에 쓰는지까지.
@@ -118,13 +119,14 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 docker compose up -d     # Postgres · Valkey
 task setup               # Go · 프론트 의존성 (처음 · pull 뒤)
 task dev                 # API(air, 8080) + 프론트 dev 서버(5176)
-task gen                 # openapi.yaml → Go · TS 생성 코드 (sqlc는 M2에서 추가)
-task test                # Go 테스트 (Vitest는 프론트 테스트가 생기면 추가)
+task gen                 # openapi.yaml → Go · TS, queries/*.sql → Go(sqlc, Docker 이미지로 실행)
+task test                # Go 테스트(통합 테스트는 Docker 필요, 없으면 로컬에서 건너뜀) + Vitest
 task lint                # golangci-lint(.golangci.yml) + svelte-check · Prettier · ESLint
 task fmt                 # gofmt · goimports · Prettier로 형식 맞추기
 task migrate             # goose up (task migrate -- status | down)
 task build               # 프론트 빌드 → embed 복사 → bin/app 하나
 task serve               # bin/app serve
+task user -- create --email … --nickname …   # 계정 만들기 (reset-password도). 비밀번호는 실행 중에 묻는다
 ```
 > push하면 GitHub Actions(`.github/workflows/ci.yml`)가 같은 검사를 돌린다. 커밋 전에 `task lint` · `task test`를 통과시킨다. golangci-lint 버전은 PC(winget)와 `ci.yml`을 같은 번호로 맞춘다.
 > `task`는 `.env`를 dotenv로 읽는다. `go run`으로 직접 실행하면 `.env`가 안 읽힌다. 명령 · 자주 막히는 것의 사람용 설명은 README "실행". Taskfile을 고치면 이 절과 README "실행"을 같이 고친다.
@@ -134,6 +136,9 @@ task serve               # bin/app serve
 - **줄바꿈은 LF**: `.gitattributes`가 모든 글자 파일을 `eol=lf`로 정한다(PC의 `core.autocrlf`보다 우선). 에디터가 새 파일을 CRLF로 저장해도 커밋할 때 LF로 들어간다. `*.ps1` · `*.cmd` · `*.bat`만 CRLF.
 - **Postgres 18 이미지 볼륨은 `/var/lib/postgresql`**: 17까지처럼 `.../data`에 묶는 예전 자료를 따라 하지 않는다(18 이미지의 `PGDATA`는 `/var/lib/postgresql/18/docker`라서 데이터가 볼륨 밖에 쌓이거나 시작이 실패한다).
 - **SvelteKit 3 구조는 예전 자료와 다르다**: `svelte.config.js`가 없고 adapter는 `web/vite.config.ts`의 `sveltekit({ adapter })` 안에 있다. 별칭은 `$lib`가 아니라 `#lib`(package.json `imports`)이고 import에 확장자를 붙인다(`#lib/api/client.js`, `#lib/components/ui/button/index.js`). 전역 CSS는 `src/routes/layout.css`.
+- **SvelteKit 3의 `resolve()`는 라우트 id를 받는다**: 라우트 묶음 폴더 `(app)`이 이름에 들어간다 — `resolve('/(app)/settings')`가 `/settings`가 된다. `resolve('/settings')`는 타입 오류. `goto`의 `replaceState`는 지원 중단 → `{ replace: true }`.
+- **oapi-codegen의 `enable-auth-scopes-on-context`를 끄지 않는다** (`api/oapi-codegen.yaml`): 꺼지면 생성 코드가 "인증 필요" 표시를 안 넣어서, openapi.yaml에 잠금을 적어도 아무것도 안 잠긴다. `TestDefaultLock`이 지킨다.
+- **통합 테스트 · `task gen`은 Docker가 필요하다**: 통합 테스트는 testcontainers로 Postgres · Valkey를, sqlc는 Docker 이미지로 돈다. Docker Desktop이 꺼져 있으면 통합 테스트는 로컬에서 `SKIP`(CI에서는 실패), `task gen`은 실패한다.
 - **생성 코드는 포매터 · 린터에서도 뺀다**: `web/.prettierignore`와 `web/eslint.config.js`의 `ignores`에 `src/lib/components/ui/` · `src/lib/api/schema.d.ts`. 새 생성 위치가 생기면 두 곳에 같이 추가한다.
 - **`npx`는 패키지를 임시로 받는다**: 없는 패키지면 설치를 묻는다(프로젝트에는 안 생김). 사용자에게 미리 말하고 쓴다.
 - **회사 PC에는 기본 Python이 없다**: conda 환경이 켜진 터미널에서만 `python`이 된다. 이 프로젝트 빌드 · 실행에는 Python이 필요 없다.

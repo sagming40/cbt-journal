@@ -26,7 +26,7 @@
 | `app migrate up\|down\|status` | goose 마이그레이션 |
 | `app user create\|reset-password` | 계정 만들기 · 비밀번호 재설정 (가입이 막힌 동안의 관리 수단, REQUIREMENTS A9) |
 
-- 라우팅: 바깥 mux가 `/api/`는 API mux(미들웨어 줄을 거침, 3.1절)로, **`GET /`**은 프론트로 보낸다. API mux에는 `openapi.yaml`에서 생성한 코드가 경로를 등록하고, 거기 없는 `GET /api/*`는 JSON 404다. 프론트는 있는 파일은 그 파일, 없는 경로 · 폴더는 `index.html`. 메서드 없는 catch-all을 두지 않는 이유: `POST /api/health` 같은 요청이 405 대신 404가 된다. 대신 없는 `/api/*`에 GET이 아닌 메서드는 405다. 정적 파일 요청은 세션 조회 같은 API 미들웨어를 거치지 않는다.
+- 라우팅: 맨 바깥은 경로 앞부분만 보고 `/api/`는 API mux(미들웨어 줄을 거침, 3.1절)로, 나머지는 프론트 mux(**`GET /`**만)로 보낸다. (메서드 없는 `/api/`와 `GET /`를 한 mux에 등록하면 Go가 "겹친다"며 거부해서 mux로 나누지 않는다.) API mux에는 `openapi.yaml`에서 생성한 코드가 경로를 등록하고, 거기 없는 `GET /api/*`는 JSON 404다. 프론트는 있는 파일은 그 파일, 없는 경로 · 폴더는 `index.html`. 메서드 없는 catch-all을 두지 않는 이유: `POST /api/health` 같은 요청이 405 대신 404가 된다. 대신 없는 `/api/*`에 GET이 아닌 메서드는 405다. 정적 파일 요청은 세션 조회 같은 API 미들웨어를 거치지 않는다.
 - Postgres와 Valkey의 역할 분담 원칙은 [decisions/0005](decisions/0005-valkey.md). 한 줄 요약: **Valkey가 통째로 날아가도 잃는 건 작성 중 초안뿐이어야 한다.**
 
 ## 2. 디렉터리 구조
@@ -85,7 +85,8 @@ Taskfile.yml           자주 쓰는 명령 모음
 ### 3.2 응답 규칙
 - JSON 필드는 `snake_case`, 시각은 RFC 3339 UTC(`...Z`).
 - 오류는 한 가지 모양: `{"error": {"code": "NOT_FOUND", "message": "…", "fields": {"…": "…"}}}` (`fields`는 입력 오류일 때만).
-- 400 입력 오류 / 401 비로그인 · 로그인 실패 / 403 막힌 기능(가입 꺼짐) · 교차 출처 요청 / 404 없음 · 남의 것 / 409 충돌 / 429 요청 제한(`Retry-After` 초) / 500 서버 오류.
+- 400 입력 오류 / 401 비로그인 · 로그인 실패 / 403 막힌 기능(가입 꺼짐) · 교차 출처 요청 / 404 없음 · 남의 것 / 409 충돌 / 413 본문 1MiB 초과 / 429 요청 제한(`Retry-After` 초) / 500 서버 오류.
+- 지금 쓰는 `code`: `INVALID_INPUT`(fields 있음) · `INVALID_REQUEST`(JSON 해석 실패) · `UNAUTHORIZED` · `INVALID_CREDENTIALS` · `SIGNUP_DISABLED` · `CROSS_ORIGIN` · `NOT_FOUND` · `EMAIL_TAKEN` · `PAYLOAD_TOO_LARGE` · `RATE_LIMITED` · `INTERNAL`.
 - 요청 본문을 해석하지 못한 경우(잘못된 JSON 등)와 handler 안에서 난 예상 못 한 오류도 같은 봉투로 준다(400 · 500). mux가 직접 주는 405만 글자 응답이다.
 
 ### 3.3 실제 접속 IP
@@ -177,3 +178,4 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-30 | 4절 유출 비밀번호 검사(A10) 추가 |
 | 2026-10-30 | 1절 라우팅(`GET /`로 SPA, 없는 `/api/*` GET은 JSON 404), 7절 embed 세부(`dist/` · `all:` · `.gitkeep` · 캐시) |
 | 2026-10-30 | M2 사전 검증: 1절 API mux 분리, 2절 `clientip/` · `db/dbgen/` · `testutil/` · handler 임베드, 3.1절 미들웨어 줄(본문 제한 · IP), 요청 제한은 handler에서, 기본 잠금을 openapi `security`로, 3.2절 429 `Retry-After` · 봉투 범위, 4절 쿠키 재발급 · 요청 제한 표 · Valkey 장애 · 만료 세션 정리 · 401 예외 · `next` 규칙 |
+| 2026-10-30 | M2 구현 중: 1절 바깥 라우팅을 경로 앞부분으로(mux 패턴 충돌), 3.2절 413 · 오류 code 목록 |

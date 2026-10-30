@@ -6,17 +6,80 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | M1 개발 환경 · 뼈대 — 회사 PC 쪽 전부 끝, 집 PC 확인만 남음 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면), `go:embed` + SPA fallback(실행 파일 하나로 화면), Taskfile · air, golangci-lint, GitHub Actions(첫 실행 초록) |
-| 진행 중 | 없음 |
-| 다음에 할 일 | 집 PC에서 `task dev` 확인 → M1 완료 처리 → M2 인증 시작(개념 설명부터: 세션 · argon2id · sqlc) |
-| 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 Go · pnpm · Task · golangci-lint → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `task setup` → `task migrate`) → `task dev` · `task lint` 확인. VS Code `*.css` → tailwindcss 연결도 |
+| 단계 | M1 · M2 구현 끝 — **집 PC 확인 2개만 남음** (PLAN 2장) → 그다음 M3 첫 배포 |
+| 끝난 것 | M0 전부. M1 전부(회사 PC). M2 인증 전부: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
+| 진행 중 | 없음 (커밋 · push 끝, 작업 트리 깨끗) |
+| 다음에 할 일 | ① 집 PC: 아래 "기기별로 할 일" → M1 ✅ ② 브라우저 "로그인 유지" 재시작 확인 → M2 ✅ ③ **M3 첫 배포** 시작 — 배포 환경 결정(결정 기록 0007)부터, 개념 설명(서버 · 도메인 · HTTPS · 리버스 프록시) 먼저 (PLAN M3) |
+| 기기별로 할 일 | **집 PC** (README "실행 → 처음 한 번" 순서 그대로): `git pull` → 도구 설치 Go · pnpm · Task · golangci-lint(winget 4줄) → **Docker Desktop 켜기** → `Copy-Item .env.example .env` 후 `POSTGRES_PASSWORD`와 `DATABASE_URL` 안 비밀번호를 같은 값으로 → `docker compose up -d` → `task setup` → `task migrate` → `task user -- create --email … --nickname …`(내 계정) → `task test`(통합 테스트가 SKIP 없이 PASS여야 함) · `task lint` → `task dev` 후 `http://localhost:5176`에서 로그인. VS Code `*.css` → tailwindcss 연결(선택) |
+| 집 PC에서 할 확인 | **M1**: `task dev`가 뜨고 화면에 Postgres · Valkey ok. **M2**: 로그인 유지 체크하고 로그인 → 브라우저를 완전히 닫았다 열기 → 그대로 로그인돼 있음 / 로그아웃 뒤 체크 해제로 로그인 → 브라우저를 닫았다 열기 → 로그인 화면. 둘 다 되면 PLAN 2장 M1 · M2를 ✅로 |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
 - 막혔던 일은 해결됐어도 남긴다. 형식: **증상 / 원인 / 해결 / 배운 것**.
 - 구현 중에 설계를 바꿨으면 `[설계]` 항목으로 이유를 적고, 해당 설계 문서의 변경 이력도 고친다.
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
+
+---
+
+## 2026-10-30 · M2 인증 ─ 자동 작업 (회사 PC)
+
+### 한 일
+- 사용자 지시로 M2 전체를 자동 작업(의존성만 사용자가 설치). 시작 전에 설계 · 사전 검증 · 진행 순서를 보여 주고 시작했다. 사전 검증의 목표("더 나은 방향으로 완성도 있게, 꼭 무언가를 찾아낼 필요는 없음")를 CLAUDE.md에 적었다.
+- 설계 문서를 먼저 고친 뒤 구현: 마이그레이션 → 인증 핵심(argon2id · 입력 규칙 · 유출 확인 · 토큰) → 설정 · 실제 IP → 인증 API · 미들웨어 · 기본 잠금 → 관리 명령 → 프론트 → CI.
+- 확인(관찰값):
+  - Go 테스트: auth 단위 9 · clientip 7케이스 · config 5 · db 통합 2 · server 통합 16 + 기존 2 — 전부 PASS (실제 Postgres 18 · Valkey 9 컨테이너, HTTPS + 쿠키 저장소). 비밀번호 변경의 캐시 삭제를 일부러 빼면 `TestChangePasswordRevokesOtherSessions`가 200으로 실패하는 것도 확인.
+  - 프론트: `pnpm check` 0 · lint 통과 · Vitest 9 · build 성공.
+  - 브라우저(임시 계정, 확인 뒤 삭제): `/settings` → `/login?next=%2Fsettings`, 틀린 비밀번호 문구 그대로 표시(로그인 화면에서 안 튕김), 로그인 → `/settings`로 복귀, 닉네임 저장 토스트 "저장했어", `document.cookie`에 세션 없음(HttpOnly), 모바일 하단 탭, 로그아웃 뒤 `/api/me` 401, `?next=/\evil.com`이면 `/`.
+  - 관리 명령: 임시 계정으로 create · 짧은 비밀번호 거절 · reset-password · `task user` 경유 create (모두 확인 뒤 삭제).
+  - `task gen` 뒤 생성 코드 변화 없음.
+  - GitHub Actions(run 41014064520): Go(lint · 통합 테스트 포함 test) · 프론트(check · lint · Vitest) · 생성 코드 확인 · 빌드 세 작업 모두 success — 통합 테스트가 Linux 러너의 Docker에서도 돈다.
+- **확인 못 한 것**: 실제 브라우저를 닫았다 여는 "로그인 유지" 동작(쿠키 Max-Age 있음/없음은 통합 테스트로 확인). 집 PC에서 한다.
+- 이번 단계는 자동 작업이라 PLAN에 적힌 "개념 설명부터"(유출 확인 · sqlc 등)를 따로 하지 않았다. 코드 주석에 비유와 이유를 적어 두었다.
+
+### [설계] 사전 검증에서 보완한 것 (설계 문서에 먼저 반영, 커밋 `585d2be`)
+- 로그인 유지 세션은 서버 기한만 늘리면 쿠키가 로그인 30일 뒤 사라진다 → 연장할 때 쿠키 `Max-Age`도 재발급.
+- 401 한 곳 처리가 로그인 화면의 "비밀번호 틀림" 401까지 잡아 로그인 화면으로 튕긴다 → 로그인 · 가입 요청의 401은 제외.
+- `?next=/\evil.com`(브라우저가 `//`로 읽음), `/\t/evil.com`(탭을 지우고 읽음)이 뚫린다 → `/\` · 제어 문자 거절 + 해석한 출처 확인.
+- Windows에는 IANA 시간대 DB가 없어 `time.LoadLocation`이 실패 → `time/tzdata`를 실행 파일에.
+- 비밀번호 변경의 "현재 비밀번호"가 무차별 대입 통로 → 사용자별 시도 제한(`rl:pwchange:user:`).
+- 요청 제한 횟수가 문서에 없었다 → 표로 정함. 만료 세션 정리는 M7까지 쌓임 → 로그인 때 그 사용자 것 정리.
+- 기본 잠금을 openapi `security`로 강제(새 경로는 저절로 잠김) + `TestDefaultLock`. 비밀번호 12 ~ 128자, 본문 1MiB, sqlc는 Docker로.
+- 하지 않은 것: 세션 절대 수명 · 폼 라이브러리(superforms, M5에서 다시 봄) · `__Host-` 쿠키 접두사(M0 결정 유지) · 가입 409의 가입 여부 노출(M8에서).
+
+### [설계] 구현 중에 바꾼 것
+- 바깥 라우팅을 mux가 아니라 경로 앞부분으로 나눈다: 메서드 없는 `/api/`와 `GET /`를 한 mux에 두면 Go가 패턴 충돌로 거부한다(ARCHITECTURE 1절).
+- 413(`PAYLOAD_TOO_LARGE`)과 오류 `code` 목록을 ARCHITECTURE 3.2절에.
+- 관리 명령을 `task user -- …`로도 부를 수 있게(Taskfile, `interactive: true`).
+
+### 막혔던 일
+**openapi에 `security`를 적었는데 생성 코드가 아무것도 안 잠금**
+- 증상: 생성 코드에 `CookieAuthScopes`가 없었다 — 인증 미들웨어가 볼 표시가 없음.
+- 원인: oapi-codegen std-http 템플릿은 `compatibility.enable-auth-scopes-on-context`가 켜져 있을 때만 표시를 넣는다(템플릿 소스에서 확인).
+- 해결: `api/oapi-codegen.yaml`에 옵션 추가 → 잠긴 5개 경로에만 표시. CLAUDE.md "함정"에 "끄지 말 것".
+
+**생성 코드가 `github.com/oapi-codegen/runtime`을 요구**
+- 원인: 요청 본문이 있는 경로가 처음 생겨 `runtime.BindJSONBody`를 쓴다(M1 DEVLOG에 예고한 그대로). 사용자가 설치했고, 이후 같은 경우는 Claude가 설치하고 보고하기로 했다(CLAUDE.md "작업 방식").
+
+**`panic: pattern "GET /" conflicts with pattern "/api/"`**
+- 원인: Go 1.22 mux는 "메서드는 더 좁은데 경로는 더 넓은" 두 패턴을 우열을 못 가린다며 등록 단계에서 거부한다.
+- 해결: 맨 바깥은 `strings.HasPrefix(path, "/api/")`로 나누고, 각각 따로 mux.
+
+**SvelteKit 3 `resolve('/')`가 타입 오류**
+- 원인: `resolve()`는 라우트 id를 받는데, 라우트 묶음 `(app)`이 id에 들어간다.
+- 해결: `resolve('/(app)')` · `resolve('/(app)/settings')`. 같이 `goto`의 `replaceState`가 지원 중단 경고 → `replace`. CLAUDE.md "함정"에.
+
+**vitest `test` 설정이 `vite`의 `defineConfig` 타입에 없음**
+- 해결: `vitest/config`의 `defineConfig`를 쓴다(vite 설정에 test 칸을 더한 것).
+
+**참고: 피어 의존성 경고 2개**
+- `openapi-typescript` → TypeScript `^5`(설치는 6), `runed`(bits-ui 의존) → `@sveltejs/kit ^2`(설치는 3). `pnpm check` · build · 화면 확인이 모두 정상이라 그대로 둔다. 업데이트가 나오면 다시 본다.
+
+### 이번 세션 커밋
+`f236f0b` CLAUDE.md 사전 검증 목표 / `585d2be` 설계 문서 / `5c9d25a` sqlc · testutil / `c0d22cb` 마이그레이션 / `9ecda22` 인증 핵심 / `029e124` 설정 · IP / `5f5edae` 인증 API / `bd14677` 관리 명령 / `a628517` 프론트 / `788d546` task test / `d66b5fd` CI / (마지막 커밋) 유출 확인 테스트 보강 · `task user` · 문서
+
+### 다음에 할 일
+- 집 PC: 위 "현재 상태"의 "기기별로 할 일" · "집 PC에서 할 확인" → PLAN에서 M1 · M2 ✅
+- M3 첫 배포: 배포 환경 결정(결정 기록 0007) — 개념 설명(서버 · 도메인 · HTTPS · 리버스 프록시)부터, 후보를 비교해 사용자가 고른다
 
 ---
 
