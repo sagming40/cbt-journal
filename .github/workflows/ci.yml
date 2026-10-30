@@ -1,0 +1,77 @@
+# GitHub Actions: main에 push하면 GitHub가 깨끗한 Linux 서버에서 검사 · 테스트 · 빌드를 대신 돌린다 (PLAN M1).
+# 비유: 집에 오면 현관에서 짐 검사를 해 주는 로봇 — 내 PC에서만 되는 것(커밋 빠진 파일, 내 PC에만 있는 설정)을 잡는다.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # GitHub 화면에서 손으로 다시 돌리기
+
+# 이 로봇은 코드를 읽기만 한다. 저장소에 아무것도 쓰지 않는다.
+permissions:
+  contents: read
+
+# 같은 브랜치에 연달아 push하면 앞의 실행은 취소한다 (마지막 커밋만 의미 있다).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go (lint · test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod # go.mod의 go 버전을 그대로 쓴다
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0 # PC의 golangci-lint --version과 같은 번호로 둔다 (버전마다 규칙이 달라서). PC를 올리면 여기도 올린다
+      # 프론트 빌드 없이도 돈다: internal/webdist/dist/.gitkeep 덕분 (ARCHITECTURE 7절)
+      - run: go test ./...
+
+  web:
+    name: 프론트 (check · lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm lint
+
+  build:
+    name: 실행 파일 빌드 (task build)
+    needs: [go, web] # 앞의 둘이 통과해야 돈다
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }} # Task 설치 파일을 받을 때 GitHub 요청 한도에 안 걸리게
+      # Taskfile의 Linux용 embed 명령(rm · cp)이 여기서 처음 실행된다. .env가 없어도 Task는 조용히 넘어간다.
+      - run: task setup
+      - run: task build
