@@ -1,0 +1,18 @@
+# 줄바꿈 규칙: 저장소에 붙어 다녀서 어느 PC에서든 똑같이 적용된다
+# 비유 ─ 각자 집의 가훈을 따르는 게 아니라 사무실의 사훈을 따르는 것
+
+# 글자 파일은 저장소에서도 작업 폴더에서도 LF
+# gofmt · Prettier도 LF를 기준으로 삼는다
+* text=auto eol=lf
+
+# Windows에서만 도는 Script는 CRLF여야 안전하다
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# 바이너리는 줄바꿈 변환을 하면 깨진다
+# text=auto로 설정을 해놓아도 보통 자동 적용되지만 만일의 사태를 대비하여 명시해둔다
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.woff2 binary
