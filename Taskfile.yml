@@ -56,10 +56,16 @@ tasks:
       - go test ./...
 
   lint:
-    desc: go vet + 프론트 타입 검사 · Prettier · ESLint (golangci-lint는 다음 단계)
+    desc: golangci-lint(govet · staticcheck · gosec …) + 프론트 타입 검사 · Prettier · ESLint
     cmds:
-      - go vet ./...
+      - golangci-lint run
       - task: web:lint
+
+  fmt:
+    desc: 형식 자동으로 맞추기 — Go(gofmt · goimports) + 프론트(Prettier)
+    cmds:
+      - golangci-lint fmt
+      - task: web:fmt
 
   build:
     desc: 프론트 빌드 → embed 자리로 복사 → 실행 파일 하나 (bin/app)
@@ -99,6 +105,12 @@ tasks:
     cmds:
       - pnpm check
       - pnpm lint
+
+  web:fmt:
+    internal: true
+    dir: web
+    cmds:
+      - pnpm format
 
   web:build:
     internal: true

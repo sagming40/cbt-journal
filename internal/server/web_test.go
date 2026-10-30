@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -19,7 +20,7 @@ var fakeWeb = fstest.MapFS{
 
 func get(h http.Handler, method, path string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), method, path, nil))
 	return rec
 }
 

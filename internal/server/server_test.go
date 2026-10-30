@@ -21,7 +21,7 @@ func failCheck(context.Context) error { return errors.New("dial tcp 127.0.0.1:63
 // do는 진짜 포트 없이 요청 하나를 보내고 응답을 돌려준다.
 func do(h http.Handler, method string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(method, "/api/health", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), method, "/api/health", nil))
 	return rec
 }
 
