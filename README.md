@@ -14,7 +14,7 @@
 자세한 범위는 [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
 ## 상태
-**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 개발 환경 · 뼈대 단계(M1)다. v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
+**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 로그인까지 되는 빈 앱이고, 다음은 첫 배포(M3)다. v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
 
 어디까지 왔는지는 [docs/PLAN.md](docs/PLAN.md) 2장에서 본다(이 README에는 진행 상황을 적지 않는다).
 
@@ -137,6 +137,7 @@ docker compose down -v     # 볼륨까지 삭제 = 로컬 DB · Valkey 데이터
 | VS Code가 `layout.css`의 `@theme` · `@apply`에 경고 | Tailwind CSS IntelliSense 확장 + `"files.associations": { "*.css": "tailwindcss" }` 설정. `web/.vscode/settings.json`은 VS Code로 `web` 폴더를 직접 열 때만 읽힌다 |
 | 로그인이 "잠시 뒤에 다시 시도해 줘" | 요청 제한(같은 이메일 실패 5번 · 같은 IP 20번 / 15분). 기다리거나, 개발 중이면 `docker compose exec valkey valkey-cli --scan --pattern "rl:*"`로 보고 `del`로 지운다 |
 | 비밀번호를 잊었다 | `task user -- reset-password --email 내이메일` (그 계정의 세션도 전부 끊긴다) |
+| "로그인 유지"를 안 했는데 브라우저를 닫았다 열어도 로그인돼 있다 | Chrome이 실제로 안 꺼졌다. `chrome://settings/system`의 "Chrome 종료 후에도 백그라운드 앱 계속 실행"을 끈다. 쿠키는 정상(개발자 도구 Application → Cookies에서 `session`의 Expires가 "Session") |
 | `task test`에서 통합 테스트가 `SKIP` | Docker Desktop이 꺼져 있다. 켜고 다시. CI에서는 건너뛰지 않고 실패한다 |
 
 ## 문서

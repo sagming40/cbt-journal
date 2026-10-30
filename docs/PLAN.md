@@ -14,8 +14,8 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
-| M1 | 개발 환경 · 뼈대 (한 줄기 관통) | 🔄 |
-| M2 | 인증 | 🔄 구현 끝, 브라우저 재시작 확인 1개 남음 |
+| M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
+| M2 | 인증 | ✅ 2026-10-30 |
 | M3 | 첫 배포 (인증만 있는 빈 앱) | ⬜ |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
@@ -45,7 +45,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 > 기능 없이 **요청 하나가 브라우저 → Go → Postgres · Valkey까지 왕복**하는 줄기를 먼저 뚫는다. 이후 단계는 이 줄기에 기능을 붙이기만 한다.
 
 - [x] **개념 설명**: Go 기초(패키지 · 에러 값 · 인터페이스), **Valkey가 뭔지 · Redis와 관계** ([0005](decisions/0005-valkey.md)에서 약속), SvelteKit SPA 구조
-- [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task, golangci-lint — 회사 PC 끝(2026-10-30), 집 PC 남음
+- [x] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task, golangci-lint — 두 PC 모두 같은 버전(Go 1.27.0 · pnpm 12.15.0 · Task 3.54.0 · golangci-lint 2.15.0)
 - [x] v1 코드(`client/`, `server/`) 삭제, `.gitattributes`로 줄바꿈 통일
 - [x] `compose.yaml`: Postgres 18(5436) · Valkey(6380, AOF 켬)
 - [x] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example`
@@ -59,7 +59,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - **완료 기준**
   - `task build`로 만든 실행 파일 하나를 띄우면 브라우저에 SvelteKit 화면이 뜨고, 화면이 `/api/health`를 불러 Postgres · Valkey `ok`를 표시한다.
   - 새로고침해도 SPA 경로가 404 없이 열리고, `/api/없는경로`는 JSON 404다.
-  - GitHub Actions가 초록이다. 집 PC · 회사 PC 둘 다에서 `task dev`가 뜬다.
+  - GitHub Actions가 초록이다. 집 PC · 회사 PC 둘 다에서 `task dev`가 뜬다. — 집 PC 확인(2026-10-30): `task test` 전부 ok(통합 테스트 db 6.1초 · server 8.7초로 컨테이너에서 실행), `task lint` 0 issues, 화면 Postgres · Valkey ok
 
 ### M2 · 인증
 - [x] sqlc(Docker 이미지로 실행 — Windows에서 설치 없이, 두 PC · CI가 같은 버전) + testcontainers 통합 테스트 도우미 *(계획에 없던 작업)*
@@ -76,7 +76,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
   - 통합 테스트(사전 검증에서 추가): 공개 경로 4개 말고는 비로그인 401 · 만료된 세션 401 · 로그인 유지 세션 연장 시 쿠키 재발급 · 비밀번호 변경 시 현재 비밀번호 연속 실패 429 · 잘못된 시간대 400.
   - 화면: `?next=`에 바깥 주소(`//evil.com`, `/\evil.com` 등)를 넣으면 무시하고 `/`로 간다 (Vitest).
   - DB의 `sessions`에 토큰 원문이 없다(해시만).
-  - 브라우저: "로그인 유지" 체크 → 브라우저를 닫았다 열어도 유지 / 체크 해제 → 브라우저를 닫으면 로그아웃. — 쿠키 속성(Max-Age 있음 / 없음)은 통합 테스트로 확인, **실제 브라우저를 닫았다 여는 확인만 남음**(집 PC에서)
+  - 브라우저: "로그인 유지" 체크 → 브라우저를 닫았다 열어도 유지 / 체크 해제 → 브라우저를 닫으면 로그아웃. — 집 PC 확인(2026-10-30): 체크 해제 시 쿠키 Expires = "Session", Chrome을 닫았다 열면 로그인 화면. 로그아웃 → 쿠키 삭제 · 다음 `/api/me` 401. **Chrome "종료 후에도 백그라운드 앱 계속 실행"이 켜져 있으면 Chrome이 실제로 꺼지지 않아 세션 쿠키가 남는다**(앱 문제 아님, README "자주 막히는 것")
 
 ### M3 · 첫 배포 (인증만 있는 빈 앱)
 > 기능은 로그인 · 설정뿐인 상태로 인터넷에 올린다. 배포 경로를 미리 뚫어 두고, M4부터 단계마다 여기에 올려 휴대폰으로 확인한다. **실제 기록은 아직 쓰지 않는다.**
