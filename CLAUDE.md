@@ -114,14 +114,16 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 
 ```powershell
 docker compose up -d     # Postgres · Valkey
-task dev                 # API(air) + 프론트 dev 서버
-task gen                 # openapi.yaml · queries/*.sql → 생성 코드
-task test                # Go 테스트 (Docker 필요) + Vitest
-task lint                # golangci-lint + ESLint
-task migrate             # goose up
-task build               # 프론트 빌드 → embed → 실행 파일 하나
+task setup               # Go · 프론트 의존성 (처음 · pull 뒤)
+task dev                 # API(air, 8080) + 프론트 dev 서버(5176)
+task gen                 # openapi.yaml → Go · TS 생성 코드 (sqlc는 M2에서 추가)
+task test                # Go 테스트 (Vitest는 프론트 테스트가 생기면 추가)
+task lint                # go vet + svelte-check · Prettier · ESLint (golangci-lint는 M1 다음 항목)
+task migrate             # goose up (task migrate -- status | down)
+task build               # 프론트 빌드 → embed 복사 → bin/app 하나
+task serve               # bin/app serve
 ```
-> 위 `task` 명령은 M1에서 Taskfile을 만들 때 생긴다. 그 전까지 쓰는 실제 명령(`.env` 불러오기, `go run ./cmd/app …`, `docker compose exec …`)과 자주 막히는 것은 README "실행"에 있다. Taskfile을 만들면 이 절과 README "실행"을 같이 고친다.
+> `task`는 `.env`를 dotenv로 읽는다. `go run`으로 직접 실행하면 `.env`가 안 읽힌다. 명령 · 자주 막히는 것의 사람용 설명은 README "실행". Taskfile을 고치면 이 절과 README "실행"을 같이 고친다.
 
 ## 함정 (고치기 전에 확인)
 - **5432는 이미 차 있다**: 두 PC 모두 PostgreSQL을 직접 설치해 둬서 기본 포트를 쓴다. compose Postgres는 `5436`. 접속 문자열 포트를 헷갈리면 엉뚱한 DB(직접 설치한 쪽)에 붙는다.

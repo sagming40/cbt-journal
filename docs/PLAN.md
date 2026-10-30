@@ -54,7 +54,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결
 - [x] SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, **DESIGN 6장 토큰으로 테마**, 라이트/다크 전환
 - [x] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
-- [ ] Taskfile: `dev` · `gen` · `test` · `lint` · `build` · `migrate`
+- [x] Taskfile: `dev` · `gen` · `test` · `lint` · `build` · `migrate` (+ `setup` · `serve`, `.env` dotenv)
 - [ ] golangci-lint, ESLint · Prettier, GitHub Actions(lint · test · build)
 - **완료 기준**
   - `task build`로 만든 실행 파일 하나를 띄우면 브라우저에 SvelteKit 화면이 뜨고, 화면이 `/api/health`를 불러 Postgres · Valkey `ok`를 표시한다.
