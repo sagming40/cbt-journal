@@ -8,7 +8,7 @@ import (
 )
 
 // all: 접두사가 있어야 _app/(밑줄로 시작)과 .gitkeep도 들어간다.
-// go:embed는 기본으로 . _ 로 시작하는 파일을 조용히 빼는데, SvelteKit 결과물의 JS · CSS가 전부 _app/ 아래에 있다.
+// embed 지시문은 기본으로 . _ 로 시작하는 파일을 조용히 빼는데, SvelteKit 결과물의 JS · CSS가 전부 _app/ 아래에 있다.
 //
 //go:embed all:dist
 var files embed.FS
