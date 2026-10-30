@@ -1,30 +1,26 @@
-# === 환경 변수 (절대 커밋 금지: 비밀번호, JWT 시크릿 등) ===
+# === 비밀값: 절대 커밋하지 않는다 (CLAUDE.md "업로드 금지") ===
+# 금고 열쇠는 각 PC 서랍에만 둔다. 저장소에는 "열쇠 모양"(.env.example)만 올린다
 .env
-.env.local
-.env.*.local
-server/.env
-client/.env
+.env.*
+!.env.example
 
-# === Node.js ===
+# === Node / 프론트(web/) ===
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+web/.svelte-kit/
+web/build/
 
-# === 빌드 결과물 ===
-client/dist/
-client/build/
-server/dist/
+# === Go ===
+# go build 결과 실행 파일, air(Hot Reload)가 쓰는 임시 폴더
+/bin/
+/tmp/
+*.exe
 
-# === 에디터 / OS 설정 ===
+# === 에디터 / OS ===
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
-# === 로그 ===
+# === 로그 · 테스트 결과 ===
 *.log
-logs/
-
-# === 기타 ===
-.cache/
 coverage/
