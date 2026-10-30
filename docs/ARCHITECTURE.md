@@ -21,11 +21,12 @@
 
 | 서브커맨드 | 하는 일 |
 |---|---|
-| `app serve` | API + 프론트 정적 파일. `/api/*`가 아닌 경로는 `index.html`로 돌려준다(SPA fallback) |
+| `app serve` | API + 프론트 정적 파일. `/api/*`가 아닌 경로는 `index.html`로 돌려준다(SPA fallback). 없는 `/api/*` GET은 JSON 404 |
 | `app worker` | 작업 큐 처리 + 주기 작업(리마인더 확인, 주간 리포트) |
 | `app migrate up\|down\|status` | goose 마이그레이션 |
 | `app user create\|reset-password` | 계정 만들기 · 비밀번호 재설정 (가입이 막힌 동안의 관리 수단, REQUIREMENTS A9) |
 
+- 라우팅: API 경로는 `openapi.yaml`에서 생성한 코드가 등록하고, 프론트는 **`GET /`** 하나로 받는다(가장 덜 구체적인 패턴이라 API가 먼저 고른다). 있는 파일은 그 파일, 없는 경로 · 폴더는 `index.html`, `/api/`로 시작하는데 여기까지 온 GET은 JSON 404다. 메서드 없이 `/`로 열지 않는 이유: `POST /api/health` 같은 요청이 405 대신 404가 된다. 대신 없는 `/api/*`에 GET이 아닌 메서드는 405다.
 - Postgres와 Valkey의 역할 분담 원칙은 [decisions/0005](decisions/0005-valkey.md). 한 줄 요약: **Valkey가 통째로 날아가도 잃는 건 작성 중 초안뿐이어야 한다.**
 
 ## 2. 디렉터리 구조
@@ -127,9 +128,12 @@ Taskfile.yml           자주 쓰는 명령 모음
 - 자주 쓰는 명령은 `Taskfile.yml`에 모은다 (`task dev` · `task test` · `task lint` · `task gen` · `task migrate`). 정확한 목록은 CLAUDE.md.
 
 ## 7. 빌드
-1. `web/`에서 `pnpm build` → 정적 파일
-2. 결과를 `internal/webdist/`로 복사 → `go:embed`
+1. `web/`에서 `pnpm build` → `web/build/` (정적 파일)
+2. 결과를 `internal/webdist/dist/`로 복사 → `//go:embed all:dist` (`go:embed`는 자기 폴더 아래만 넣을 수 있어서 복사한다. `all:`이 없으면 밑줄로 시작하는 `_app/`이 빠진다)
 3. `go build ./cmd/app` → 실행 파일 하나
+
+- `internal/webdist/dist/`에는 `.gitkeep`만 커밋한다. 프론트를 빌드하지 않은 PC · CI에서도 `go build` · `go test`가 되고, 그 상태로 화면 주소에 들어오면 503 안내를 준다.
+- 캐시: `_app/immutable/`(파일 이름에 내용 해시)은 1년 immutable, `index.html`은 `no-cache`.
 
 배포 환경은 아직 정하지 않았다(첫 배포 단계에서 결정 기록으로 남긴다).
 
@@ -151,3 +155,4 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-29 | v2 첫 작성 |
 | 2026-10-29 | 문서 검토 반영: 미들웨어 순서(로그를 패닉 복구 바깥으로), `app user` 서브커맨드, 공개 설정 `GET /api/config`, 403 추가, 3.3절 실제 접속 IP(`TRUSTED_PROXIES`), 4절 로그인 유지 · 가짜 해시 · 세션 삭제 시 Valkey 캐시 삭제, 6절 휴대폰 확인은 배포 서버로 |
 | 2026-10-30 | 4절 유출 비밀번호 검사(A10) 추가 |
+| 2026-10-30 | 1절 라우팅(`GET /`로 SPA, 없는 `/api/*` GET은 JSON 404), 7절 embed 세부(`dist/` · `all:` · `.gitkeep` · 캐시) |

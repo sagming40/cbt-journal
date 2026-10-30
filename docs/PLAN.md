@@ -53,7 +53,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] README "실행"에 지금 쓰는 터미널 명령 · 자주 막히는 것 정리 *(계획에 없던 작업)*
 - [x] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결
 - [x] SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, **DESIGN 6장 토큰으로 테마**, 라이트/다크 전환
-- [ ] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
+- [x] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
 - [ ] Taskfile: `dev` · `gen` · `test` · `lint` · `build` · `migrate`
 - [ ] golangci-lint, ESLint · Prettier, GitHub Actions(lint · test · build)
 - **완료 기준**

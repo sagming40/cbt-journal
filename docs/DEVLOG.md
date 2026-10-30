@@ -7,9 +7,9 @@
 | 항목 | 내용 |
 |---|---|
 | 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면) |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면), `go:embed` + SPA fallback(실행 파일 하나로 화면) |
 | 진행 중 | 없음 |
-| 다음에 할 일 | `go:embed`로 `web/build` 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404) (PLAN M1 아홉째 항목) |
+| 다음에 할 일 | Taskfile (`dev` · `gen` · `test` · `lint` · `build` · `migrate`, `.env` 자동 읽기) (PLAN M1 열째 항목) |
 | 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `go mod download` → `migrate up` → `web`에서 `pnpm install --frozen-lockfile`) |
 
 ## 작성 규칙
@@ -39,6 +39,8 @@
 - 타이핑 학습 모드로 SvelteKit SPA: `sv create`(minimal · TS · prettier · eslint · tailwindcss), adapter-static, shadcn-svelte 1.7(vega · lucide) Button · Card, `layout.css`를 DESIGN 6장 토큰으로, Inter → Pretendard(npm), mode-watcher, openapi-typescript + openapi-fetch, health 화면. 확인: `pnpm check` 0 · `pnpm lint` 통과 · `pnpm build` 성공, 브라우저에서 ok/ok → 라이트 ↔ 다크 → Valkey stop 시 error(아이콘 + 굵은 글자) → Go 종료 시 "연결이 안 돼" → 다시 켜면 ok/ok.
 - [설계] 카드 모서리가 DESIGN의 12px이 아니라 14px: shadcn 1.7은 모서리를 곱셈(`md = radius × 0.8`, `xl = × 1.4`)으로 계산한다. `--radius` 10px로 Button(`rounded-md`) 8px을 정확히 맞추고, Card(`rounded-xl`)는 14px로 둔다. 화면을 만들 때 감싸는 부품에서 맞출지 본다(DESIGN 6장 "모양"은 그대로).
 - `openapi-typescript` 7.13이 TypeScript `^5`를 피어로 원하는데 프로젝트는 TS 6(`sv` 기본). 생성 도구일 뿐이고 `pnpm gen:api` 결과가 정상이라 그대로 둔다. TS를 낮추면 SvelteKit 3 쪽이 어긋날 위험이 더 크다.
+- 타이핑 학습 모드로 `go:embed` + SPA fallback: `internal/webdist`(`all:dist`, `.gitkeep`), `GET /` SPA 핸들러, 오류 봉투 첫 판. 확인: TestSPA 11 케이스, `bin/app.exe serve` 하나로 8080에서 화면 ok/ok · `/checkin`은 서버 200 + SvelteKit 404 화면, `/api/nope` JSON 404, 새로 checkout한 트리(dist에 `.gitkeep`만)에서 `go build` · `go vet` 통과.
+- [설계] SPA를 메서드 없는 `/`가 아니라 `GET /`로 등록: `/`로 열면 Go mux가 `POST /api/health`를 경로가 맞는 `/`로 보내 405가 404로 바뀐다. 대가로 없는 `/api/*`에 GET이 아닌 메서드는 405. ARCHITECTURE 1절.
 - `.env`는 Go가 읽지 않는다. Taskfile을 만들기 전까지는 PowerShell 한 줄로 터미널에 불러온다(Taskfile에서 `dotenv`로 대체 예정).
 
 ### 막혔던 일
@@ -77,14 +79,18 @@
 - 원인: `sv`가 만든 `web/.vscode/settings.json`(`*.css` → tailwindcss)은 VS Code로 `web` 폴더를 직접 열 때만 읽힌다. 저장소 맨 위를 열어 두면 안 읽힌다.
 - 해결: 사용자 설정 또는 저장소 맨 위 `.vscode/settings.json`(커밋 안 됨)에 같은 줄. README "자주 막히는 것"에 적었다.
 
+**`/../../go.mod` 테스트가 200이 아니라 307**
+- 원인: Go `ServeMux`는 `..`이 섞인 경로를 핸들러까지 보내지 않고 정리된 주소로 307 리다이렉트한다. 안내한 테스트가 이 동작을 빠뜨리고 200을 기대했다.
+- 해결: 307 + `Location: /go.mod`를 확인하는 테스트로 바꿨다. 경로 조작은 mux와 `path.Clean`이 두 겹으로 막는다.
+
 **참고: go-redis가 자기 로그를 따로 찍는다**
 - Valkey를 끄면 `redis: ... pool.go:770: ... failed to dial` 줄이 slog 형식이 아니라 그대로 나온다. go-redis 내부 로거라서다. 기록 내용은 없어서 지금은 그대로 두고, 운영 로그를 JSON으로 모을 때(M3) 정리할지 본다.
 
 ### 이번 세션 커밋
-`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / `d1d33b2` 문서 / `84646b0` SvelteKit SPA / (이 커밋) 문서 갱신
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / `d1d33b2` 문서 / `84646b0` SvelteKit SPA / `73af1fb` 문서 / `93d0e2f` go:embed · SPA fallback / (이 커밋) 문서 갱신
 
 ### 다음에 할 일
-- `go:embed`로 `web/build` 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
+- Taskfile (`dev` · `gen` · `test` · `lint` · `build` · `migrate`, `.env` 자동 읽기, 빌드 · 복사를 `task build` 하나로)
 - 집 PC: 위 "기기별로 할 일"
 
 ---

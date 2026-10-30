@@ -88,6 +88,17 @@ pnpm lint         # Prettier 확인 + ESLint
 pnpm build        # → web/build (정적 파일)
 ```
 
+### 실행 파일 하나로 빌드 · 실행
+```powershell
+Set-Location web; pnpm build; Set-Location ..                                          # → web/build
+Get-ChildItem internal/webdist/dist -Exclude .gitkeep | Remove-Item -Recurse -Force    # 옛 복사본 지우기 (.gitkeep은 남김)
+Copy-Item web/build/* internal/webdist/dist -Recurse                                   # embed할 곳으로 복사
+go build -o bin/app.exe ./cmd/app
+
+./bin/app.exe serve      # .env를 불러온 터미널에서. 화면은 http://127.0.0.1:8080 (Vite 필요 없음)
+```
+프론트를 고쳤으면 세 줄(빌드 · 복사 · `go build`)을 다시 해야 실행 파일에 들어간다. 개발 중에는 `pnpm dev`(5176)로 보면 된다.
+
 ### 코드 생성 (`api/openapi.yaml`을 고친 뒤)
 ```powershell
 go tool oapi-codegen -config api/oapi-codegen.yaml api/openapi.yaml   # → internal/apigen/apigen.gen.go
@@ -139,6 +150,7 @@ docker compose down -v     # 볼륨까지 삭제 = 로컬 DB · Valkey 데이터
 | 엉뚱한 DB에 붙는다 | 포트가 `5432`(직접 설치한 Postgres)로 돼 있다. compose는 `5436` |
 | psql 결과 뒤에 `(END)`가 뜨고 멈춤 | 페이저다. `q`로 나온다. 한 줄만 보려면 `-tAc "…"` |
 | `bind: ... 8080` 시작 실패 | 이미 다른 `serve`가 떠 있다. 그 터미널에서 Ctrl+C |
+| 8080에 "프론트 빌드가 없다" (503) | 프론트를 빌드 · 복사하지 않고 `go build` 했다. 위 "실행 파일 하나로" 세 줄 |
 | 화면에 "연결이 안 돼" | Go 서버(`serve`)가 꺼져 있다. 프론트 dev 서버만으로는 `/api`가 안 된다 |
 | VS Code가 `layout.css`의 `@theme` · `@apply`에 경고 | Tailwind CSS IntelliSense 확장 + `"files.associations": { "*.css": "tailwindcss" }` 설정. `web/.vscode/settings.json`은 VS Code로 `web` 폴더를 직접 열 때만 읽힌다 |
 
