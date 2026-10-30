@@ -22,7 +22,7 @@ const (
 )
 
 // ValidationError는 입력 오류를 칸별 문구로 모은다. API에서 400 봉투의 fields가 된다 (ARCHITECTURE 3.2절).
-// 문구는 화면에 그대로 보이므로 반말로 쓴다 (DESIGN 8장).
+// 문구는 화면에 그대로 보이므로 부드러운 존댓말(해요체)로 쓴다 (DESIGN 8장).
 type ValidationError struct {
 	Fields map[string]string
 }
@@ -49,15 +49,15 @@ func fieldError(field, message string) *ValidationError {
 func NormalizeEmail(raw string) (string, error) {
 	email := strings.ToLower(strings.TrimSpace(raw))
 	if email == "" {
-		return "", fieldError("email", "이메일을 적어 줘")
+		return "", fieldError("email", "이메일을 입력해 주세요")
 	}
 	if len(email) > maxEmailLen {
-		return "", fieldError("email", "이메일이 너무 길어")
+		return "", fieldError("email", "이메일이 너무 길어요")
 	}
 	// ParseAddress는 "이름 <주소>" 꼴도 받아 주므로, 주소만 있는 경우인지 다시 확인한다.
 	addr, err := mail.ParseAddress(email)
 	if err != nil || addr.Address != email || addr.Name != "" {
-		return "", fieldError("email", "이메일 형식이 아니야")
+		return "", fieldError("email", "이메일 형식이 아니에요")
 	}
 	return email, nil
 }
@@ -68,9 +68,9 @@ func ValidatePassword(field, password string) error {
 	n := utf8.RuneCountInString(password)
 	switch {
 	case n < minPasswordLen:
-		return fieldError(field, fmt.Sprintf("%d자 이상이어야 해", minPasswordLen))
+		return fieldError(field, fmt.Sprintf("%d자 이상이어야 해요", minPasswordLen))
 	case n > maxPasswordLen:
-		return fieldError(field, fmt.Sprintf("%d자까지만 돼", maxPasswordLen))
+		return fieldError(field, fmt.Sprintf("%d자까지 쓸 수 있어요", maxPasswordLen))
 	}
 	return nil
 }
@@ -80,14 +80,14 @@ func NormalizeNickname(raw string) (string, error) {
 	nickname := strings.TrimSpace(raw)
 	n := utf8.RuneCountInString(nickname)
 	if n == 0 {
-		return "", fieldError("nickname", "닉네임을 적어 줘")
+		return "", fieldError("nickname", "닉네임을 입력해 주세요")
 	}
 	if n > maxNicknameLen {
-		return "", fieldError("nickname", fmt.Sprintf("%d자까지만 돼", maxNicknameLen))
+		return "", fieldError("nickname", fmt.Sprintf("%d자까지 쓸 수 있어요", maxNicknameLen))
 	}
 	for _, r := range nickname {
 		if unicode.IsControl(r) {
-			return "", fieldError("nickname", "쓸 수 없는 글자가 있어")
+			return "", fieldError("nickname", "쓸 수 없는 글자가 있어요")
 		}
 	}
 	return nickname, nil
@@ -97,10 +97,10 @@ func NormalizeNickname(raw string) (string, error) {
 // LoadLocation은 ""(UTC)와 "Local"(서버 시간대)도 받아 주는데, 둘 다 사용자의 "하루"를 정하는 값이 아니라 거부한다.
 func ValidateTimezone(tz string) error {
 	if tz == "" || tz == "Local" {
-		return fieldError("timezone", "시간대를 골라 줘")
+		return fieldError("timezone", "시간대를 골라 주세요")
 	}
 	if _, err := time.LoadLocation(tz); err != nil {
-		return fieldError("timezone", "모르는 시간대야")
+		return fieldError("timezone", "알 수 없는 시간대예요")
 	}
 	return nil
 }

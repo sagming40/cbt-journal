@@ -7,7 +7,7 @@ info:
   description: |
     인지행동치료 사고 기록 연습 앱의 API.
     JSON 필드는 snake_case, 시각은 RFC 3339 UTC (ARCHITECTURE 3.2절).
-    오류는 전부 Error 모양이다. 화면 문구로 그대로 쓸 수 있게 message는 반말이다 (DESIGN 8장).
+    오류는 전부 Error 모양이다. 화면 문구로 그대로 쓸 수 있게 message는 부드러운 존댓말(해요체)이다 (DESIGN 8장).
 
 # 기본은 잠금 (ARCHITECTURE 3.1절): 모든 경로에 세션 쿠키가 필요하다.
 # 인증 없이 열 경로만 security: []로 연다 — 새 경로를 추가하면 따로 하지 않아도 잠긴다.

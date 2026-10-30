@@ -17,7 +17,7 @@ func spa(web fs.FS) http.Handler {
 	files := http.FileServerFS(web)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/") {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "없는 API 경로야", nil)
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "없는 API 경로예요", nil)
 			return
 		}
 

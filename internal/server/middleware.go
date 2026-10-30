@@ -93,7 +93,7 @@ func recoverPanic(logger *slog.Logger) func(http.Handler) http.Handler {
 					panic(v) // net/http가 연결을 조용히 끊으라고 쓰는 신호는 그대로 넘긴다
 				}
 				logger.Error("패닉", "path", r.URL.Path, "panic", v, "stack", string(debug.Stack()))
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어. 다시 시도해 줘", nil)
+				writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어요. 다시 시도해 주세요", nil)
 			}()
 			next.ServeHTTP(w, r)
 		})
@@ -113,7 +113,7 @@ func limitBody(next http.Handler) http.Handler {
 func crossOrigin(next http.Handler) http.Handler {
 	cop := http.NewCrossOriginProtection()
 	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		writeError(w, http.StatusForbidden, "CROSS_ORIGIN", "다른 사이트에서 온 요청은 받지 않아", nil)
+		writeError(w, http.StatusForbidden, "CROSS_ORIGIN", "다른 사이트에서 온 요청은 받을 수 없어요", nil)
 	}))
 	return cop.Handler(next)
 }
@@ -131,7 +131,7 @@ func sessionMiddleware(sessions *auth.Sessions, logger *slog.Logger) func(http.H
 			if err != nil {
 				// DB 장애: 로그인 안 한 것으로 치지 않고 500으로 끝낸다(멀쩡한 사용자를 로그인 화면으로 튕기지 않게).
 				logger.Error("세션 조회 실패", "err", err)
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어. 다시 시도해 줘", nil)
+				writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어요. 다시 시도해 주세요", nil)
 				return
 			}
 			if sess == nil {
@@ -170,11 +170,11 @@ func requestError(logger *slog.Logger) func(http.ResponseWriter, *http.Request, 
 	return func(w http.ResponseWriter, r *http.Request, err error) {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeError(w, http.StatusRequestEntityTooLarge, "PAYLOAD_TOO_LARGE", "요청이 너무 커", nil)
+			writeError(w, http.StatusRequestEntityTooLarge, "PAYLOAD_TOO_LARGE", "요청이 너무 커요", nil)
 			return
 		}
 		logger.Debug("요청 해석 실패", "path", r.URL.Path, "err", err)
-		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "요청 형식이 맞지 않아", nil)
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "요청 형식이 맞지 않아요", nil)
 	}
 }
 
@@ -182,6 +182,6 @@ func requestError(logger *slog.Logger) func(http.ResponseWriter, *http.Request, 
 func internalError(logger *slog.Logger) func(http.ResponseWriter, *http.Request, error) {
 	return func(w http.ResponseWriter, r *http.Request, err error) {
 		logger.Error("처리 중 오류", "path", r.URL.Path, "err", err)
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어. 다시 시도해 줘", nil)
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "잠시 문제가 생겼어요. 다시 시도해 주세요", nil)
 	}
 }

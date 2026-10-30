@@ -20,16 +20,16 @@ import (
 
 // 서비스가 돌려주는 예상된 실패들. handler가 이걸 보고 상태 코드를 정한다.
 var (
-	ErrInvalidCredentials = errors.New("이메일 또는 비밀번호가 맞지 않아")
-	ErrSignupDisabled     = errors.New("지금은 가입을 받지 않아")
-	ErrEmailTaken         = errors.New("이미 가입된 이메일이야")
+	ErrInvalidCredentials = errors.New("이메일 또는 비밀번호가 맞지 않아요")
+	ErrSignupDisabled     = errors.New("지금은 가입을 받지 않아요")
+	ErrEmailTaken         = errors.New("이미 가입된 이메일이에요")
 	ErrUserNotFound       = errors.New("사용자가 없다")
 )
 
 // RateLimitedError는 요청 제한에 걸렸다는 뜻이다. RetryAfter 뒤에 다시 시도할 수 있다.
 type RateLimitedError struct{ RetryAfter time.Duration }
 
-func (e *RateLimitedError) Error() string { return "잠시 뒤에 다시 시도해 줘" }
+func (e *RateLimitedError) Error() string { return "잠시 뒤에 다시 시도해 주세요" }
 
 // User는 화면 · CLI에 돌려줄 사용자 정보다 (비밀번호 해시는 밖으로 내보내지 않는다).
 type User struct {
@@ -98,7 +98,7 @@ func (s *Service) Login(ctx context.Context, rawEmail, password string, remember
 		return LoginResult{}, err
 	}
 	if password == "" {
-		return LoginResult{}, fieldError("password", "비밀번호를 적어 줘")
+		return LoginResult{}, fieldError("password", "비밀번호를 입력해 주세요")
 	}
 
 	// 제한 검사는 비밀번호 확인 "전에" 한다: 잠긴 동안은 맞는 비밀번호도 429 — 맞았는지 알려 주지 않는다.
@@ -282,13 +282,13 @@ func (s *Service) ChangePassword(ctx context.Context, sess *Session, current, ne
 	if !ok {
 		// 세션을 훔친 사람이 현재 비밀번호를 무차별로 넣어 보지 못하게 센다 (REQUIREMENTS 5.2절).
 		s.limits.hit(ctx, key, pwChangeRule)
-		return fieldError("current_password", "지금 비밀번호가 맞지 않아")
+		return fieldError("current_password", "지금 비밀번호가 맞지 않아요")
 	}
 	if err := ValidatePassword("new_password", next); err != nil {
 		return err
 	}
 	if next == current {
-		return fieldError("new_password", "지금 비밀번호와 다른 걸로 골라 줘")
+		return fieldError("new_password", "지금 비밀번호와 다른 비밀번호를 정해 주세요")
 	}
 	if err := s.checkBreached(ctx, "new_password", next); err != nil {
 		return err
@@ -383,7 +383,7 @@ func (s *Service) checkBreached(ctx context.Context, field, password string) err
 		return nil
 	}
 	if breached {
-		return fieldError(field, "알려진 유출 목록에 있는 비밀번호야. 다른 걸로 골라 줘")
+		return fieldError(field, "유출된 적이 있는 비밀번호예요. 다른 비밀번호를 정해 주세요")
 	}
 	return nil
 }

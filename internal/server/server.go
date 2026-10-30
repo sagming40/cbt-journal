@@ -74,7 +74,7 @@ func New(d Deps) http.Handler {
 	})
 	// 계약서에 없는 GET /api/*는 JSON 404. GET으로만 여는 이유는 ARCHITECTURE 1절(405가 404로 바뀌지 않게).
 	api.HandleFunc("GET /api/", func(w http.ResponseWriter, _ *http.Request) {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "없는 API 경로야", nil)
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "없는 API 경로예요", nil)
 	})
 
 	// 미들웨어 줄 (ARCHITECTURE 3.1절). 아래에서 위로 감싸므로, 실제로 도는 순서는 위에서 아래다.

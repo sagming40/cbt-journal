@@ -164,7 +164,7 @@ func errorBody(code, message string) apigen.Error {
 
 // UnauthorizedBody는 세션 없음 401 봉투다. 인증 미들웨어도 같은 모양을 쓴다.
 func UnauthorizedBody() apigen.Error {
-	return errorBody("UNAUTHORIZED", "로그인이 필요해")
+	return errorBody("UNAUTHORIZED", "로그인이 필요해요")
 }
 
 func unauthorized() apigen.UnauthorizedJSONResponse {
@@ -172,7 +172,7 @@ func unauthorized() apigen.UnauthorizedJSONResponse {
 }
 
 func validationBody(ve *ValidationError) apigen.Error {
-	e := errorBody("INVALID_INPUT", "입력을 다시 확인해 줘")
+	e := errorBody("INVALID_INPUT", "입력한 내용을 다시 확인해 주세요")
 	fields := ve.Fields
 	e.Error.Fields = &fields
 	return e
