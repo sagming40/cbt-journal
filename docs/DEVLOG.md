@@ -6,11 +6,11 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면), `go:embed` + SPA fallback(실행 파일 하나로 화면), Taskfile · air |
+| 단계 | M1 개발 환경 · 뼈대 — 회사 PC 쪽 전부 끝, 집 PC 확인만 남음 (PLAN 2장) |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면), `go:embed` + SPA fallback(실행 파일 하나로 화면), Taskfile · air, golangci-lint, GitHub Actions(첫 실행 초록) |
 | 진행 중 | 없음 |
-| 다음에 할 일 | golangci-lint, GitHub Actions(lint · test · build) (PLAN M1 마지막 항목) → 집 PC에서 `task dev` 확인하면 M1 완료 |
-| 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `task setup` → `task migrate`) → `task dev` 확인 |
+| 다음에 할 일 | 집 PC에서 `task dev` 확인 → M1 완료 처리 → M2 인증 시작(개념 설명부터: 세션 · argon2id · sqlc) |
+| 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 Go · pnpm · Task · golangci-lint → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `task setup` → `task migrate`) → `task dev` · `task lint` 확인. VS Code `*.css` → tailwindcss 연결도 |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
@@ -43,6 +43,8 @@
 - [설계] SPA를 메서드 없는 `/`가 아니라 `GET /`로 등록: `/`로 열면 Go mux가 `POST /api/health`를 경로가 맞는 `/`로 보내 405가 404로 바뀐다. 대가로 없는 `/api/*`에 GET이 아닌 메서드는 405. ARCHITECTURE 1절.
 - `.env`는 Go가 읽지 않는다. Taskfile을 만들기 전까지는 PowerShell 한 줄로 터미널에 불러왔고, 이제 Task의 `dotenv`가 읽는다.
 - 타이핑 학습 모드로 Taskfile · air: `setup` · `dev`(air + Vite 동시, `output: prefixed`) · `gen` · `test` · `lint` · `build`(빌드 → embed 복사 → `bin/app`) · `serve` · `migrate`. 확인: 환경변수를 지운 터미널에서 `task migrate -- status` 성공, `task build` 뒤 `git status` 깨끗, `task serve` health 200, `task dev` 저장 시 재빌드 · Ctrl+C로 오류 없이 종료. README "실행"을 `task` 중심으로 다시 썼다.
+- 타이핑 학습 모드로 golangci-lint(v2.15.0, winget) + GitHub Actions. 첫 실행에서 지적 3개: 테스트의 가짜 비밀번호 G101(테스트 파일의 G101만 제외), 테스트 헬퍼 `httptest.NewRequest`의 noctx(`NewRequestWithContext`로). 확인: `task lint` 0 issues, Actions 첫 실행(run 41001543315) Go · 프론트 · 빌드 세 작업 모두 success — Taskfile의 Linux용 embed 명령과 `.gitkeep` 전략이 깨끗한 Linux에서 처음 검증됐다.
+- golangci-lint는 `go get -tool` 대신 winget: 공식 문서가 비권장(검사기 의존성이 `go.mod`와 부딪힐 수 있음). 대신 PC와 `ci.yml`의 버전을 같은 번호로 맞춘다(CLAUDE.md "자주 쓰는 명령").
 
 ### 막혔던 일
 **`git add --renormalize .` 뒤에도 `.gitattributes`가 Untracked**
@@ -101,11 +103,11 @@
 - Valkey를 끄면 `redis: ... pool.go:770: ... failed to dial` 줄이 slog 형식이 아니라 그대로 나온다. go-redis 내부 로거라서다. 기록 내용은 없어서 지금은 그대로 두고, 운영 로그를 JSON으로 모을 때(M3) 정리할지 본다.
 
 ### 이번 세션 커밋
-`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / `d1d33b2` 문서 / `84646b0` SvelteKit SPA / `73af1fb` 문서 / `93d0e2f` go:embed · SPA fallback / `2517d5b` 문서 / `58b63e4` Taskfile · air / `bb9e918` 주석 SA9009 / (이 커밋) 문서 갱신
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / `d1d33b2` 문서 / `84646b0` SvelteKit SPA / `73af1fb` 문서 / `93d0e2f` go:embed · SPA fallback / `2517d5b` 문서 / `58b63e4` Taskfile · air / `bb9e918` 주석 SA9009 / `a7bf28b` 문서 / `7b59c92` golangci-lint / `82cafa6` GitHub Actions / (이 커밋) 문서 갱신
 
 ### 다음에 할 일
-- golangci-lint (`task lint`의 `go vet`을 바꿔 끼움), GitHub Actions(lint · test · build)
-- 집 PC: README "처음 한 번" → `task dev` (M1 완료 기준)
+- 집 PC: README "처음 한 번" → `task dev` · `task lint` (M1 완료 기준의 마지막)
+- M2 인증: 개념 설명(세션 쿠키 · argon2id · sqlc)부터
 - 집 PC: 위 "기기별로 할 일"
 
 ---

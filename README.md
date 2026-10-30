@@ -39,6 +39,7 @@
 winget install --id GoLang.Go -e
 winget install --id pnpm.pnpm -e
 winget install --id Task.Task -e
+winget install --id GolangCI.golangci-lint -e   # 버전은 .github/workflows/ci.yml의 version과 맞춘다
 
 # 2. 비밀값 파일 만들기 → .env를 열어 POSTGRES_PASSWORD와 DATABASE_URL 안의 비밀번호를 같은 값으로 바꾼다
 Copy-Item .env.example .env
@@ -64,15 +65,13 @@ task dev        # API(air, 8080) + 프론트(Vite, 5176)를 한 터미널에. �
 ### 확인 · 검사
 ```powershell
 task test        # Go 테스트
-task lint        # go vet + 프론트 타입 검사 · Prettier · ESLint
+task lint        # golangci-lint(govet · staticcheck · gosec …) + 프론트 타입 검사 · Prettier · ESLint
+task fmt         # 형식 자동 맞추기 (gofmt · goimports · Prettier) — lint가 형식 오류를 내면
 curl.exe -i http://127.0.0.1:8080/api/health   # 200 {"postgres":"ok","status":"ok","valkey":"ok"}, 하나라도 죽으면 503
-
-# 형식 맞추기 (lint가 형식 오류를 내면)
-go fmt ./...
-Set-Location web; pnpm format; Set-Location ..
 
 go mod tidy      # Go import를 추가 · 삭제한 뒤 go.mod · go.sum 정리
 ```
+main에 push하면 GitHub Actions(`.github/workflows/ci.yml`)가 Go lint · test, 프론트 check · lint, `task build`를 돌린다. 결과는 GitHub 저장소의 Actions 탭.
 
 ### 실행 파일 하나로 빌드 · 실행
 ```powershell

@@ -118,11 +118,13 @@ task setup               # Go · 프론트 의존성 (처음 · pull 뒤)
 task dev                 # API(air, 8080) + 프론트 dev 서버(5176)
 task gen                 # openapi.yaml → Go · TS 생성 코드 (sqlc는 M2에서 추가)
 task test                # Go 테스트 (Vitest는 프론트 테스트가 생기면 추가)
-task lint                # go vet + svelte-check · Prettier · ESLint (golangci-lint는 M1 다음 항목)
+task lint                # golangci-lint(.golangci.yml) + svelte-check · Prettier · ESLint
+task fmt                 # gofmt · goimports · Prettier로 형식 맞추기
 task migrate             # goose up (task migrate -- status | down)
 task build               # 프론트 빌드 → embed 복사 → bin/app 하나
 task serve               # bin/app serve
 ```
+> push하면 GitHub Actions(`.github/workflows/ci.yml`)가 같은 검사를 돌린다. 커밋 전에 `task lint` · `task test`를 통과시킨다. golangci-lint 버전은 PC(winget)와 `ci.yml`을 같은 번호로 맞춘다.
 > `task`는 `.env`를 dotenv로 읽는다. `go run`으로 직접 실행하면 `.env`가 안 읽힌다. 명령 · 자주 막히는 것의 사람용 설명은 README "실행". Taskfile을 고치면 이 절과 README "실행"을 같이 고친다.
 
 ## 함정 (고치기 전에 확인)

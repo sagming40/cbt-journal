@@ -45,7 +45,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 > 기능 없이 **요청 하나가 브라우저 → Go → Postgres · Valkey까지 왕복**하는 줄기를 먼저 뚫는다. 이후 단계는 이 줄기에 기능을 붙이기만 한다.
 
 - [x] **개념 설명**: Go 기초(패키지 · 에러 값 · 인터페이스), **Valkey가 뭔지 · Redis와 관계** ([0005](decisions/0005-valkey.md)에서 약속), SvelteKit SPA 구조
-- [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task — 회사 PC 끝(2026-10-30), 집 PC 남음
+- [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task, golangci-lint — 회사 PC 끝(2026-10-30), 집 PC 남음
 - [x] v1 코드(`client/`, `server/`) 삭제, `.gitattributes`로 줄바꿈 통일
 - [x] `compose.yaml`: Postgres 18(5436) · Valkey(6380, AOF 켬)
 - [x] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example`
@@ -55,7 +55,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, **DESIGN 6장 토큰으로 테마**, 라이트/다크 전환
 - [x] `go:embed`로 프론트 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
 - [x] Taskfile: `dev` · `gen` · `test` · `lint` · `build` · `migrate` (+ `setup` · `serve`, `.env` dotenv)
-- [ ] golangci-lint, ESLint · Prettier, GitHub Actions(lint · test · build)
+- [x] golangci-lint, ESLint · Prettier, GitHub Actions(lint · test · build)
 - **완료 기준**
   - `task build`로 만든 실행 파일 하나를 띄우면 브라우저에 SvelteKit 화면이 뜨고, 화면이 `/api/health`를 불러 Postgres · Valkey `ok`를 표시한다.
   - 새로고침해도 SPA 경로가 404 없이 열리고, `/api/없는경로`는 JSON 404다.
