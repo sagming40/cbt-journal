@@ -54,9 +54,10 @@ tasks:
       - task: web:gen
 
   test:
-    desc: Go 테스트 (프론트 Vitest는 테스트가 생기면 여기에 붙인다)
+    desc: Go 테스트(통합 테스트는 Docker 필요 — 꺼져 있으면 건너뜀) + 프론트 Vitest
     cmds:
       - go test ./...
+      - task: web:test
 
   lint:
     desc: golangci-lint(govet · staticcheck · gosec …) + 프론트 타입 검사 · Prettier · ESLint
@@ -108,6 +109,12 @@ tasks:
     cmds:
       - pnpm check
       - pnpm lint
+
+  web:test:
+    internal: true
+    dir: web
+    cmds:
+      - pnpm test
 
   web:fmt:
     internal: true
