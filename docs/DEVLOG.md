@@ -6,10 +6,10 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | **M3 첫 배포 진행 중** — 서버 `cbt-1` · 기본 보안 끝, 다음은 Docker · Caddy · 앱 (PLAN 2장) |
+| 단계 | **M3 첫 배포 진행 중** — 서버 `cbt-1` · 기본 보안 · Docker 끝, 다음은 운영 구성 설계 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(두 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
-| 진행 중 | M3: 자동 보안 업데이트 확인 → Docker · Postgres/Valkey(compose) → Caddy → 앱 → `cbt.sagming.com` DNS |
-| 다음에 할 일 | 서버에 Docker 설치(24.04 공식 저장소) → 운영용 compose → Caddy → 앱 실행(systemd) → DNS 회색 구름 → M3 완료 기준 확인 (PLAN M3) |
+| 진행 중 | M3: 운영 구성(운영용 compose · Caddy · 앱 실행 방식 · 배포 스크립트) 설계를 사용자에게 먼저 보여 주고 구현 |
+| 다음에 할 일 | 운영 구성 설계 → 저장소에 운영 파일 추가 → 서버에 올리기 → `cbt.sagming.com` DNS(회색 구름) → M3 완료 기준 확인 (PLAN M3) |
 | 기기별로 할 일 | **회사 PC**: SSH 키를 따로 만들어(`-C "cbt-journal company-pc"`, 파일 `cbt_vultr`) Vultr가 아니라 **서버의 `~/.ssh/authorized_keys`에 추가**해야 접속된다(서버가 이미 만들어져서 Vultr 등록만으로는 안 들어감). 접속: `ssh -i "$HOME.sshcbt_vultr" sagming40@<서버 IP>` |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
@@ -46,8 +46,13 @@
 - 원인: 새 계정 접속 테스트를 PC의 새 탭이 아니라 root 탭(서버 안)에서 쳤다. Windows 경로(`$HOME.ssh…`)가 리눅스에서 안 맞아 `Identity file … not accessible`.
 - 배운 것: 명령 치기 전에 프롬프트를 본다 — `PS C:…>` = 내 PC, `root@cbt-1:~#` · `sagming40@cbt-1:~$` = 서버.
 
+**`docker run hello-world`가 `failed to connect to the docker API … no such file`**
+- 원인: 설치 명령을 옮기다 맨 앞 `docker-ce`(Engine 본체)가 빠지고 `docker-ce-cli`(리모컨)부터 설치됐다. 본체가 없으니 명령을 받을 곳이 없다.
+- 해결: `sudo apt-get install -y docker-ce` → `Hello from Docker!`. 자동 보안 업데이트도 켜져 있음을 확인.
+- 배운 것: 설치 뒤 "설치된 패키지 목록"을 계획과 한 번 맞춰 본다(이번엔 4개 = 하나 빠짐).
+
 ### 이번 세션 커밋
-(이 커밋) 서버 · 기본 보안 기록
+`60acc9c` 서버 · 기본 보안 기록 / (이 커밋) Docker 설치 기록
 
 ### 다음에 할 일
 - 서버: 자동 보안 업데이트 확인 → Docker → 운영용 compose(Postgres · Valkey, 127.0.0.1에만) → Caddy → 앱 → DNS
