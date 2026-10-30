@@ -60,7 +60,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 	// ListenAndServe는 서버가 끝날 때까지 돌아오지 않는다 → 고루틴으로 따로 돌리고 결과는 채널로 받는다.
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("서버 시작", "addr", cfg.HTTPAddr, "env", cfg.Env)
+		logger.Info("서버 시작", "addr", cfg.HTTPAddr, "env", cfg.Env, "version", version)
 		errCh <- srv.ListenAndServe()
 	}()
 

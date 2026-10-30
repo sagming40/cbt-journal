@@ -17,10 +17,16 @@ import (
 const usage = `사용법: app <명령>
 
 명령:
-  serve                    API 서버를 띄운다
-  migrate up|down|status   DB 마이그레이션 (goose)
+  serve                       API 서버를 띄운다
+  migrate up|down|status      DB 마이그레이션 (goose)
   user create|reset-password  계정 만들기 · 비밀번호 재설정 (가입이 막힌 동안)
+  version                     빌드한 커밋 번호
 `
+
+// version은 빌드할 때 -ldflags "-X main.version=<커밋>"으로 바깥에서 채운다 (ARCHITECTURE 7.1절)
+// 비유 ─ 공장에서 완성품에 제조번호 도장을 찍는 것 → 코드에는 빈칸("dev")만 두고, 포장(빌드) 때 번호를 찍는다
+// go build · go run으로 만든 실행 파일은 그냥 "dev"로 남는다
+var version = "dev"
 
 // command는 서브커맨드 하나가 하는 일이다. args는 명령 이름 뒤에 붙은 나머지 인자다.
 type command func(ctx context.Context, cfg config.Config, logger *slog.Logger, args []string) error
@@ -46,6 +52,12 @@ func run(args []string) error {
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, usage)
 		return errors.New("명령이 없다")
+	}
+	// version은 DB 설정도 필요없다 → 설정을 읽기 전에 답한다
+	// 서버에서 env 없이도 "지금 돌고 있는 커밋이 어느 커밋인지"를 바로 확인할 수 있게 한다
+	if args[0] == "version" {
+		fmt.Println(version)
+		return nil
 	}
 	cmd, ok := commands[args[0]]
 	if !ok {

@@ -78,6 +78,25 @@ tasks:
       - task: embed
       - go build -o bin/app{{exeExt}} ./cmd/app
 
+  build:linux:
+    desc: 운영 서버용 실행 파일 (Linux amd64, 커밋 번호 포함) → bin/app-linux-amd64
+    vars:
+      # 지금 커밋의 짧은 번호. 커밋 하지 않은 변경이 있으면 끝에 -dirty가 붙는다 ─ 배포스크립트가 그걸 보고 거부한다
+      COMMIT:
+        sh: git describe --always --dirty=-dirty --abbrev=12 --exclude="*"
+    # env는 작업 단위로 건다. cmd 하나에 건 env는 Task가 조용히 무시해서 Windows용이 만들어졌다. (2026-10-31)
+    env:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: "0"
+    cmds:
+      - task: web:build
+      - task: embed
+      # GOOS · GOARCH: Windows에서 Linux용을 만든다(Cross Compile) CGO_ENABLED=0: C 라이브러리 없이 순수 Go로만
+      # ─ 서버에서 따로 깔 게 없는 실행 파일 하나가 된다 (ARCHITECTURE 7.1절)
+      # ─ -trimpath: 내 PC 폴더 경로(D:\_dev\…)를 실행 파일에서 지운다. -s -w: 디버그 정보를 제외시켜 크기를 줄인다
+      - cmd: go build -trimpath -ldflags "-s -w -X main.version={{.COMMIT}}" -o bin/app-linux-amd64 ./cmd/app
+
   serve:
     desc: task build로 만든 실행 파일 띄우기 (.env 자동) → http://127.0.0.1:8080
     cmds:
