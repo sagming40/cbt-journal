@@ -73,10 +73,10 @@
   ];
   const STEPS = {
     5: `<p class="q">이 생각이 맞다고 볼 수 있는 사실은?</p>
-        <p class="help">느낌 말고, 다른 사람도 확인할 수 있는 사실로. 없으면 비워 둬도 돼.</p>
+        <p class="help">느낌 말고, 다른 사람도 확인할 수 있는 사실로 적어 주세요. 없으면 비워 둬도 괜찮아요.</p>
         <textarea class="input" aria-label="근거">숫자를 틀린 건 사실. 팀장님이 정정할 때 몇 명이 나를 봤음</textarea>`,
-    8: `<p class="q">지금은 얼마나 느껴져?</p>
-        <p class="help">처음 강도는 흐리게 같이 보여 줄게. 안 줄었어도 괜찮아.</p>
+    8: `<p class="q">지금은 얼마나 느껴지나요?</p>
+        <p class="help">처음 강도는 흐리게 같이 보여 드릴게요. 안 줄었어도 괜찮아요.</p>
         <div id="after"></div>`,
   };
   let step = new URLSearchParams(location.search).get('step') === '8' ? 8 : 5;
