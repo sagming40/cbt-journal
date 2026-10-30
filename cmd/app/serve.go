@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sagming40/cbt-journal/internal/auth"
 	"github.com/sagming40/cbt-journal/internal/cache"
 	"github.com/sagming40/cbt-journal/internal/config"
 	"github.com/sagming40/cbt-journal/internal/db"
@@ -30,14 +31,28 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 	}
 	defer rdb.Close()
 
+	authSvc := auth.NewService(auth.Options{
+		Pool:        pool,
+		Valkey:      rdb,
+		Breach:      auth.NewPwnedPasswords(), // 유출 비밀번호 확인 (REQUIREMENTS A10)
+		Logger:      logger,
+		AllowSignup: cfg.AllowSignup,
+	})
+
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
-		Handler: server.New(logger, server.Checks{
-			// 메서드 값: pool.Ping 자체가 "ctx를 받아 error를 돌려주는 함수"라 그대로 꽂힌다.
-			Postgres: pool.Ping,
-			// go-redis의 Ping은 결과 상자를 돌려줘서, 에러만 꺼내는 작은 어댑터를 씌운다.
-			Valkey: func(ctx context.Context) error { return rdb.Ping(ctx).Err() },
-		}, webdist.FS()),
+		Handler: server.New(server.Deps{
+			Logger: logger,
+			Checks: server.Checks{
+				// 메서드 값: pool.Ping 자체가 "ctx를 받아 error를 돌려주는 함수"라 그대로 꽂힌다.
+				Postgres: pool.Ping,
+				// go-redis의 Ping은 결과 상자를 돌려줘서, 에러만 꺼내는 작은 어댑터를 씌운다.
+				Valkey: func(ctx context.Context) error { return rdb.Ping(ctx).Err() },
+			},
+			Web:            webdist.FS(),
+			Auth:           authSvc,
+			TrustedProxies: cfg.TrustedProxies,
+		}),
 		// 헤더를 아주 느리게 보내 연결을 붙잡아 두는 공격(Slowloris)을 막는다.
 		ReadHeaderTimeout: 5 * time.Second,
 	}

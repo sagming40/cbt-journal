@@ -55,7 +55,7 @@ func TestHealth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rec := do(New(discard, tt.checks, fstest.MapFS{}), http.MethodGet)
+			rec := do(New(Deps{Logger: discard, Checks: tt.checks, Web: fstest.MapFS{}}), http.MethodGet)
 
 			if rec.Code != tt.wantCode {
 				t.Fatalf("상태 코드 = %d, %d이어야 한다", rec.Code, tt.wantCode)
@@ -76,7 +76,7 @@ func TestHealth(t *testing.T) {
 	}
 
 	t.Run("POST는 405", func(t *testing.T) {
-		h := New(discard, Checks{Postgres: okCheck, Valkey: okCheck}, fstest.MapFS{})
+		h := New(Deps{Logger: discard, Checks: Checks{Postgres: okCheck, Valkey: okCheck}, Web: fstest.MapFS{}})
 		if rec := do(h, http.MethodPost); rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("상태 코드 = %d, 405여야 한다", rec.Code)
 		}

@@ -25,7 +25,7 @@ func get(h http.Handler, method, path string) *httptest.ResponseRecorder {
 }
 
 func TestSPA(t *testing.T) {
-	h := New(slog.New(slog.DiscardHandler), Checks{Postgres: okCheck, Valkey: okCheck}, fakeWeb)
+	h := New(Deps{Logger: slog.New(slog.DiscardHandler), Checks: Checks{Postgres: okCheck, Valkey: okCheck}, Web: fakeWeb})
 
 	tests := []struct {
 		name     string
@@ -97,7 +97,7 @@ func TestSPA(t *testing.T) {
 	})
 
 	t.Run("프론트 빌드가 없으면 503 안내", func(t *testing.T) {
-		empty := New(slog.New(slog.DiscardHandler), Checks{Postgres: okCheck, Valkey: okCheck}, fstest.MapFS{".gitkeep": {}})
+		empty := New(Deps{Logger: slog.New(slog.DiscardHandler), Checks: Checks{Postgres: okCheck, Valkey: okCheck}, Web: fstest.MapFS{".gitkeep": {}}})
 		if rec := get(empty, http.MethodGet, "/"); rec.Code != http.StatusServiceUnavailable {
 			t.Errorf("상태 코드 = %d, 503이어야 한다", rec.Code)
 		}

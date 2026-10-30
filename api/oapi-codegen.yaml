@@ -5,3 +5,7 @@ generate:
   models: true          # 스키마 → Go 타입 (Health, CheckStatus)
   std-http-server: true # Go 표준 net/http(1.22+ ServeMux)에 경로 등록
   strict-server: true   # 요청 · 응답을 타입으로 받는 "빈칸 채우기" 인터페이스
+compatibility:
+  # 인증이 필요한 경로의 요청 context에 CookieAuthScopes 표시를 넣는다.
+  # 인증 미들웨어는 이 표시만 보고 401을 준다 — openapi.yaml의 security가 곧 잠금 목록이 된다 (ARCHITECTURE 3.1절 "기본 잠금").
+  enable-auth-scopes-on-context: true
