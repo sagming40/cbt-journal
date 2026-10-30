@@ -6,17 +6,46 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | M0 완료 → M1 개발 환경 · 뼈대 시작 전 (PLAN 2장) |
-| 끝난 것 | 결정 기록 6개, REQUIREMENTS · ARCHITECTURE · DATA_MODEL · DESIGN · PLAN, 목업 4장, 색 확정(B), CLAUDE.md, README |
+| 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml` |
 | 진행 중 | 없음 |
-| 다음에 할 일 | M1 시작: 개념 설명(Go 기초 · Valkey · SvelteKit SPA) → 도구 설치(사용자 직접, 두 PC) |
-| 기기별로 할 일 | M1에서 Go · pnpm · Task 설치 (집 PC · 회사 PC 둘 다) |
+| 다음에 할 일 | Go 모듈 · `cmd/app` · `internal/config` · `slog` · `.env.example` 앱 설정 (PLAN M1 다섯째 항목) |
+| 기기별로 할 일 | **집 PC**: Go · pnpm · Task 설치(`winget install --id GoLang.Go -e` / `pnpm.pnpm` / `Task.Task`), `git pull` 뒤 `.env.example`을 `.env`로 복사, Docker Desktop 켜고 `docker compose up -d` |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
 - 막혔던 일은 해결됐어도 남긴다. 형식: **증상 / 원인 / 해결 / 배운 것**.
 - 구현 중에 설계를 바꿨으면 `[설계]` 항목으로 이유를 적고, 해당 설계 문서의 변경 이력도 고친다.
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
+
+---
+
+## 2026-10-30 · M1 시작 ─ 도구 설치 · v1 삭제 · compose (회사 PC)
+
+### 한 일
+- 개념 설명: Go(패키지 · 에러 값 · 인터페이스), Valkey와 Redis의 관계, SvelteKit SPA · SPA fallback, goose.
+- 회사 PC에 winget으로 Go 1.27.0 · pnpm 12.15.0 · Task 3.54.0 설치 (사용자 직접).
+- 타이핑 학습 모드로 v1 코드 삭제 · `.gitignore` 재작성 · `.gitattributes` · `compose.yaml` · `.env.example` 작성.
+- 확인: 두 컨테이너 healthy, PostgreSQL 18.6 · Valkey 9.1.3, 포트는 `127.0.0.1`에만 열림, AOF 켬 — TTL 600초 키가 Valkey 재시작 뒤에도 남음(ttl 595).
+- 질문 정리: "Alembic을 쓸 수 있나" → 쓸 수는 있지만 Python 런타임이 필요해 실행 파일 하나 배포가 깨지고, sqlc가 `.py` 마이그레이션을 못 읽어 스키마 원본이 둘이 된다. goose 유지.
+
+### 막혔던 일
+**`git add --renormalize .` 뒤에도 `.gitattributes`가 Untracked**
+- 증상: renormalize를 했는데 `.gitattributes`만 stage되지 않았다.
+- 원인: `--renormalize`는 이미 추적 중인 파일만 다시 검사한다. 새 파일은 대상이 아니다.
+- 해결: `git add .gitattributes`를 따로. 규칙 자체는 작업 폴더에 파일만 있어도 적용돼 renormalize 결과는 맞았다(바뀐 파일 0개).
+- 배운 것: 규칙 파일은 "적용"과 "커밋"이 별개다.
+
+**`psql` 결과 뒤에 `(END)`가 떠서 멈춘 것처럼 보임**
+- 원인: `docker compose exec`가 터미널을 붙여 주면 psql이 결과를 페이저(less)로 보여 준다.
+- 해결: `q`로 나온다. 한 줄 확인이면 `-tAc` 옵션으로 페이저 없이 값만 받는다.
+
+### 이번 세션 커밋
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / (이 커밋) 문서 갱신
+
+### 다음에 할 일
+- Go 모듈 · `cmd/app`(`serve` · `migrate`) · `internal/config` · `slog`, `.env.example`에 앱 설정 추가
+- 집 PC: 위 "기기별로 할 일"
 
 ---
 

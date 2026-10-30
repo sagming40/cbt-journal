@@ -125,7 +125,8 @@ task build               # 프론트 빌드 → embed → 실행 파일 하나
 
 ## 함정 (고치기 전에 확인)
 - **5432는 이미 차 있다**: 두 PC 모두 PostgreSQL을 직접 설치해 둬서 기본 포트를 쓴다. compose Postgres는 `5436`. 접속 문자열 포트를 헷갈리면 엉뚱한 DB(직접 설치한 쪽)에 붙는다.
-- **줄바꿈**: Windows라 git이 LF → CRLF 경고를 낸다. M1에서 `.gitattributes`로 통일하기 전까지는 경고만 뜨고 문제없다.
+- **줄바꿈은 LF**: `.gitattributes`가 모든 글자 파일을 `eol=lf`로 정한다(PC의 `core.autocrlf`보다 우선). 에디터가 새 파일을 CRLF로 저장해도 커밋할 때 LF로 들어간다. `*.ps1` · `*.cmd` · `*.bat`만 CRLF.
+- **Postgres 18 이미지 볼륨은 `/var/lib/postgresql`**: 17까지처럼 `.../data`에 묶는 예전 자료를 따라 하지 않는다(18 이미지의 `PGDATA`는 `/var/lib/postgresql/18/docker`라서 데이터가 볼륨 밖에 쌓이거나 시작이 실패한다).
 - **`npx`는 패키지를 임시로 받는다**: 없는 패키지면 설치를 묻는다(프로젝트에는 안 생김). 사용자에게 미리 말하고 쓴다.
 - **회사 PC에는 기본 Python이 없다**: conda 환경이 켜진 터미널에서만 `python`이 된다. 이 프로젝트 빌드 · 실행에는 Python이 필요 없다.
 - **휴대폰 확인은 배포 서버로**: 개발 서버(`http://IP주소`)에서는 `Secure` 쿠키가 저장되지 않아 휴대폰 로그인이 안 된다. 휴대폰이 필요한 확인은 M3(첫 배포) 이후 배포 서버에서 한다 (ARCHITECTURE 6절).

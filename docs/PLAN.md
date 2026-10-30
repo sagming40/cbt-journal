@@ -14,7 +14,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
-| M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ⬜ |
+| M1 | 개발 환경 · 뼈대 (한 줄기 관통) | 🔄 |
 | M2 | 인증 | ⬜ |
 | M3 | 첫 배포 (인증만 있는 빈 앱) | ⬜ |
 | M4 | 체크인 | ⬜ |
@@ -44,10 +44,10 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 ### M1 · 개발 환경 · 뼈대
 > 기능 없이 **요청 하나가 브라우저 → Go → Postgres · Valkey까지 왕복**하는 줄기를 먼저 뚫는다. 이후 단계는 이 줄기에 기능을 붙이기만 한다.
 
-- [ ] **개념 설명**: Go 기초(패키지 · 에러 값 · 인터페이스), **Valkey가 뭔지 · Redis와 관계** ([0005](decisions/0005-valkey.md)에서 약속), SvelteKit SPA 구조
-- [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task
-- [ ] v1 코드(`client/`, `server/`) 삭제, `.gitattributes`로 줄바꿈 통일
-- [ ] `compose.yaml`: Postgres 18(5436) · Valkey(6380, AOF 켬)
+- [x] **개념 설명**: Go 기초(패키지 · 에러 값 · 인터페이스), **Valkey가 뭔지 · Redis와 관계** ([0005](decisions/0005-valkey.md)에서 약속), SvelteKit SPA 구조
+- [ ] 도구 설치 (사용자가 직접, 집 PC · 회사 PC 둘 다): Go, pnpm, Task — 회사 PC 끝(2026-10-30), 집 PC 남음
+- [x] v1 코드(`client/`, `server/`) 삭제, `.gitattributes`로 줄바꿈 통일
+- [x] `compose.yaml`: Postgres 18(5436) · Valkey(6380, AOF 켬)
 - [ ] Go 모듈 · `cmd/app` (`serve` · `migrate`), `internal/config` (빠진 환경변수면 시작 거부), `slog`, `.env.example`
 - [ ] goose 설정 + 첫 마이그레이션(빈 것), `GET /api/health` (Postgres · Valkey 연결 확인)
 - [ ] `api/openapi.yaml` 첫 판(health만) + `oapi-codegen` · `openapi-typescript` 생성 연결

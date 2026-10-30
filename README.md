@@ -14,7 +14,7 @@
 자세한 범위는 [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
 ## 상태
-**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 설계 문서 단계이고, `client/` · `server/`는 v1 코드라 다음 단계(M1)에서 지운다. v1은 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
+**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 개발 환경 · 뼈대 단계(M1)다. v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
 
 어디까지 왔는지는 [docs/PLAN.md](docs/PLAN.md) 2장에서 본다(이 README에는 진행 상황을 적지 않는다).
 
