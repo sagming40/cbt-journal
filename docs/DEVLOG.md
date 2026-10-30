@@ -6,18 +6,51 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | **M3 첫 배포 진행 중** — 배포 환경 결정(0007) · Vultr · 도메인 끝, 다음은 SSH 키 → 서버 만들기 (PLAN 2장) |
+| 단계 | **M3 첫 배포 진행 중** — 서버 `cbt-1` · 기본 보안 끝, 다음은 Docker · Caddy · 앱 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(두 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
-| 진행 중 | M3: SSH 키 만들기 |
-| 다음에 할 일 | SSH 키(사용자 직접) → Vultr 서버(Shared CPU 1GB · 서울 · Ubuntu 24.04, 자동 백업 옵션 끔) → 서버 기본 보안 → Caddy · 앱 · compose → `cbt.sagming.com` DNS(회색 구름) (PLAN M3) |
-| 기기별로 할 일 | 없음 — 두 PC 모두 도구 · `.env` · 컨테이너 · 계정 준비 끝 |
-| **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare) |
+| 진행 중 | M3: 자동 보안 업데이트 확인 → Docker · Postgres/Valkey(compose) → Caddy → 앱 → `cbt.sagming.com` DNS |
+| 다음에 할 일 | 서버에 Docker 설치(24.04 공식 저장소) → 운영용 compose → Caddy → 앱 실행(systemd) → DNS 회색 구름 → M3 완료 기준 확인 (PLAN M3) |
+| 기기별로 할 일 | **회사 PC**: SSH 키를 따로 만들어(`-C "cbt-journal company-pc"`, 파일 `cbt_vultr`) Vultr가 아니라 **서버의 `~/.ssh/authorized_keys`에 추가**해야 접속된다(서버가 이미 만들어져서 Vultr 등록만으로는 안 들어감). 접속: `ssh -i "$HOME.sshcbt_vultr" sagming40@<서버 IP>` |
+| **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
 - 막혔던 일은 해결됐어도 남긴다. 형식: **증상 / 원인 / 해결 / 배운 것**.
 - 구현 중에 설계를 바꿨으면 `[설계]` 항목으로 이유를 적고, 해당 설계 문서의 변경 이력도 고친다.
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
+
+---
+
+## 2026-10-30 · M3 서버 만들기 · 기본 보안 (집 PC, 사용자 직접)
+
+### 한 일
+- SSH 키: PC마다 따로 만든다(한 PC를 잃으면 그 키만 지운다). 집 PC `~/.ssh/cbt_vultr`(ed25519, passphrase 있음), Vultr에 `home-pc`로 등록.
+- Vultr 서버 `cbt-1`: Shared CPU `vc2-1c-1gb`(1 vCPU · 1GB · 25GB SSD, $5/월) · 서울 · Ubuntu 24.04 LTS · **IPv4만** · 자동 백업 켬(+$1/월, 11-30에 다시 판단). 접속 사용자 `sagming40`(sudo).
+- 기본 보안 (확인한 관찰값):
+  - `cloud-init status` done → `apt upgrade` 65개 → 재부팅 → `uname -r` = 6.8.0-147-generic
+  - ufw: 기본 deny incoming · allow outgoing, 열린 문 22 · 80 · 443뿐(Vultr가 22를 미리 열어 둠, 다른 규칙 없음)
+  - SSH 잠금 `/etc/ssh/sshd_config.d/00-hardening.conf`(PermitRootLogin no · PasswordAuthentication no · KbdInteractiveAuthentication no) → 바깥에서: root 접속 `Permission denied (publickey)`, 비밀번호로 시도해도 묻지 않고 거부, `sagming40` + 키는 접속됨
+
+### [설계] 정하면서 바꾼 것
+- **OS는 24.04 LTS** (사용자 결정). 26.04 LTS(지원 2031)도 후보였지만 자료가 많은 쪽. 지원 종료 2029-04 → 그 전에 새 서버로 복원해 옮긴다. 접속 화면의 `do-release-upgrade` 안내는 따르지 않는다.
+- **자동 백업은 켠다**: 처음엔 "서버 값의 20%"라 끄자고 했지만 실제 금액은 월 $1이고, 서버 설정을 처음 해 보는 지금은 "서버 통째로 되돌리기"가 값어치가 있다. 우리 DB 백업이 생긴 뒤 11-30에 다시 판단.
+- **IPv6는 끈다**: 문이 하나 더 생겨 방화벽 · DNS를 두 벌 관리해야 하고, **요청 제한이 IP 단위라 IPv6(사용자 한 명이 /64 블록을 가짐)에서는 주소를 바꿔 가며 피할 수 있다**. IPv6를 켤 때는 요청 제한 키를 IPv6 /64 단위로 묶도록 코드를 먼저 고친다(지금 코드의 구멍 — 메모).
+- 업데이트 중 "이미 수정된 설정 파일을 덮어쓸까?"(sshd_config · PAM)는 전부 **지금 것 유지**. Vultr가 맞춰 둔 상태가 정상이고, SSH는 `sshd_config.d/00-…` 파일로 덮어쓴다(sshd는 **먼저 읽은 값**을 쓰므로 Vultr의 `50-cloud-init.conf`보다 앞 번호).
+
+### 막혔던 일
+**`ssh-keygen`이 `No such file or directory`**
+- 원인: `~/.ssh` 폴더가 없었다. `-f`로 위치를 정하면 폴더를 만들어 주지 않는다.
+- 해결: `New-Item -ItemType Directory -Force "$HOME.ssh"` 뒤 다시.
+
+**서버 안에서 `ssh`를 쳐서 서버가 자기 자신에게 접속하려 함**
+- 원인: 새 계정 접속 테스트를 PC의 새 탭이 아니라 root 탭(서버 안)에서 쳤다. Windows 경로(`$HOME.ssh…`)가 리눅스에서 안 맞아 `Identity file … not accessible`.
+- 배운 것: 명령 치기 전에 프롬프트를 본다 — `PS C:…>` = 내 PC, `root@cbt-1:~#` · `sagming40@cbt-1:~$` = 서버.
+
+### 이번 세션 커밋
+(이 커밋) 서버 · 기본 보안 기록
+
+### 다음에 할 일
+- 서버: 자동 보안 업데이트 확인 → Docker → 운영용 compose(Postgres · Valkey, 127.0.0.1에만) → Caddy → 앱 → DNS
 
 ---
 

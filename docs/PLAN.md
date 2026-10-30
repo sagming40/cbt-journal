@@ -16,7 +16,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
 | M2 | 인증 | ✅ 2026-10-30 |
-| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 Vultr · 도메인 준비 끝, 서버 만들기 전 |
+| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 서버 · 기본 보안 끝, 다음은 Docker · Caddy · 앱 |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
 | M6 | 기록 목록 · 통계 → **혼자 쓰기 시작** | ⬜ |
@@ -83,7 +83,8 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 
 - [x] **배포 환경 결정**(결정 기록 0007): 개념 설명(서버 · 도메인 · HTTPS · 리버스 프록시) → 후보 비교 · 시드니/서울 왕복 실측 → **Vultr 서울** (사용자 결정, 2026-10-30)
 - [x] Vultr 계정(크레딧 $250, 만료 2026-11-30) · Cloudflare 계정(2단계 인증 앱 + 이메일, 백업 코드) · 도메인 `sagming.com` 등록(만료 2027-10-30, 자동 갱신) (사용자 직접) *(계획에 없던 작업)*
-- [ ] SSH 키 만들기 (사용자 직접) → Vultr 서버 만들기(Shared CPU 1GB · 서울 · Ubuntu 24.04) → 서버 기본 보안(방화벽 22 · 80 · 443, SSH 키로만, 자동 보안 업데이트)
+- [x] SSH 키(PC마다 따로, 집 PC = `home-pc`) → Vultr 서버 `cbt-1`(Shared CPU `vc2-1c-1gb` · 서울 · Ubuntu 24.04 · IPv4만 · 자동 백업 켬) → 서버 기본 보안: 보안 업데이트 · 재부팅, ufw(22 · 80 · 443만), 일반 계정 + sudo, SSH 잠금(root 금지 · 비밀번호 금지) (사용자 직접, 2026-10-30)
+- [ ] 자동 보안 업데이트(unattended-upgrades) 켜져 있는지 확인, 회사 PC SSH 키 추가
 - [ ] Caddy + 앱(systemd 또는 compose) + Postgres · Valkey(compose, Valkey 비밀번호) 구성, `cbt.sagming.com` DNS(회색 구름)
 - [ ] 운영 설정: HTTPS, 비밀값, DB · Valkey 포트 외부 차단, 보안 헤더
 - [ ] 리버스 프록시 뒤 실제 클라이언트 IP 규칙 (`TRUSTED_PROXIES`, ARCHITECTURE 3.3절)
