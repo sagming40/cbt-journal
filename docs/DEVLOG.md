@@ -7,10 +7,10 @@
 | 항목 | 내용 |
 |---|---|
 | 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml` |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · config · slog · `/api/health`(DB 확인 전) |
 | 진행 중 | 없음 |
-| 다음에 할 일 | Go 모듈 · `cmd/app` · `internal/config` · `slog` · `.env.example` 앱 설정 (PLAN M1 다섯째 항목) |
-| 기기별로 할 일 | **집 PC**: Go · pnpm · Task 설치(`winget install --id GoLang.Go -e` / `pnpm.pnpm` / `Task.Task`), `git pull` 뒤 `.env.example`을 `.env`로 복사, Docker Desktop 켜고 `docker compose up -d` |
+| 다음에 할 일 | goose 설정 + 첫 마이그레이션 + `app migrate`, `/api/health`에 Postgres · Valkey 확인 (PLAN M1 여섯째 항목. pgx · go-redis · goose는 사용자가 `go get`) |
+| 기기별로 할 일 | **집 PC**: Go · pnpm · Task 설치(`winget install --id GoLang.Go -e` / `pnpm.pnpm` / `Task.Task`), `git pull` 뒤 `.env.example`을 `.env`로 복사(앱 설정 포함), Docker Desktop 켜고 `docker compose up -d` |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
@@ -30,6 +30,9 @@
 - 질문 정리: "Alembic을 쓸 수 있나" → 쓸 수는 있지만 Python 런타임이 필요해 실행 파일 하나 배포가 깨지고, sqlc가 `.py` 마이그레이션을 못 읽어 스키마 원본이 둘이 된다. goose 유지.
 - 외부 API 후보 검토: 기록 내용을 보내지 않는 것만 고름 → REQUIREMENTS A10(유출 비밀번호 거절 — L로 적었다가 사용자 결정으로 M, PLAN M2에 추가) · X3(날씨) · 5.3절 메일 발송 API. 사고 기록 · 인지 왜곡 전용 공개 API는 찾아봤지만 쓸 만한 게 없다(있는 것은 기록 내용을 통째로 보내는 방식이라 5.1절 위반).
 
+- 타이핑 학습 모드로 Go 첫 코드: `go.mod`, `internal/config`(필수 값 모아서 한 번에 거부, 에러에 비밀값 없음), `internal/server`(`GET /api/health`), `cmd/app`(서브커맨드 표 · slog · 우아한 종료). 확인: 테스트 config 4 · server 1 함수 통과, GET 200 / POST 405, Ctrl+C → "서버 종료" 로그.
+- `.env`는 Go가 읽지 않는다. Taskfile을 만들기 전까지는 PowerShell 한 줄로 터미널에 불러온다(Taskfile에서 `dotenv`로 대체 예정).
+
 ### 막혔던 일
 **`git add --renormalize .` 뒤에도 `.gitattributes`가 Untracked**
 - 증상: renormalize를 했는데 `.gitattributes`만 stage되지 않았다.
@@ -42,10 +45,10 @@
 - 해결: `q`로 나온다. 한 줄 확인이면 `-tAc` 옵션으로 페이저 없이 값만 받는다.
 
 ### 이번 세션 커밋
-`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / (이 커밋) 문서 갱신
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / (이 커밋) 문서 갱신
 
 ### 다음에 할 일
-- Go 모듈 · `cmd/app`(`serve` · `migrate`) · `internal/config` · `slog`, `.env.example`에 앱 설정 추가
+- goose 설정 + 첫 마이그레이션(빈 것) + `app migrate`, `/api/health`에 Postgres · Valkey 연결 확인
 - 집 PC: 위 "기기별로 할 일"
 
 ---
