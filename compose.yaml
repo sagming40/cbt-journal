@@ -1,0 +1,46 @@
+# 로컬 개발용 Postgres · Valkey (ARCHITECTURE 6절)
+# 앱(Go · 프론트)은 컨테이너 밖에서 돌린다. 여기서는 "창고(Postgres)와 포스트잇(Valkey)"만 띄운다.
+name: cbt-journal
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      # 값은 .env에서 읽는다. 없으면 :? 뒤 문구를 내고 시작을 거부한다 — 빈 비밀번호로 뜨는 사고를 막는다.
+      POSTGRES_USER: ${POSTGRES_USER:?.env에 POSTGRES_USER가 없다}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD가 없다}
+      POSTGRES_DB: ${POSTGRES_DB:?.env에 POSTGRES_DB가 없다}
+    ports:
+      # 5432는 직접 설치한 Postgres가 쓰고 있어서 5436으로 비킨다 (ARCHITECTURE 6절).
+      # 127.0.0.1에만 열어서 회사 네트워크의 다른 PC는 붙을 수 없게 한다.
+      - "127.0.0.1:5436:5432"
+    volumes:
+      # Postgres 18 이미지부터는 /var/lib/postgresql 자체를 묶는다 (17까지는 .../data).
+      # 버전별 하위 폴더를 이미지가 알아서 만들어서, 나중에 19로 올릴 때 데이터가 섞이지 않는다.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      # $$는 compose가 아니라 컨테이너 안 셸이 변수를 풀게 하려는 이스케이프다.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:9
+    # AOF: 쓰는 명령을 파일에 일기처럼 적어 두고, 재시작하면 다시 읽어 복원한다.
+    # 그래서 컨테이너를 껐다 켜도 초안이 남는다 (DATA_MODEL 4.2절, PLAN M5 완료 기준).
+    command: ["valkey-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+# 이름 붙인 볼륨: 컨테이너를 지워도 데이터는 남는다. 지우려면 docker compose down -v.
+volumes:
+  pgdata:
+  valkeydata:
