@@ -7,10 +7,10 @@
 | 항목 | 내용 |
 |---|---|
 | 단계 | M1 개발 환경 · 뼈대 진행 중 (PLAN 2장) |
-| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버 |
+| 끝난 것 | M0 전부. M1: 개념 설명, 회사 PC 도구 설치, v1 코드 삭제, `.gitattributes`, `compose.yaml`, Go 모듈 · `app serve` · `app migrate` · config · slog, `/api/health`(Postgres · Valkey 확인), README "실행", `api/openapi.yaml` + oapi-codegen strict 서버, SvelteKit SPA(shadcn-svelte · 토큰 테마 · openapi-fetch · health 화면) |
 | 진행 중 | 없음 |
-| 다음에 할 일 | SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, DESIGN 6장 토큰 테마, `openapi-typescript` 연결 (PLAN M1 여덟째 항목 + 일곱째의 남은 반) |
-| 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `go mod download` → `migrate up`) |
+| 다음에 할 일 | `go:embed`로 `web/build` 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404) (PLAN M1 아홉째 항목) |
+| 기기별로 할 일 | **집 PC**: README "실행 → 처음 한 번" 그대로 (도구 설치 → `.env` 만들기(두 비밀번호 맞추기) → `docker compose up -d` → `go mod download` → `migrate up` → `web`에서 `pnpm install --frozen-lockfile`) |
 
 ## 작성 규칙
 - 세션(작업 단위)이 끝날 때 날짜 블록을 맨 위에 추가하고, 위 "현재 상태"를 고친다.
@@ -36,6 +36,9 @@
 - 타이핑 학습 모드로 `api/openapi.yaml` 첫 판 + oapi-codegen(`go get -tool`로 go.mod에 고정, strict · std-http). 경로 등록을 생성 코드에 맡기고 `var _ apigen.StrictServerInterface = (*handler)(nil)`로 컴파일 시 확인. 확인: `operationId`를 바꿔 재생성하면 `go build`가 "missing method GetHealthz"로 깨짐 → 되돌리면 통과, server 테스트 4 케이스, curl 200 / 405.
 - [설계] `openapi-typescript`는 이번 항목에서 빼고 SvelteKit 항목에서 연결: 아직 `web/`이 없어 설치할 곳이 없다. PLAN 항목에 표시.
 - 안내한 `go get github.com/oapi-codegen/runtime`은 필요 없었다: health처럼 파라미터가 없는 경로만 있으면 생성 코드가 runtime을 import하지 않아서 `go mod tidy`가 지웠다. 경로 · 쿼리 파라미터가 생기는 M2 이후에 다시 들어온다.
+- 타이핑 학습 모드로 SvelteKit SPA: `sv create`(minimal · TS · prettier · eslint · tailwindcss), adapter-static, shadcn-svelte 1.7(vega · lucide) Button · Card, `layout.css`를 DESIGN 6장 토큰으로, Inter → Pretendard(npm), mode-watcher, openapi-typescript + openapi-fetch, health 화면. 확인: `pnpm check` 0 · `pnpm lint` 통과 · `pnpm build` 성공, 브라우저에서 ok/ok → 라이트 ↔ 다크 → Valkey stop 시 error(아이콘 + 굵은 글자) → Go 종료 시 "연결이 안 돼" → 다시 켜면 ok/ok.
+- [설계] 카드 모서리가 DESIGN의 12px이 아니라 14px: shadcn 1.7은 모서리를 곱셈(`md = radius × 0.8`, `xl = × 1.4`)으로 계산한다. `--radius` 10px로 Button(`rounded-md`) 8px을 정확히 맞추고, Card(`rounded-xl`)는 14px로 둔다. 화면을 만들 때 감싸는 부품에서 맞출지 본다(DESIGN 6장 "모양"은 그대로).
+- `openapi-typescript` 7.13이 TypeScript `^5`를 피어로 원하는데 프로젝트는 TS 6(`sv` 기본). 생성 도구일 뿐이고 `pnpm gen:api` 결과가 정상이라 그대로 둔다. TS를 낮추면 SvelteKit 3 쪽이 어긋날 위험이 더 크다.
 - `.env`는 Go가 읽지 않는다. Taskfile을 만들기 전까지는 PowerShell 한 줄로 터미널에 불러온다(Taskfile에서 `dotenv`로 대체 예정).
 
 ### 막혔던 일
@@ -59,14 +62,29 @@
 - 원인: Windows는 `localhost`를 IPv6(`::1`)부터 푸는데 compose는 포트를 `127.0.0.1`에만 열었다.
 - 해결: `.env.example`의 `DATABASE_URL` · `VALKEY_URL`을 `127.0.0.1`로.
 
+**안내한 SvelteKit 구조가 실제와 달랐다 (SvelteKit 3)**
+- 증상: `svelte.config.js`가 없고, 전역 CSS가 `src/app.css`가 아니라 `src/routes/layout.css`, 별칭이 `$lib`가 아니라 `#lib`.
+- 원인: `sv create`가 SvelteKit 3을 설치했다. adapter 설정이 `vite.config.ts`로 옮겨 왔고, 별칭은 Node 표준 subpath imports(`package.json`의 `imports`)로 바뀌었다.
+- 해결: 생성 직후 파일을 열어 보고 안내를 고쳤다. shadcn-svelte 1.7 init은 `layout.css` · `#lib`를 스스로 찾았다. import는 확장자까지 적는다(`#lib/...js`).
+- 배운 것: 처음 쓰는 도구는 생성기를 돌린 뒤 결과를 먼저 열어 보고 다음 안내를 쓴다. CLAUDE.md "함정"에 적었다.
+
+**`pnpm lint`가 생성된 shadcn Button에서 실패**
+- 증상: `ui/button/button.svelte` 63:3 `svelte/no-navigation-without-resolve`.
+- 원인: 범용 Button은 `href`를 그대로 쓴다. 링크를 `resolve()`로 만드는 건 쓰는 쪽의 일이다.
+- 해결: `eslint.config.js`의 전역 `ignores`에 `ui/` · `schema.d.ts`를 넣었다(`.prettierignore`와 같은 목록). 우리 화면 코드에는 규칙이 그대로 걸린다.
+
+**Tailwind 확장이 있는데도 `layout.css`에 `Unknown at rule` 경고**
+- 원인: `sv`가 만든 `web/.vscode/settings.json`(`*.css` → tailwindcss)은 VS Code로 `web` 폴더를 직접 열 때만 읽힌다. 저장소 맨 위를 열어 두면 안 읽힌다.
+- 해결: 사용자 설정 또는 저장소 맨 위 `.vscode/settings.json`(커밋 안 됨)에 같은 줄. README "자주 막히는 것"에 적었다.
+
 **참고: go-redis가 자기 로그를 따로 찍는다**
 - Valkey를 끄면 `redis: ... pool.go:770: ... failed to dial` 줄이 slog 형식이 아니라 그대로 나온다. go-redis 내부 로거라서다. 기록 내용은 없어서 지금은 그대로 두고, 운영 로그를 JSON으로 모을 때(M3) 정리할지 본다.
 
 ### 이번 세션 커밋
-`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / (이 커밋) 문서 갱신
+`2d629e5` v1 삭제 · .gitignore / `05e2870` .gitattributes / `276f6af` compose · .env.example / `4494d7a` 문서 갱신 / `2df9652` · `15fcd2f` 외부 API 후보 · A10을 M2로 / `b3df9b8` Go 뼈대 / `5107443` 문서 / `84d4481` goose · health DB 확인 / `6600b4b` README "실행" · 문서 / `33b5e79` openapi · oapi-codegen / `d1d33b2` 문서 / `84646b0` SvelteKit SPA / (이 커밋) 문서 갱신
 
 ### 다음에 할 일
-- SvelteKit + `adapter-static` + Tailwind + shadcn-svelte, DESIGN 6장 토큰 테마 · 라이트/다크, `openapi-typescript` 연결 (개념 설명부터)
+- `go:embed`로 `web/build` 넣기 + SPA fallback (`/api/*`의 없는 경로는 JSON 404)
 - 집 PC: 위 "기기별로 할 일"
 
 ---
