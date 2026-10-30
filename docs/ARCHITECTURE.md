@@ -156,7 +156,7 @@ Taskfile.yml           자주 쓰는 명령 모음
 - `internal/webdist/dist/`에는 `.gitkeep`만 커밋한다. 프론트를 빌드하지 않은 PC · CI에서도 `go build` · `go test`가 되고, 그 상태로 화면 주소에 들어오면 503 안내를 준다.
 - 캐시: `_app/immutable/`(파일 이름에 내용 해시)은 1년 immutable, `index.html`은 `no-cache`.
 
-배포 환경은 아직 정하지 않았다(첫 배포 단계에서 결정 기록으로 남긴다).
+배포 환경: Vultr 서울 서버 한 대 + Caddy(HTTPS) + 도메인 `cbt.sagming.com`(Cloudflare, DNS만) — [decisions/0007](decisions/0007-deploy-vultr-seoul.md). 서버 구성 · 배포 순서는 M3 진행하며 이 절에 채운다.
 
 ## 8. 테스트
 | 층 | 도구 | 무엇을 |

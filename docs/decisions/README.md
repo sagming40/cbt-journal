@@ -14,3 +14,4 @@
 | [0004](0004-db-postgresql.md) | 메인 DB는 PostgreSQL | 채택 |
 | [0005](0005-valkey.md) | Valkey를 붙이고 Postgres와 역할을 나눈다 | 채택 |
 | [0006](0006-ai-coach-deferred.md) | AI 코치는 핵심 기능 뒤 옵트인으로 보류 | 채택 |
+| [0007](0007-deploy-vultr-seoul.md) | 배포는 Vultr 서울, 도메인은 Cloudflare(DNS만) | 채택 |
