@@ -10,8 +10,8 @@
 | 끝난 것 | M0 · M1 · M2 전부(회사 · 집 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | M3: 운영 파일은 단계마다 사용자가 타이핑하거나 자동으로 맡긴다(단계마다 사용자가 정함). 타이핑이면 "코드 검수!" → Claude 리뷰 → 커밋 · push |
 | 다음에 할 일 | 서버 작업(SERVER.md에 적으며: 스왑 · `cbt` 계정 · 비밀값 · compose · Caddy · `age`) → DNS → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
-| **서버에 접속되는 기기** | **지금은 집 PC뿐.** 다른 기기에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3절)로. 넣으면 이 칸을 고친다 |
-| 기기별로 할 일 | **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: README "처음 한 번" 끝 · 기기 표 채움(2026-10-31) → 남은 것: 열쇠(`laptop`) · 별명 · `age` |
+| **서버에 접속되는 기기** | **집 PC · 노트북**(노트북은 2026-10-31 추가). 회사 PC에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC · 노트북으로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3 · 3.4절)로. 넣으면 이 칸을 고친다 |
+| 기기별로 할 일 | **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: 처음 한 번 · 열쇠(`laptop`) · 별명 `cbt` 끝(2026-10-31) → 남은 것: `age` |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
 ## 작성 규칙
@@ -29,12 +29,25 @@
 - Claude가 본 값: `main` 최신(`fc33d33`), Go 1.27.0 · Task 3.54.0 · pnpm 12.16.1 · Node 24.15.0 · golangci-lint 2.15.0(`ci.yml`과 같음) · Docker Desktop 29.9.2(WSL2), compose Postgres · Valkey healthy, 5432는 직접 설치한 PostgreSQL 18이 사용 중. `~/.ssh` 없음, `age` 없음.
 - CLAUDE.md "기기" 표에 노트북 줄(개인 계정), "5432는 이미 차 있다"에 노트북 추가.
 - **확인 못 한 것**: 노트북에서 `task test` · `task lint` · 로그인은 Claude가 돌리지 않았다.
+- 노트북 열쇠 `laptop`을 Vultr 웹 콘솔(root)로 서버에 추가 → `ssh cbt`로 `sagming40@cbt-1` 접속 확인(첫 접속 지문 `yes`).
+- 로그인 화면의 `New release '26.04.1 LTS' available`은 따르지 않는다 — 24.04를 지원 종료(2029-04)까지 쓰고 새 서버로 옮기기로 했다(위 "기억할 날짜").
+
+### 막혔던 일
+**웹 콘솔을 못 찾음**
+- 원인: 인스턴스 목록에는 없고 `cbt-1` 상세 화면 오른쪽 위 모니터 아이콘(또는 줄 끝 `···`)에 있다. 콘솔은 root라 `~`가 `/root` — 열쇠는 `/home/sagming40/.ssh/authorized_keys`에 넣어야 한다.
+- 해결: SERVER 3.3 · 3.4절에 적음.
+
+**`ssh cbt` → `Could not resolve hostname cbt: \354\225\214…`**
+- 증상: 깨진 글자는 Windows 오류 문구 "알려진 호스트가 없습니다."의 UTF-8 바이트.
+- 원인: 메모장이 `~/.ssh/config`를 `config.txt`로 저장해 ssh가 별명을 못 읽었다.
+- 해결: 이름 바꿈, `ssh -G cbt`로 확인. SERVER 3.2절에 "파일 먼저 만들고 열기".
+- 배운 것: ssh 설정이 읽혔는지는 접속 전에 `ssh -G 별명`으로 본다.
 
 ### 이번 세션 커밋
-(이 커밋) 문서만 — 동작 변경 없음
+`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / (이 커밋) 노트북 접속 반영 — 전부 문서만, 동작 변경 없음
 
 ### 다음에 할 일
-- 노트북: SSH 열쇠 `laptop` → 서버 `authorized_keys`에 추가(집 PC로 접속하거나 Vultr 웹 콘솔, SERVER.md 3.4절) → ssh 별명 `cbt` → `age` 설치. 그다음 위 "현재 상태"의 서버 작업.
+- 노트북: `age` 설치. 그다음 위 "현재 상태"의 서버 작업(스왑 1GB부터).
 
 ---
 

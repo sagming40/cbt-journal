@@ -85,7 +85,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] Vultr 계정(크레딧 $250, 만료 2026-11-30) · Cloudflare 계정(2단계 인증 앱 + 이메일, 백업 코드) · 도메인 `sagming.com` 등록(만료 2027-10-30, 자동 갱신) (사용자 직접) *(계획에 없던 작업)*
 - [x] SSH 키(PC마다 따로, 집 PC = `home-pc`) → Vultr 서버 `cbt-1`(Shared CPU `vc2-1c-1gb` · 서울 · Ubuntu 24.04 · IPv4만 · 자동 백업 켬) → 서버 기본 보안: 보안 업데이트 · 재부팅, ufw(22 · 80 · 443만), 일반 계정 + sudo, SSH 잠금(root 금지 · 비밀번호 금지) (사용자 직접, 2026-10-30)
 - [x] 자동 보안 업데이트 확인(`20auto-upgrades` 둘 다 "1", `unattended-upgrades` active), **Docker Engine 29.9.2 · Compose v5.6.1**(공식 저장소, `hello-world` 확인). 사용자를 `docker` 그룹에 넣지 않는다(= root 권한) — 서버에서는 `sudo docker` (사용자 직접)
-- [ ] 회사 PC · 노트북 SSH 키 추가 (서버 `authorized_keys`에 직접, README "운영 서버를 다루는 PC라면")
+- [ ] 회사 PC · 노트북 SSH 키 추가 (서버 `authorized_keys`에 직접, README "운영 서버를 다루는 PC라면") — 노트북 끝(2026-10-31), 회사 PC 남음
 - [x] 운영 구성 결정(실행 파일 + systemd · PC에서 `task deploy` · `age` 암호화 백업을 PC로) · 설계 문서(ARCHITECTURE 7절) (사용자 결정, 2026-10-31)
 - [x] `app version`(커밋 번호) · `task build:linux` (타이핑 학습 모드, 2026-10-31)
 - [x] 저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수): 운영 compose · env 예시 · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 `release.sh` (2026-10-31)
