@@ -188,7 +188,7 @@ Taskfile.yml           자주 쓰는 명령 모음
 
 **Caddy가 하는 일**
 - `cbt.sagming.com`만 받는다. IP로 들어오거나 다른 이름이면 앱을 보여 주지 않는다.
-- 보안 헤더: `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` · `Referrer-Policy: strict-origin-when-cross-origin` · HSTS(**처음엔 하루짜리**, 확인 뒤 1년). CSP는 화면이 생긴 뒤(M4~) 인라인 스크립트 해시와 함께 붙인다.
+- 보안 헤더: `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` · `Referrer-Policy: strict-origin-when-cross-origin` · HSTS(**처음엔 하루짜리**, 확인 뒤 1년). CSP는 화면이 생긴 뒤(M4~) 인라인 스크립트 해시와 함께 붙인다. 무슨 프로그램인지 알리는 `Server` · `Via` 헤더는 뺀다(`Via`는 `reverse_proxy`의 `header_down`으로는 안 지워져 사이트 `header` 블록에서 지운다 — 2026-11-01 확인).
 - 바깥에서 온 `X-Forwarded-For`는 버리고 자기가 새로 붙인다 → 3.3절 규칙으로 실제 접속 IP가 나온다. `Host`도 그대로 넘겨 교차 출처 차단(3.1절)이 동작한다.
 - 접근 로그는 남기지 않는다(앱 로그로 충분하고, 남기는 곳을 늘리지 않는다 — REQUIREMENTS 5.1절). 인증서 등록 이메일은 넣지 않는다 — Let's Encrypt가 2025년에 만료 알림 메일을 없앴고 갱신은 Caddy가 자동으로 해서 쓸 곳이 없다(2026-10-31, 처음엔 `ACME_EMAIL` env로 빼려 했음). 저장소에 이메일이 들어갈 일도 없다.
 - IP로 `https://`에 들어오면 그 IP용 인증서가 없어 연결 자체가 안 된다. `http://IP`는 Caddy가 `https://IP`로 보내고(308) 거기서 연결이 끊긴다(2026-10-31 서버에서 확인). 어느 쪽이든 앱은 안 보인다(따로 "그 밖의 이름" 블록을 두지 않는다 — 자동 http→https 전환 규칙과 엉킬 수 있어서).
@@ -252,4 +252,5 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-31 | 7.3절 PC 쪽(`scripts/deploy.ps1`): 보낼 폴더를 PC에서 만들어 `scp -r` 한 번, ssh 별명 `cbt`, 서버 임시 폴더 정리, `-DryRun` |
 | 2026-10-31 | 7.4절 백업 세부: 타이머 04:00 KST(놓치면 켜진 뒤), `pg_dump -Fc`, 파일 이름 · 공개키 위치, 임시 파일 → 성공하면 이름 바꾸기, 14개, PC는 저장소 밖 `~/cbt-backups/`로 전부 가져오기 |
 | 2026-10-31 | 7.2절 `http://IP` 동작을 실제 관찰대로 고침(빈 응답 → `https://IP`로 308 후 연결 끊김) |
+| 2026-11-01 | 7.2절 `Server` · `Via` 헤더 빼기(지우는 자리 포함) |
 | 2026-10-31 | 7.5절 스왑: "1GB 만들기" → 이미 있던 2.3GB 유지 + swappiness 10 (서버에서 보니 스왑이 이미 있었음 — DEVLOG 2026-10-31 (5)) |

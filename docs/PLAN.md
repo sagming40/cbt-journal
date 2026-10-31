@@ -16,7 +16,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
 | M2 | 인증 | ✅ 2026-10-30 |
-| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 `cbt.sagming.com`에 배포 · 휴대폰 로그인 됨(2026-10-31), 완료 기준 1 ~ 4 확인, 남은 것(서버 접속 필요): README대로 새 버전 배포 · 재부팅 자동 복구 · 배포 실패 시 자동 되돌림 |
+| M3 | 첫 배포 (인증만 있는 빈 앱) | ✅ 2026-11-01 (`cbt.sagming.com`, 완료 기준 7개 확인. 회사 PC SSH 열쇠만 남음) |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
 | M6 | 기록 목록 · 통계 → **혼자 쓰기 시작** | ⬜ |
@@ -85,7 +85,8 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] Vultr 계정(크레딧 $250, 만료 2026-11-30) · Cloudflare 계정(2단계 인증 앱 + 이메일, 백업 코드) · 도메인 `sagming.com` 등록(만료 2027-10-30, 자동 갱신) (사용자 직접) *(계획에 없던 작업)*
 - [x] SSH 키(PC마다 따로, 집 PC = `home-pc`) → Vultr 서버 `cbt-1`(Shared CPU `vc2-1c-1gb` · 서울 · Ubuntu 24.04 · IPv4만 · 자동 백업 켬) → 서버 기본 보안: 보안 업데이트 · 재부팅, ufw(22 · 80 · 443만), 일반 계정 + sudo, SSH 잠금(root 금지 · 비밀번호 금지) (사용자 직접, 2026-10-30)
 - [x] 자동 보안 업데이트 확인(`20auto-upgrades` 둘 다 "1", `unattended-upgrades` active), **Docker Engine 29.9.2 · Compose v5.6.1**(공식 저장소, `hello-world` 확인). 사용자를 `docker` 그룹에 넣지 않는다(= root 권한) — 서버에서는 `sudo docker` (사용자 직접)
-- [ ] 회사 PC · 노트북 SSH 키 추가 (서버 `authorized_keys`에 직접, README "운영 서버를 다루는 PC라면") — 노트북 끝(2026-10-31), 회사 PC 남음
+- [ ] 회사 PC · 노트북 SSH 키 추가 (서버 `authorized_keys`에 직접, README "운영 서버를 다루는 PC라면") — 노트북 끝(2026-10-31), 회사 PC 남음 (완료 기준은 아니라 M3를 닫고 회사 PC에서 할 때 체크)
+- [x] Caddy `Server` · `Via` 헤더 빼기 (2026-11-01, SERVER 4.17절) *(계획에 없던 작업)*
 - [x] 운영 구성 결정(실행 파일 + systemd · PC에서 `task deploy` · `age` 암호화 백업을 PC로) · 설계 문서(ARCHITECTURE 7절) (사용자 결정, 2026-10-31)
 - [x] `app version`(커밋 번호) · `task build:linux` (타이핑 학습 모드, 2026-10-31)
 - [x] 저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수): 운영 compose · env 예시 · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 `release.sh` (2026-10-31)
@@ -101,9 +102,9 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
   - 바깥에서 DB · Valkey 포트 접속이 실패한다. — ✅ 2026-10-31 노트북 `Test-NetConnection` 5432 · 6379 False (SERVER 4.10절)
   - 로그인 요청 제한이 프록시 IP가 아니라 실제 접속 IP 기준으로 걸린다(휴대폰 · PC가 서로의 제한에 걸리지 않음). — ✅ 2026-10-31: Valkey 키가 실제 IP별(127.0.0.1 없음), 한 IP가 429일 때 다른 IP는 401 (DEVLOG 2026-10-31 (5))
   - 백업 파일로 빈 DB에 복원해 사용자 건수가 같다. — ✅ 2026-10-31 노트북 로컬 빈 DB에 `pg_restore`, `users` 1 · 마이그레이션 버전 2 (SERVER 4.16절. 운영 건수는 가입 꺼짐 + 만든 계정 1개로 갈음)
-  - README 순서대로 새 버전을 한 번 올려 본다.
-  - 서버를 재부팅하면 손대지 않아도 앱 · DB · Caddy가 다시 살아나 health가 200이다.
-  - 배포 중 health가 실패하면 옛 버전으로 저절로 돌아간다(일부러 실패시켜 한 번 확인).
+  - README 순서대로 새 버전을 한 번 올려 본다. — ✅ 2026-11-01 `f925ad6` (SERVER 4.17절)
+  - 서버를 재부팅하면 손대지 않아도 앱 · DB · Caddy가 다시 살아나 health가 200이다. — ✅ 2026-11-01 1분 안에 서비스 넷 active · health 200 (SERVER 4.18절)
+  - 배포 중 health가 실패하면 옛 버전으로 저절로 돌아간다(일부러 실패시켜 한 번 확인). — ✅ 2026-11-01 가짜 앱으로 health 실패 → `f925ad6`으로 되돌아옴 (SERVER 4.19절)
 
 ### M4 · 체크인
 - [ ] `emotions`(seed 10개) · `checkins` · `checkin_emotions` 마이그레이션

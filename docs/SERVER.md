@@ -17,7 +17,7 @@
 | 접속 방법 | SSH 키만 (비밀번호 로그인 불가) |
 | 열린 문 | 22(SSH) · 80 · 443 — 나머지는 방화벽(ufw)이 막는다 |
 | 자동 백업 | Vultr 자동 백업 켬(+$1/월) — 2026-11-30에 유지 여부 판단 |
-| 도메인 | `cbt.sagming.com` (Cloudflare, DNS만 · 회색 구름) — M3에서 연결 |
+| 도메인 | `cbt.sagming.com` (Cloudflare, DNS만 · 회색 구름) — 2026-10-31 연결 (4.11절) |
 
 ## 2. 지금 어디서 치고 있나
 
@@ -118,7 +118,7 @@ age --version                                        # 새 터미널에서 설�
 ## 4. 지금까지 한 설정 (순서대로)
 
 > 각 절은 **상황**(왜 · 어디서 쳤나) → 친 명령(줄마다 뜻 · 옵션을 어떻게 줬나 · 나온 결과) → 메모 순서다. 헛디딘 명령도 남긴다 — 같은 실수를 안 하려고.
-> 4.1 ~ 4.6은 2026-10-30 집 PC에서, 4.7 ~ 4.15는 2026-10-31 노트북에서 쳤다. 노트북을 서버에 연결한 과정은 3.5절.
+> 4.1 ~ 4.6은 2026-10-30 집 PC에서, 4.7 ~ 4.19는 2026-10-31 ~ 11-01 노트북에서 쳤다. 노트북을 서버에 연결한 과정은 3.5절.
 
 | 절 | 한 일 | 날짜 · 기기 |
 |---|---|---|
@@ -132,6 +132,10 @@ age --version                                        # 새 터미널에서 설�
 | 4.13 | 백업 열쇠 `age` | 〃 |
 | 4.14 | 운영 파일 · 매일 백업 | 〃 |
 | 4.15 | 첫 배포 · 내 계정 | 〃 |
+| 4.16 | 복원 연습 | 〃 (서버 접속 없이) |
+| 4.17 | README대로 새 버전 배포 · `Via` 빼기 | 2026-11-01 노트북 |
+| 4.18 | 재부팅 뒤 자동 복구 | 〃 |
+| 4.19 | 배포 실패 시 자동 되돌림 | 〃 |
 
 ### 4.1 첫 접속 · 업데이트 · 재부팅 (root로, 이때만 root 접속 가능했음)
 **상황**: 서버를 막 만든 직후. Vultr가 준 root로 처음 들어가 밀린 업데이트부터 했다.
@@ -450,7 +454,7 @@ curl.exe -sI https://cbt.sagming.com   # 머리글만 → 200 OK + 보안 헤더
 ```
 - 확인 (PC): `curl.exe -sI https://cbt.sagming.com` → `200`, HSTS `max-age=86400` · `nosniff` · `DENY` · `Referrer-Policy` 있음, `Server` 없음. `/api/health` → postgres · valkey `ok`, 로그인 없이 `/api/me` → `401`.
 - 로그인 · 설정 · 로그아웃: 노트북 브라우저, 휴대폰(LTE, 와이파이 끔) 둘 다 됨.
-- 응답에 `Via: 1.1 Caddy`가 붙는다(Caddy가 프록시할 때 넣는 표준 헤더).
+- 응답에 `Via: 1.1 Caddy`가 붙었다(Caddy가 프록시할 때 넣는 표준 헤더) → 4.17절에서 뺐다.
 
 ### 4.16 복원 연습 (2026-10-31, 노트북 — 서버 접속 없이)
 **상황**: 열어 본 적 없는 백업은 믿을 수 없다. 서버에서 받아 둔 최신 백업(내 계정이 생긴 뒤 19:22 KST에 뜬 것)을 노트북 로컬 Docker의 **빈 DB**에 넣고 건수를 셌다. 운영 DB는 건드리지 않는다. KTX 와이파이라 서버 접속 없이 노트북 안에서만 했다(Claude가 침).
@@ -477,6 +481,80 @@ Remove-Item "$env:TEMP\cbt-restore.dump"
 ```
 - 결과: 테이블 `goose_db_version` · `sessions` · `users`, `users` 1건 · 버전 2. 운영은 가입이 꺼져 있고 `cbtctl`로 만든 계정이 하나뿐이라 운영도 1건이다(서버에서 따로 세지는 않았다 — 다음 접속 때 `sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt_journal -tAc 'select count(*) from users;'`).
 - 진짜로 운영을 되살려야 할 때도 같은 흐름이다(풀기 → `pg_restore`). 다만 대상이 서버 Postgres라 앱을 먼저 멈추고 한다 — 그 절차는 필요해지면 여기에 적는다.
+
+### 4.17 README대로 새 버전 배포 · `Via` 헤더 빼기 (2026-11-01, 노트북 · 호텔 와이파이)
+**상황**: M3 완료 기준 "README 순서대로 새 버전을 한 번 올려 본다". 올릴 새 버전으로 Caddyfile 고침(`Via` 헤더 빼기)을 같이 했다.
+```powershell
+# ── 노트북 PowerShell (C:\_dev\cbt-journal) ── README "배포" 순서
+task lint; task test               # (Claude가 침) 둘 다 종료 코드 0
+git push                           # (Claude가 침) f925ad6
+task deploy                        # → [release] 끝: f925ad636013
+scp deploy/Caddyfile cbt:~/        # Caddyfile은 task deploy가 안 옮긴다 → 따로 보낸다
+```
+```bash
+# ── 서버 ──
+sudo install -m 644 -o root -g root ~/Caddyfile /etc/caddy/Caddyfile && rm ~/Caddyfile   # 제자리에 넣고, 성공하면(&&) 홈 사본 지우기
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile                    # → Valid configuration
+sudo systemctl reload caddy        # 끄지 않고 설정만 다시 읽기
+sudo cbtctl version                # 지금 도는 앱의 커밋 → f925ad636013
+ls /opt/cbt/releases/              # → 1a04de8c6130  f925ad636013 (옛 버전이 남아 있어 되돌릴 곳이 있다)
+```
+- ✗ 헛디딤(Claude): `reverse_proxy` 안의 `header_down -Via`로는 `Via: 1.1 Caddy`가 안 지워졌다(배포 뒤 `curl.exe -sI`로 확인). `header_down`은 앱이 보낸 헤더를 다듬는 자리고, `Via`는 Caddy가 그 뒤에 붙인다. → 사이트 `header` 블록에 `-Via`(`-Server`와 같은 자리, 응답 직전에 지움)로 옮기고, 로컬 `caddy:2` 컨테이너에서 지워지는 걸 먼저 확인한 뒤 다시 넣었다(`1406977`, 아래 4.18의 첫 두 줄).
+- 배운 것: 설정을 서버에 넣기 전에 **같은 프로그램을 로컬에서 띄워 결과(헤더)까지** 본다 — `validate`는 문법만 본다.
+
+### 4.18 재부팅 뒤 자동 복구 (2026-11-01)
+**상황**: M3 완료 기준 "서버를 재부팅하면 손대지 않아도 앱 · DB · Caddy가 다시 살아나 health가 200". 고친 Caddyfile을 넣고 reload 대신 재부팅으로 적용했다.
+```powershell
+scp deploy/Caddyfile cbt:~/        # 노트북: 고친 Caddyfile(1406977)
+```
+```bash
+# ── 서버 ──
+sudo install -m 644 -o root -g root ~/Caddyfile /etc/caddy/Caddyfile && rm ~/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile   # → Valid configuration
+sudo reboot                        # 접속이 끊기는 게 정상. 1분쯤 뒤 다시 ssh cbt
+systemctl is-active docker cbt caddy cbt-backup.timer   # 넷 다 active
+sudo docker compose -f /srv/cbt/compose.yaml ps         # Postgres · Valkey "Up 30 seconds (healthy)" — compose restart: unless-stopped가 다시 띄움
+uptime                             # → up 1 min (방금 재부팅된 게 맞다)
+```
+- 바깥 (Claude가 노트북에서): `curl.exe -sI https://cbt.sagming.com` → `200`, `Via` · `Server` 없음, 보안 헤더 4개 그대로. `/api/health` → postgres · valkey `ok`.
+- 아무것도 손대지 않고 1분 안에 전부 살아났다. `systemctl show cbt -p NRestarts` → `0` — 앱이 DB를 기다리며 다시 뜬 일도 없었다.
+- ARCHITECTURE 7.5절 "새벽 자동 재부팅은 재부팅 뒤 자동 복구를 확인한 다음 켤지 정한다" — 확인은 됐다. 켤지는 아직 정하지 않았다.
+
+### 4.19 배포 실패 시 자동 되돌림 (2026-11-01)
+**상황**: M3 완료 기준 "배포 중 health가 실패하면 옛 버전으로 저절로 돌아간다(일부러 실패시켜 한 번 확인)". git에 고장 난 코드를 올리지 않으려고, 진짜 `release.sh`에 **가짜 앱**(버전은 맞게 대답 · migrate는 성공한 척 · serve는 포트를 안 엶)을 넣었다.
+```bash
+# ── 서버 ── 가짜 앱 만들기
+mkdir -p ~/rollback-test
+cat > ~/rollback-test/app-linux-amd64 <<'EOF'
+#!/bin/sh
+# 되돌림 시험용 가짜 앱: version은 맞게 대답, migrate는 성공한 척, serve는 아무 포트도 안 연다
+case "$1" in
+  version) echo badbadbad000 ;;
+  migrate) exit 0 ;;
+  serve) exec sleep infinity ;;
+esac
+EOF
+                                   # cat > 파일 <<'EOF' … EOF: 사이 줄을 그대로 파일에. badbadbad000 = release.sh가 받는 커밋 모양(16진수 12자리)에 맞춘 가짜 번호
+chmod 755 ~/rollback-test/app-linux-amd64   # 실행 가능하게
+```
+```powershell
+scp deploy/release.sh cbt:~/rollback-test/   # 노트북: 진짜 배포 스크립트를 같은 폴더로 (release.sh는 자기 폴더의 app-linux-amd64를 넣는다)
+```
+```bash
+# ── 서버 ── 시험 실행
+sudo bash ~/rollback-test/release.sh badbadbad000
+# [release] 넣음: /opt/cbt/releases/badbadbad000
+# [release] 배포 직전 백업 → [backup] 만듦: … (6902 바이트)
+# [release] migrate up → 재시작: badbadbad000
+# (30초) [release] 헬스체크 실패 ─ 옛 버전으로 되돌린다: /opt/cbt/releases/f925ad636013
+# [release] 헬스체크 통과 (2번째) → 옛 버전으로 돌아옴
+# [release] 실패: 새 버전이 30초 안에 정상 응답을 안 했다   ← 시험이라 실패로 끝나는 게 정상
+sudo cbtctl version                # → f925ad636013 (진짜 버전으로 돌아옴)
+sudo rm -rf /opt/cbt/releases/badbadbad000 ~/rollback-test   # 가짜 버전 폴더 · 시험 폴더 치우기
+ls /opt/cbt/releases/              # → 1a04de8c6130  f925ad636013
+```
+- 바깥 (Claude): 시험 뒤 `/api/health` `200`. 시험 동안 사이트가 40초쯤 멈췄다(쓰는 사람이 없을 때 했다).
+- 시험이 배포 직전 백업을 하나 더 만들었다(지우지 않음 — 14개만 남기는 규칙이 알아서 정리).
 
 
 ## 5. 자주 쓰는 명령 (서버에서)
@@ -510,7 +588,7 @@ Remove-Item "$env:TEMP\cbt-restore.dump"
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-M3 완료 기준을 확인하며 이어서 적는다: 재부팅 뒤 자동 복구 · 배포 실패 시 자동 되돌림 · 운영 DB로 복원하는 절차(필요해지면).
+필요해지면 이어서 적는다: 운영 DB로 복원하는 절차 · 새벽 자동 재부팅을 켜기로 하면 그 설정.
 
 ---
 
@@ -522,3 +600,4 @@ M3 완료 기준을 확인하며 이어서 적는다: 재부팅 뒤 자동 복�
 | 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠, 4.14절 운영 파일 · 백업 타이머, 4.15절 첫 배포 · 내 계정 |
 | 2026-10-31 | 사용자 요청: 서버 작업에서 친 명령을 전부 — 4장 머리에 순서 표, 절마다 **상황** · 줄마다 뜻 · 옵션 · 결과, 헛디딘 명령(✗)까지. 3.5절 노트북 추가 실제 순서. 5장에 운영 명령 줄 추가 |
 | 2026-10-31 | 4.16절 복원 연습 |
+| 2026-11-01 | 4.17절 README대로 새 버전 배포 · `Via` 빼기, 4.18절 재부팅 뒤 자동 복구, 4.19절 배포 실패 시 자동 되돌림. 1장 도메인 연결됨 |
