@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로고 시안</title>
+<!-- 로고 시안 보드 (DESIGN 6장 D2 결). 상징 넷을 앱 아이콘 · 작은 아이콘(16 · 32px) · 가로 글자 조합 · 라이트/다크 종이 위에서 본다.
+     색은 D2 토큰만: 잉크 남색 accent · 종이 bg. 감정의 좋고 나쁨을 말하는 모양(웃는 얼굴 · 하트 · 위로 가는 화살표)은 쓰지 않는다 (DESIGN 1장 원칙 2). -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #8a8a90; font-family: 'Pretendard', system-ui, sans-serif; }
+  .bar { position: sticky; top: 0; z-index: 2; padding: 8px 16px; background: #222; color: #eee; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 24px; padding: 24px; }
+  .card { border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .half { padding: 24px; display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: center; }
+  .light { --bg:#F5F2EA; --ink:#33449E; --paper:#FBF9F4; --text:#22211D; --muted:#6A665C; --tint:color-mix(in oklab, #33449E 8%, #FBF9F4); background: var(--bg); color: var(--text); }
+  .dark  { --bg:#15161A; --ink:#A3AEF0; --paper:#1B1C21; --text:#ECEAE4; --muted:#A8A59C; --tint:color-mix(in oklab, #4457C2 16%, #1B1C21); background: var(--bg); color: var(--text); }
+  .head { padding: 18px 24px 0; background: #F5F2EA; color: #22211D; }
+  .head h2 { margin: 0; font-family: 'Gowun Batang', serif; font-size: 22px; }
+  .head p { margin: 4px 0 0; font-size: 14px; color: #6A665C; line-height: 1.55; }
+  /* 앱 아이콘: 둥근 사각 위 상징 (휴대폰 홈 화면 · PWA) */
+  .appicon { width: 120px; height: 120px; border-radius: 27px; display: grid; place-items: center; background: var(--icon-bg); }
+  .light .appicon { --icon-bg:#33449E; --m:#F5F2EA; --m2:rgba(245,242,234,.45); }
+  .dark  .appicon { --icon-bg:#F5F2EA; --m:#33449E; --m2:rgba(51,68,158,.4); }
+  .right { display: flex; flex-direction: column; gap: 16px; }
+  .lockup { display: flex; align-items: center; gap: 10px; }
+  .lockup .word { font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 26px; letter-spacing: -.01em; }
+  .lockup .word small { display: block; font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+  .smalls { display: flex; align-items: flex-end; gap: 14px; font-size: 12px; color: var(--muted); }
+  .smalls > div:not(.tabbar) { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tabbar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px 8px 0 0; background: var(--paper); font-size: 12px; width: 200px; border: 1px solid color-mix(in oklab, var(--text) 12%, transparent); border-bottom: 0; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div class="bar"><strong>로고 시안 1 ~ 4</strong> · 위는 미색 종이(라이트), 아래는 먹색(다크). 앱 아이콘 · 가로 글자 조합 · 32px · 16px · 브라우저 탭</div>
+
+<!-- 상징 정의: 같은 그림을 여러 크기에 다시 쓴다. fill="currentColor"라 놓인 자리의 색을 따른다 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- 1 · 숨 원: 체크인 원 그대로. 가운데 찬 원 + 바깥 테 두 겹 = 숨을 들이쉬고 내쉬는 모양 -->
+    <symbol id="m1" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="14" fill="currentColor"/>
+      <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3" opacity=".55"/>
+      <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/>
+    </symbol>
+    <!-- 2 · 다시 보는 생각: 찬 원(처음 생각) 옆에 조금 비켜 선 빈 원(다시 본 생각). 사고 기록 = 같은 일을 한 걸음 옆에서 보기 -->
+    <symbol id="m2" viewBox="0 0 64 64">
+      <circle cx="26" cy="32" r="16" fill="currentColor"/>
+      <circle cx="38" cy="32" r="16" fill="none" stroke="currentColor" stroke-width="3.5"/>
+    </symbol>
+    <!-- 3 · 공책 한 장: 모서리 접힌 종이 + 줄 두 개 + 잉크 점 하나 = 매일 짧게 적는 일기 -->
+    <symbol id="m3" viewBox="0 0 64 64">
+      <path d="M14 8h26l12 12v36H14z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M40 8v12h12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+      <line x1="21" y1="32" x2="45" y2="32" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+      <line x1="21" y1="41" x2="38" y2="41" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+      <circle cx="24" cy="21" r="4.5" fill="currentColor"/>
+    </symbol>
+    <!-- 4 · 잔잔한 수평선: 원 안 아래쪽이 물로 차 있고 수면이 평평하다 = 출렁이던 마음이 가라앉은 상태 -->
+    <symbol id="m4" viewBox="0 0 64 64">
+      <clipPath id="m4c"><circle cx="32" cy="32" r="24"/></clipPath>
+      <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="3.5"/>
+      <rect x="0" y="35" width="64" height="40" fill="currentColor" clip-path="url(#m4c)"/>
+      <line x1="16" y1="27" x2="48" y2="27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".45"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="grid" id="grid"></div>
+
+<script>
+  const MARKS = [
+    { id: 'm1', name: '1 · 숨 원', desc: 'S-02의 체크인 원을 그대로 로고로. 앱을 열 때마다 보는 모양과 같아 기억하기 쉽다. 가장 단순해서 16px에서도 잘 보인다.' },
+    { id: 'm2', name: '2 · 다시 보는 생각', desc: '찬 원(처음 떠오른 생각) 옆에 한 걸음 비켜 선 빈 원(다시 본 생각). 사고 기록이 하는 일 — 같은 일을 다른 자리에서 보기 — 을 담았다.' },
+    { id: 'm3', name: '3 · 공책 한 장', desc: '모서리가 접힌 종이에 줄 두 개와 잉크 점. "매일 짧게 적는 일기"를 가장 곧게 말한다. 대신 메모 앱처럼 흔해 보일 수 있다.' },
+    { id: 'm4', name: '4 · 잔잔한 수평선', desc: '원 안에 물이 고요하게 차 있다. 출렁이던 마음이 가라앉은 상태. 감정을 좋고 나쁨으로 나누지 않고 "가라앉힘"만 말한다.' },
+  ];
+  const use = (id, s) => `<svg width="${s}" height="${s}" style="color:var(--m, var(--ink))"><use href="#${id}"/></svg>`;
+  const half = (m, theme) => `
+    <div class="half ${theme}">
+      <div class="appicon">${use(m.id, 84)}</div>
+      <div class="right">
+        <div class="lockup"><span style="color:var(--ink)">${use(m.id, 44).replace('var(--m, var(--ink))', 'var(--ink)')}</span>
+          <span class="word">CBT 저널<small>생각을 붙잡고, 다시 보기</small></span></div>
+        <div class="smalls">
+          <div><span style="color:var(--ink)">${use(m.id, 32).replace('var(--m, var(--ink))', 'var(--ink)')}</span>32</div>
+          <div><span style="color:var(--ink)">${use(m.id, 16).replace('var(--m, var(--ink))', 'var(--ink)')}</span>16</div>
+          <div class="tabbar"><span style="color:var(--ink)">${use(m.id, 16).replace('var(--m, var(--ink))', 'var(--ink)')}</span>CBT 저널</div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('grid').innerHTML = MARKS.map(m => `
+    <div class="card">
+      <div class="head"><h2>${m.name}</h2><p>${m.desc}</p></div>
+      ${half(m, 'light')}${half(m, 'dark')}
+    </div>`).join('');
+</script>
+</body>
+</html>
