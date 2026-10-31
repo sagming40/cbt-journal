@@ -253,6 +253,32 @@ curl.exe -sI http://cbt.sagming.com     # 308 → Location: https://cbt.sagming.
 - **인증서를 받자마자 20초 안에 스캐너가 들어왔다**(`/.env` · `/phpinfo.php` · `/wp-admin/…` · `/database.sql`). 새 인증서는 공개 목록(Certificate Transparency)에 올라가고 봇이 그 목록을 지켜본다. 앱이 없어 전부 502였다. 정상적인 인터넷 소음이다 — 그래서 기본 잠금 · 요청 제한이 먼저 있어야 했다.
 - Caddy는 접근 로그를 안 남기지만, **오류(502 등) 때는 `journalctl -u caddy`에 접속 IP · 경로 · 헤더를 남긴다**. 쿠키 · `Authorization`은 Caddy가 기본으로 가린다. 경로에는 id만 있고 본문은 안 남아서 REQUIREMENTS 5.1절과 맞는다.
 
+### 4.13 백업 열쇠 `age` (2026-10-31, 노트북에서)
+PC에서 열쇠 한 쌍을 만든다(저장소 밖):
+```powershell
+age-keygen -o "$HOME\cbt-backup.key"     # 화면의 Public key: age1… = 공개키(비밀 아님)
+age-keygen -y "$HOME\cbt-backup.key"     # 공개키를 다시 보고 싶을 때
+```
+서버에는 공개키만:
+```bash
+sudo apt install --yes age               # 1.1.1 (PC 1.3.2와 호환)
+echo 'age1…' | sudo tee /etc/cbt/backup.pub
+sudo chmod 644 /etc/cbt/backup.pub
+```
+짝 시험 — 서버에서 잠그고 PC에서 연다:
+```bash
+echo '열쇠 짝 시험' | age -R /etc/cbt/backup.pub -o ~/keytest.age    # 서버
+```
+```powershell
+scp cbt:~/keytest.age $env:TEMP\
+age -d -i "$HOME\cbt-backup.key" "$env:TEMP\keytest.age"     # 열쇠 짝 시험
+Remove-Item "$env:TEMP\keytest.age"
+```
+- **개인키(`AGE-SECRET-KEY-1…`)는 서버 · 저장소 · 대화 · 클라우드에 두지 않는다.** 보관: 노트북 `$HOME\cbt-backup.key` + 종이. 백업을 열 PC마다 같은 파일을 `$HOME\cbt-backup.key`에 둔다(USB로 옮기고 USB에서는 지운다).
+- 잃으면 모든 백업을 못 연다 → 새 열쇠를 만들어 `backup.pub`를 바꾸고, 그 전 백업은 버린다.
+- `age-keygen`의 `writing secret key to a world-readable file` 경고는 Unix 권한 기준이다. Windows 홈 폴더는 기본으로 본인 · 관리자만 읽는다.
+
+
 ## 5. 자주 쓰는 명령 (서버에서)
 
 | 하고 싶은 것 | 명령 |
@@ -278,7 +304,7 @@ curl.exe -sI http://cbt.sagming.com     # 308 → Location: https://cbt.sagming.
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 백업 열쇠(`age`) · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
+운영 구성이 생기면 이 문서에 이어서 적는다: 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
 
 ---
 
@@ -287,4 +313,4 @@ curl.exe -sI http://cbt.sagming.com     # 308 → Location: https://cbt.sagming.
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠 |
