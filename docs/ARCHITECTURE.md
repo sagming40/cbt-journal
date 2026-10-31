@@ -36,6 +36,7 @@ cmd/app/               진입점 (serve · worker · migrate)
 internal/
   config/              환경변수 읽기 · 검증 (빠진 값이 있으면 시작하지 않는다)
   server/              라우터 조립, 미들웨어, 오류 응답 봉투
+  apierr/              오류 봉투(3.2절)를 만드는 함수 · 입력 오류(ValidationError) — 기능 패키지들이 같이 쓴다
   auth/                비밀번호 해시, 세션, 요청 제한, 유출 비밀번호 검사 + 인증 API handler
   clientip/            실제 접속 IP 미들웨어 (3.3절)
   checkin/  record/    기능별 패키지 ─ handler(HTTP ↔ 도메인) + service(규칙 · 트랜잭션)
@@ -64,6 +65,8 @@ Taskfile.yml           자주 쓰는 명령 모음
 - 기능별 패키지 안에서 `handler → service → db(sqlc)` 한 방향으로만 부른다. 별도 repository 계층은 두지 않는다(sqlc가 그 역할).
 - 생성된 `StrictServerInterface`는 타입 하나가 전부 구현해야 한다. 기능 패키지마다 자기 경로의 메서드를 가진 `Handler`를 만들고, `server`의 handler가 그것들을 **임베드**해서 합친다(메서드가 위로 올라와 인터페이스를 채운다).
 - 기능 패키지끼리는 서로 import하지 않는다. 같이 써야 하는 건 service 인터페이스로 넘긴다.
+  - **"지금 로그인한 사용자 id"도 함수로 넘긴다**: 세션은 `auth`가 context에 넣지만, `checkin` 같은 기능 패키지가 `auth`를 import하지 않게 `server`가 조립할 때 `func(ctx) (pgtype.UUID, bool)`를 꽂아 준다(콘센트만 맞으면 된다).
+  - 오류 봉투 · 입력 오류처럼 모든 기능이 같은 모양을 써야 하는 것은 기능이 아닌 작은 공용 패키지(`apierr`)에 둔다.
 - **사용자 데이터를 읽고 쓰는 SQL은 전부 `user_id`를 조건에 넣는다.** 남의 기록은 0행 → 404. 이 규칙은 통합 테스트로 검사한다(다른 사용자로 조회 · 수정 · 삭제 → 404).
 
 ## 3. 요청 흐름
@@ -253,4 +256,5 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-31 | 7.4절 백업 세부: 타이머 04:00 KST(놓치면 켜진 뒤), `pg_dump -Fc`, 파일 이름 · 공개키 위치, 임시 파일 → 성공하면 이름 바꾸기, 14개, PC는 저장소 밖 `~/cbt-backups/`로 전부 가져오기 |
 | 2026-10-31 | 7.2절 `http://IP` 동작을 실제 관찰대로 고침(빈 응답 → `https://IP`로 308 후 연결 끊김) |
 | 2026-11-01 | 7.2절 `Server` · `Via` 헤더 빼기(지우는 자리 포함) |
+| 2026-11-01 | M4 사전 검증: 2절 `apierr/` 공용 패키지, 기능 패키지에는 사용자 id를 함수로 넘김(`checkin`이 `auth`를 import하지 않게) |
 | 2026-10-31 | 7.5절 스왑: "1GB 만들기" → 이미 있던 2.3GB 유지 + swappiness 10 (서버에서 보니 스왑이 이미 있었음 — DEVLOG 2026-10-31 (5)) |
