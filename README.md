@@ -14,7 +14,7 @@
 자세한 범위는 [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
 ## 상태
-**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 로그인까지 되는 빈 앱이고, 다음은 첫 배포(M3)다. v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
+**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 로그인까지 되는 빈 앱이고, `https://cbt.sagming.com`에 배포돼 있다(2026-10-31). v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
 
 어디까지 왔는지는 [docs/PLAN.md](docs/PLAN.md) 2장에서 본다(이 README에는 진행 상황을 적지 않는다).
 
@@ -65,6 +65,18 @@ task user -- create --email 내이메일 --nickname 내닉네임
 1. **SSH 열쇠**: PC마다 따로 만들고, 이미 접속되는 PC(또는 Vultr 웹 콘솔)로 서버 `authorized_keys`에 한 줄 추가 — [SERVER.md](docs/SERVER.md) 3.4절. Vultr 화면에 등록만 해서는 이미 만든 서버에 안 들어간다. 열쇠 메모는 기기 이름으로(`home-pc` · `company-pc` · `laptop`).
 2. **ssh 별명 `cbt`**: `~/.ssh/config` — SERVER.md 3.2절. `task deploy` · `task backup:pull`이 쓴다. 확인: `ssh cbt` 접속.
 3. **`age`**(백업을 열 때): `winget install --id FiloSottile.age -e`. 여는 열쇠(개인키)는 `$HOME\cbt-backup.key`에 둔다 — 노트북에서 만들었고 종이에 한 벌, 다른 PC에는 USB로 옮긴다. 저장소 · 대화 · 클라우드에 넣지 않는다 (ARCHITECTURE 7.4절, SERVER.md 4.13절).
+
+### 배포 (운영 서버에 새 버전 올리기)
+```powershell
+task lint; task test        # 통과한 것만 올린다
+git push                    # push된 main만 배포된다 — 커밋 안 한 변경 · push 안 한 커밋이 있으면 task deploy가 거부한다
+task deploy                 # 빌드 → 서버로 복사 → 배포 직전 백업 → migrate → 재시작 → health 확인. passphrase 2번 + sudo 비밀번호 1번
+curl.exe -sI https://cbt.sagming.com    # 200이면 끝
+```
+- health가 30초 안에 200이 안 되면 서버가 **옛 버전으로 저절로 되돌린다**(ARCHITECTURE 7.3절). 마이그레이션은 되돌리지 않으므로, 마이그레이션은 옛 버전과도 맞게 쓴다(7.5절).
+- 먼저 해 보기: `task deploy -- -DryRun` — 빌드와 보낼 폴더까지만, 서버에는 안 보낸다.
+- 서버에서 지금 버전: `sudo cbtctl version`. 앱 로그: `sudo journalctl -u cbt -n 50 --no-pager`. 그 밖의 서버 명령은 [SERVER.md](docs/SERVER.md) 5장.
+- 백업 가져오기 · 열어 보기: `task backup:pull` → 복원 연습 순서는 SERVER.md 4.16절.
 
 ### 매일 시작할 때
 ```powershell

@@ -452,6 +452,32 @@ curl.exe -sI https://cbt.sagming.com   # 머리글만 → 200 OK + 보안 헤더
 - 로그인 · 설정 · 로그아웃: 노트북 브라우저, 휴대폰(LTE, 와이파이 끔) 둘 다 됨.
 - 응답에 `Via: 1.1 Caddy`가 붙는다(Caddy가 프록시할 때 넣는 표준 헤더).
 
+### 4.16 복원 연습 (2026-10-31, 노트북 — 서버 접속 없이)
+**상황**: 열어 본 적 없는 백업은 믿을 수 없다. 서버에서 받아 둔 최신 백업(내 계정이 생긴 뒤 19:22 KST에 뜬 것)을 노트북 로컬 Docker의 **빈 DB**에 넣고 건수를 셌다. 운영 DB는 건드리지 않는다. KTX 와이파이라 서버 접속 없이 노트북 안에서만 했다(Claude가 침).
+```powershell
+# ── 노트북 PowerShell (C:\_dev\cbt-journal) ──
+task backup:pull                   # (평소엔 이것부터) 서버 백업 전부를 ~/cbt-backups/로 — 이번엔 이미 받아 둔 파일을 썼다
+$latest = Get-ChildItem "$HOME\cbt-backups\*.dump.age" | Sort-Object Name | Select-Object -Last 1
+                                   # 이름에 UTC 시각이 들어 있어 이름순 마지막 = 가장 최근 → cbt-20261031T102225Z.dump.age (6902바이트)
+age -d -i "$HOME\cbt-backup.key" -o "$env:TEMP\cbt-restore.dump" $latest.FullName
+                                   # 개인키(-i)로 풀어(-d) 임시 파일로(-o) → 6702바이트. 여기부터는 잠기지 않은 진짜 데이터 — 끝나면 꼭 지운다
+docker compose up -d --wait        # 로컬 Postgres · Valkey 켜고 healthy까지 기다림(--wait)
+docker compose exec -T postgres createdb -U cbt cbt_restore_test
+                                   # 개발용 cbt_journal은 그대로 두고 시험용 빈 DB를 따로 만든다
+docker compose cp "$env:TEMP\cbt-restore.dump" postgres:/tmp/cbt-restore.dump
+                                   # 파일을 컨테이너 안으로 복사. Get-Content … | docker … 파이프는 PowerShell 5.1이 바이너리를 글자로 바꿔 덤프가 깨진다
+docker compose exec -T postgres pg_restore -U cbt -d cbt_restore_test --no-owner --no-privileges /tmp/cbt-restore.dump
+                                   # pg_dump -Fc 백업을 DB로 되돌린다. --no-owner --no-privileges 운영 쪽 소유자 · 권한 정보는 빼고 → 출력 없음, 종료 코드 0
+docker compose exec -T postgres psql -U cbt -d cbt_restore_test -tAc 'select count(*) from users;'               # → 1
+docker compose exec -T postgres psql -U cbt -d cbt_restore_test -tAc 'select max(version_id) from goose_db_version;'   # 마이그레이션 버전 → 2 (저장소와 같음)
+# ── 치우기 ── 풀린 덤프에는 진짜 계정 정보(이메일 · 비밀번호 해시)가 있다
+docker compose exec -T postgres rm /tmp/cbt-restore.dump
+docker compose exec -T postgres dropdb -U cbt cbt_restore_test
+Remove-Item "$env:TEMP\cbt-restore.dump"
+```
+- 결과: 테이블 `goose_db_version` · `sessions` · `users`, `users` 1건 · 버전 2. 운영은 가입이 꺼져 있고 `cbtctl`로 만든 계정이 하나뿐이라 운영도 1건이다(서버에서 따로 세지는 않았다 — 다음 접속 때 `sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt_journal -tAc 'select count(*) from users;'`).
+- 진짜로 운영을 되살려야 할 때도 같은 흐름이다(풀기 → `pg_restore`). 다만 대상이 서버 Postgres라 앱을 먼저 멈추고 한다 — 그 절차는 필요해지면 여기에 적는다.
+
 
 ## 5. 자주 쓰는 명령 (서버에서)
 
@@ -484,7 +510,7 @@ curl.exe -sI https://cbt.sagming.com   # 머리글만 → 200 OK + 보안 헤더
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 복원.
+M3 완료 기준을 확인하며 이어서 적는다: 재부팅 뒤 자동 복구 · 배포 실패 시 자동 되돌림 · 운영 DB로 복원하는 절차(필요해지면).
 
 ---
 
@@ -495,3 +521,4 @@ curl.exe -sI https://cbt.sagming.com   # 머리글만 → 200 OK + 보안 헤더
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
 | 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠, 4.14절 운영 파일 · 백업 타이머, 4.15절 첫 배포 · 내 계정 |
 | 2026-10-31 | 사용자 요청: 서버 작업에서 친 명령을 전부 — 4장 머리에 순서 표, 절마다 **상황** · 줄마다 뜻 · 옵션 · 결과, 헛디딘 명령(✗)까지. 3.5절 노트북 추가 실제 순서. 5장에 운영 명령 줄 추가 |
+| 2026-10-31 | 4.16절 복원 연습 |
