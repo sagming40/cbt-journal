@@ -59,7 +59,7 @@ ssh cbt
 
 ### 3.3 비상구: Vultr 웹 콘솔
 SSH가 막혔을 때(방화벽 · SSH 설정 실수) 쓰는 문이다.
-- Vultr → Compute → Instances → `cbt-1` → 오른쪽 위 **View Console**
+- Vultr → Compute → Instances → `cbt-1` 이름을 눌러 상세 화면 → 오른쪽 위 모니터 모양 아이콘(**View Console**). 목록에서 그 줄 끝 `···` 메뉴에도 있다. 콘솔은 새 창(팝업)으로 열린다 — 브라우저가 막으면 주소창 오른쪽에서 허용
 - 웹 화면 안에서 `root`와 **Vultr 화면에 표시된 root 비밀번호**로 로그인한다. root 금지는 SSH에만 걸려 있어서 콘솔은 된다.
 - root 비밀번호는 이 비상구 말고는 쓰지 않는다. 어디에도 옮겨 적지 않는다.
 
@@ -78,6 +78,8 @@ PC마다 열쇠를 따로 만든다 — 한 PC를 잃으면 그 열쇠만 지우
    echo 'ssh-ed25519 AAAA…(복사한 한 줄 전체)' >> ~/.ssh/authorized_keys
    ```
    `>>`(두 개)여야 한다. `>`(하나)면 기존 열쇠를 지워 버려 다른 PC가 못 들어온다.
+   - **접속되는 PC가 없어 웹 콘솔(3.3절)로 넣을 때**: 콘솔은 `root`로 들어가서 `~`가 `/root`다. 경로를 `/home/sagming40/.ssh/authorized_keys`로 바꿔 친다(기존 파일에 덧붙이는 거라 주인은 그대로 `sagming40`). 확인: `tail -n 2 /home/sagming40/.ssh/authorized_keys`
+   - 웹 콘솔에 붙여넣기가 안 되면 콘솔 화면의 클립보드 · 텍스트 보내기 버튼을 쓰거나, 집 PC로 넣는다. 열쇠 한 줄을 손으로 옮겨 치지 않는다(한 글자만 틀려도 안 맞는다).
 3. 새 PC에서 3.1 명령으로 접속 확인.
 4. 지금 등록된 열쇠 보기 (서버에서): `cat ~/.ssh/authorized_keys` — 줄 끝 메모(`home-pc` · `company-pc`)로 구분한다. PC를 잃으면 그 줄만 지운다.
 
