@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스타일 시안 A ~ C</title>
+<!-- 스타일 시안 보드 (DESIGN 6장 · 9장). 같은 화면(S-02 오늘 · S-03 체크인, 모바일)을 세 방향으로 그린다.
+     규칙은 그대로 지킨다: 포인트 색 하나(B · 남색 계열), 빨강 · 주황 · 초록 없음, 강도는 포인트 색의 명도로만.
+     예시 문구 · 기록은 지어낸 것이다. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #8a8a90; font-family: 'Pretendard', system-ui, sans-serif; color: #111; }
+  button, input, textarea { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+  .bar { position: sticky; top: 0; z-index: 10; display: flex; gap: 16px; align-items: center; padding: 8px 16px; background: #222; color: #eee; font-size: 13px; }
+  .bar label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .board { display: flex; flex-direction: column; gap: 56px; padding: 32px 24px 80px; }
+  .dir { display: grid; grid-template-columns: 300px auto; gap: 32px; align-items: start; }
+  .note { color: #fff; font-size: 14px; line-height: 1.6; position: sticky; top: 56px; }
+  .note h2 { font-size: 22px; margin: 0 0 4px; }
+  .note .tag { font-size: 12px; opacity: .75; margin-bottom: 12px; }
+  .note ul { padding-left: 18px; margin: 8px 0 0; }
+  .note li { margin-bottom: 4px; }
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; }
+  .cap { color: #fff; font-size: 12px; margin: 0 0 6px; opacity: .85; }
+  .phone { width: 375px; height: 780px; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+  .scroll { flex: 1; overflow: auto; }
+  .status { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 14px; font-weight: 600; }
+
+  /* ── 공통 토큰 이름: 각 시안이 값을 다르게 채운다 ── */
+  .phone { background: var(--bg); color: var(--text); }
+  .muted { color: var(--muted); }
+
+  /* ════════ A · 밤의 일기장 ════════ */
+  .A { --bg:#0E0F14; --surface:#16171F; --surface2:#20222C; --border:#272935; --input:#5D6070; --text:#EEEEF3; --muted:#A3A5B2;
+       --accent:#4457C2; --accentText:#9AA6F0; --tint:rgba(68,87,194,.18); --glow:rgba(68,87,194,.35); }
+  .light .A { --bg:#F4F4F7; --surface:#FFFFFF; --surface2:#E9E9EF; --border:#E1E1E8; --input:#8A8A96; --text:#16161C; --muted:#5E5F6A;
+       --accentText:#3949A8; --tint:rgba(68,87,194,.09); --glow:rgba(68,87,194,.16); }
+  .A .phone { background: radial-gradient(120% 55% at 50% -8%, var(--glow), transparent 60%), var(--bg); }
+  .A .top { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px 0; }
+  .A .logo { display: flex; gap: 8px; align-items: center; font-weight: 800; font-size: 14px; letter-spacing: .02em; }
+  .A .logo i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .A .pill-btn { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; }
+  .A .hero { padding: 26px 20px 8px; }
+  .A .eyebrow { font-size: 13px; font-weight: 600; color: var(--accentText); letter-spacing: .04em; }
+  .A .hero h1 { font-size: 44px; line-height: 1.05; letter-spacing: -.035em; font-weight: 800; margin: 6px 0 6px; }
+  .A .hero p { margin: 0; font-size: 14px; }
+  .A .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 18px 16px 0; }
+  .A .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
+  .A .cta { grid-column: 1 / -1; position: relative; overflow: hidden; border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+            background: linear-gradient(140deg, color-mix(in oklab, var(--accent) 34%, var(--surface)) 0%, var(--surface) 70%); padding: 20px; }
+  .A .cta b { display: block; font-size: 22px; letter-spacing: -.02em; margin-bottom: 14px; }
+  .A .cta .go { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px var(--glow); }
+  .A .mini b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
+  .A .mini span { font-size: 12px; }
+  .A .sec { padding: 22px 20px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .A .sec h3 { margin: 0; font-size: 17px; font-weight: 800; }
+  .A .tl { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+  .A .row { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
+  .A .row time { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .A .em { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 14px; font-weight: 600; }
+  .A .lvl { display: inline-block; width: 40px; height: 6px; border-radius: 3px; background: var(--surface2); vertical-align: middle; margin-left: 6px; overflow: hidden; }
+  .A .lvl i { display: block; height: 100%; border-radius: 3px; }
+  .A .tab { position: absolute; left: 16px; right: 16px; bottom: 18px; height: 60px; border-radius: 999px; display: flex; align-items: center; justify-content: space-around;
+            background: color-mix(in oklab, var(--surface) 82%, transparent); backdrop-filter: blur(14px); border: 1px solid var(--border); font-size: 12px; }
+  .A .tab span { padding: 8px 14px; border-radius: 999px; }
+  .A .tab .on { background: var(--tint); color: var(--accentText); font-weight: 700; }
+  /* A 체크인 */
+  .A .hdr { display: flex; align-items: center; gap: 8px; padding: 4px 12px; }
+  .A .hdr .x { width: 44px; height: 44px; border: 0; background: none; font-size: 20px; }
+  .A .hdr .t { flex: 1; font-weight: 700; }
+  .A .q { padding: 10px 20px 4px; }
+  .A .q h2 { font-size: 30px; line-height: 1.15; letter-spacing: -.03em; font-weight: 800; margin: 0 0 6px; }
+  .A .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
+  .A .chip { height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--input); background: transparent; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .A .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 14px var(--glow); }
+  .A .sliders { margin: 6px 16px; padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+  .A .sl { display: grid; grid-template-columns: 1fr 52px; align-items: center; gap: 4px 12px; padding: 12px 0; }
+  .A .sl + .sl { border-top: 1px solid var(--border); }
+  .A .sl .nm { font-weight: 700; font-size: 15px; }
+  .A .sl .v { grid-row: span 2; text-align: right; font-size: 30px; font-weight: 800; letter-spacing: -.03em; }
+  .A input[type=range] { width: 100%; accent-color: var(--accent); }
+  .A .field { padding: 8px 16px; }
+  .A .field label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .A .field input { width: 100%; height: 48px; margin-top: 6px; border-radius: 14px; border: 1px solid var(--input); background: var(--surface); padding: 0 14px; }
+  .A .save { position: absolute; left: 16px; right: 16px; bottom: 20px; height: 56px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 800; font-size: 16px; box-shadow: 0 8px 26px var(--glow); }
+
+  /* ════════ B · 종이 노트 ════════ */
+  .B { --bg:#F5F2EA; --surface:#FBF9F4; --surface2:#E9E4D8; --border:#DDD6C7; --input:#8C8576; --text:#22211D; --muted:#6A665C;
+       --accent:#33449E; --accentText:#2E3D90; --tint:rgba(51,68,158,.08); --rule:rgba(51,68,158,.13); }
+  .dark .B { --bg:#15161A; --surface:#1B1C21; --surface2:#2A2B31; --border:#2E2F36; --input:#6E6F78; --text:#ECEAE4; --muted:#A8A59C;
+       --accent:#4457C2; --accentText:#A3AEF0; --tint:rgba(68,87,194,.16); --rule:rgba(154,166,240,.12); }
+  .B .serif { font-family: 'Gowun Batang', serif; }
+  .B .top { display: flex; align-items: center; justify-content: space-between; padding: 8px 22px 0; font-size: 13px; }
+  .B .hero { padding: 26px 22px 16px; border-bottom: 1px solid var(--border); margin: 0 0 0; }
+  .B .hero .d { font-size: 15px; color: var(--muted); }
+  .B .hero h1 { font-family: 'Gowun Batang', serif; font-size: 34px; line-height: 1.25; font-weight: 700; margin: 6px 0 0; letter-spacing: -.01em; }
+  .B .write { margin: 18px 22px 0; padding: 18px 18px 16px; border-radius: 6px; background: var(--surface);
+              border: 1px solid var(--border); box-shadow: 0 1px 0 var(--border), 0 3px 0 -1px var(--surface), 0 4px 0 -1px var(--border); }
+  .B .write .prompt { font-family: 'Gowun Batang', serif; font-size: 20px; margin-bottom: 14px; }
+  .B .write .lines { height: 54px; background: repeating-linear-gradient(to bottom, transparent 0 26px, var(--rule) 26px 27px); margin-bottom: 14px; }
+  .B .btns { display: flex; gap: 8px; }
+  .B .btn { height: 46px; padding: 0 18px; border-radius: 6px; border: 1px solid var(--input); background: transparent; font-weight: 600; }
+  .B .btn.p { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .B .sec { padding: 26px 22px 6px; display: flex; justify-content: space-between; align-items: baseline; }
+  .B .sec h3 { font-family: 'Gowun Batang', serif; margin: 0; font-size: 19px; }
+  .B .entries { padding: 0 22px; }
+  .B .entry { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 14px 0; border-bottom: 1px dashed var(--border); }
+  .B .entry time { font-family: 'Gowun Batang', serif; font-size: 15px; color: var(--muted); padding-top: 1px; }
+  .B .entry .what { font-size: 15px; line-height: 1.6; }
+  .B .dots { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: 1px; }
+  .B .dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--accent); }
+  .B .dots i.f { background: var(--accent); }
+  .B .tab { position: absolute; left: 0; right: 0; bottom: 0; height: 76px; padding-bottom: 14px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); background: var(--bg); font-size: 13px; }
+  .B .tab span { padding: 6px 4px; }
+  .B .tab .on { color: var(--accentText); font-weight: 700; border-bottom: 2px solid var(--accent); }
+  /* B 체크인 */
+  .B .hdr { display: flex; align-items: center; padding: 4px 12px; border-bottom: 1px solid var(--border); }
+  .B .hdr .x { width: 44px; height: 44px; border: 0; background: none; font-size: 20px; }
+  .B .hdr .t { flex: 1; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 17px; }
+  .B .hdr .sv { height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font-weight: 700; }
+  .B .q { padding: 22px 22px 4px; }
+  .B .q h2 { font-family: 'Gowun Batang', serif; font-size: 26px; font-weight: 700; margin: 0 0 4px; }
+  .B .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 22px 6px; }
+  .B .chip { height: 44px; padding: 0 15px; border-radius: 6px; border: 1px solid var(--input); background: var(--surface); font-size: 15px; cursor: pointer; }
+  .B .chip.on { background: var(--tint); border-color: var(--accent); color: var(--accentText); font-weight: 700; box-shadow: inset 0 -3px 0 var(--accent); }
+  .B .sl { margin: 0 22px; padding: 14px 0; border-bottom: 1px dashed var(--border); display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; }
+  .B .sl .nm { font-family: 'Gowun Batang', serif; font-size: 17px; font-weight: 700; }
+  .B .sl .v { font-size: 22px; font-weight: 700; }
+  .B input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+  .B .field { padding: 18px 22px 0; }
+  .B .field label { font-size: 13px; color: var(--muted); }
+  .B .field .ruled { height: 30px; border: 0; border-bottom: 1px solid var(--input); width: 100%; background: transparent; padding: 0 2px; margin-top: 4px; }
+
+  /* ════════ C · 고요한 물결 ════════ */
+  .C { --bg:#EEF0F8; --surface:rgba(255,255,255,.72); --surface2:#DEE2F1; --border:rgba(255,255,255,.9); --input:#878BA0; --text:#1A1C29; --muted:#5B5F75;
+       --accent:#4457C2; --accentText:#3646A6; --tint:rgba(68,87,194,.12); --line:rgba(26,28,41,.08); }
+  .dark .C { --bg:#101220; --surface:rgba(30,33,52,.72); --surface2:#2A2E47; --border:rgba(255,255,255,.07); --input:#6D7190; --text:#ECEDF5; --muted:#A5A8C0;
+       --accentText:#A4AEF2; --tint:rgba(110,128,230,.2); --line:rgba(255,255,255,.07); }
+  .C .phone { background:
+      radial-gradient(60% 40% at 15% 10%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 70%),
+      radial-gradient(50% 35% at 95% 35%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
+      var(--bg); }
+  .C .top { padding: 10px 22px 0; display: flex; justify-content: space-between; align-items: center; }
+  .C .hello { font-size: 15px; color: var(--muted); }
+  .C .hero { padding: 18px 22px 0; }
+  .C .hero h1 { font-size: 30px; line-height: 1.25; letter-spacing: -.025em; font-weight: 700; margin: 0; }
+  .C .orbwrap { display: flex; justify-content: center; padding: 22px 0 10px; }
+  .C .orb { width: 196px; height: 196px; border-radius: 50%; border: 0; color: #fff; cursor: pointer; position: relative;
+            background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--accent) 55%, white), var(--accent) 62%, color-mix(in oklab, var(--accent) 80%, black));
+            box-shadow: 0 0 0 14px var(--tint), 0 0 0 30px color-mix(in oklab, var(--accent) 6%, transparent), 0 18px 40px color-mix(in oklab, var(--accent) 40%, transparent); }
+  .C .orb b { display: block; font-size: 22px; } .C .orb span { font-size: 13px; opacity: .9; }
+  .C .sub { display: flex; justify-content: center; }
+  .C .ghost { height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--input); background: var(--surface); backdrop-filter: blur(10px); font-weight: 600; }
+  .C .glass { margin: 16px 16px 0; background: var(--surface); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 28px; padding: 6px 18px; box-shadow: 0 8px 30px var(--line); }
+  .C .glass h3 { font-size: 15px; margin: 12px 0 4px; }
+  .C .it { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .C .it:first-of-type { border-top: 0; }
+  .C .blob { width: 38px; height: 38px; border-radius: 50%; flex: none; }
+  .C .it .tx { flex: 1; font-size: 14px; font-weight: 600; } .C .it .tx small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .C .tab { position: absolute; left: 50%; transform: translateX(-50%); bottom: 18px; height: 58px; padding: 0 8px; border-radius: 999px; display: flex; gap: 2px; align-items: center;
+            background: var(--surface); backdrop-filter: blur(16px); border: 1px solid var(--border); box-shadow: 0 8px 30px var(--line); font-size: 12px; }
+  .C .tab span { padding: 10px 16px; border-radius: 999px; white-space: nowrap; }
+  .C .field { padding: 14px 22px 0; }
+  .C .field label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .C .field input { width: 100%; height: 50px; margin-top: 6px; border-radius: 999px; border: 1px solid var(--input); background: var(--surface); backdrop-filter: blur(10px); padding: 0 18px; }
+  .C .tab .on { background: var(--accent); color: #fff; font-weight: 700; }
+  /* C 체크인 */
+  .C .hdr { display: flex; align-items: center; padding: 4px 12px; }
+  .C .hdr .x { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font-size: 18px; }
+  .C .hdr .t { flex: 1; text-align: center; font-weight: 700; margin-right: 44px; }
+  .C .q { padding: 14px 22px 0; text-align: center; }
+  .C .q h2 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 4px; }
+  .C .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 18px 16px 8px; }
+  .C .chip { height: 46px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); backdrop-filter: blur(10px); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .C .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .C .sl { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .C .sl:first-of-type { border-top: 0; }
+  .C .sl .nm { font-weight: 700; } .C .sl .v { font-weight: 800; font-size: 18px; }
+  .C .track { grid-column: 1 / -1; height: 26px; border-radius: 13px; background: var(--surface2); position: relative; overflow: hidden; cursor: pointer; }
+  .C .track i { position: absolute; inset: 0 auto 0 0; border-radius: 13px; }
+  .C .save { position: absolute; left: 22px; right: 22px; bottom: 22px; height: 56px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 800; font-size: 16px;
+             box-shadow: 0 10px 30px color-mix(in oklab, var(--accent) 45%, transparent); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>스타일 시안 A ~ C</strong>
+  <label><input type="checkbox" id="flip"> 반대 테마로 보기 (A는 다크 → 라이트, B · C는 라이트 → 다크)</label>
+  <span style="opacity:.7">칩 · 슬라이더는 눌러 볼 수 있다</span>
+</div>
+
+<div class="board" id="board">
+
+  <!-- ─────────── A ─────────── -->
+  <section class="dir">
+    <div class="note">
+      <h2>A · 밤의 일기장</h2>
+      <div class="tag">참고 목업(PlayLedger · 자재 사전)과 가장 가까운 결</div>
+      <ul>
+        <li>어두운 바탕 위 위쪽에 남색 빛번짐, 날짜를 아주 크게(44px 굵게)</li>
+        <li>벤토 카드: 체크인 카드가 화면의 주인공, 옆에 작은 숫자 카드</li>
+        <li>알약 모양 버튼 · 칩, 떠 있는 하단 탭</li>
+        <li>강도는 숫자를 크게 + 남색 막대(명도)</li>
+        <li>밤에 침대에서 여는 앱이라는 상황에 맞음. 대신 "차분함"보다 "세련됨" 쪽</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <p class="cap">S-02 오늘</p>
+        <div class="A"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="top"><div class="logo"><i></i>CBT 저널</div><button class="pill-btn">설정</button></div>
+            <div class="hero">
+              <div class="eyebrow">일요일 · 오늘</div>
+              <h1>11월 1일</h1>
+              <p class="muted">오늘 체크인 2번, 사고 기록 1개</p>
+            </div>
+            <div class="bento">
+              <div class="card cta"><b>지금 기분이 어때요?</b><button class="go">＋ 체크인</button></div>
+              <div class="card mini"><b class="num">3/8</b><span class="muted">이어 쓰기 · 회의 끝나고…</span></div>
+              <div class="card mini"><b class="num">80→35</b><span class="muted">오늘 사고 기록 · 불안</span></div>
+            </div>
+            <div class="sec"><h3>오늘</h3><span class="muted" style="font-size:13px">기록 전체 ›</span></div>
+            <div class="tl">
+              <div class="row"><time class="num">09:12</time><div class="em"><span>불안 <span class="num">60</span><span class="lvl"><i data-v="60"></i></span></span><span>무기력 <span class="num">40</span><span class="lvl"><i data-v="40"></i></span></span></div></div>
+              <div class="row"><time class="num">13:40</time><div class="em"><span>짜증 <span class="num">70</span><span class="lvl"><i data-v="70"></i></span></span></div></div>
+              <div class="row"><time class="num">18:05</time><div class="em"><span>사고 기록 · 불안 <span class="num">80 → 35</span></span></div></div>
+            </div>
+            <div style="height:100px"></div>
+          </div>
+          <div class="tab"><span class="on">오늘</span><span>기록</span><span>통계</span><span>설정</span></div>
+        </div></div>
+      </div>
+      <div>
+        <p class="cap">S-03 체크인</p>
+        <div class="A"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="hdr"><button class="x">×</button><span class="t">체크인</span><span class="muted" style="font-size:13px;padding-right:8px">지금 · 21:40</span></div>
+            <div class="q"><h2>지금 어떤 감정인가요?</h2><span class="muted" style="font-size:14px">여러 개 골라도 돼요</span></div>
+            <div class="chips" data-chips></div>
+            <div class="sliders" data-sliders></div>
+            <div class="field"><label>메모 (선택)</label><input placeholder="한 줄로"></div>
+            <div style="height:100px"></div>
+          </div>
+          <button class="save">저장</button>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── B ─────────── -->
+  <section class="dir">
+    <div class="note">
+      <h2>B · 종이 노트</h2>
+      <div class="tag">"일기장"을 그대로 화면으로. 가장 차분함</div>
+      <ul>
+        <li>미색 종이 바탕, 제목 · 날짜 · 질문은 명조(고운바탕), 본문은 Pretendard</li>
+        <li>카드 대신 가는 선 · 점선으로 나눔. 입력칸은 공책 줄</li>
+        <li>오늘 기록은 왼쪽 여백에 시각을 적는 일기 형식</li>
+        <li>강도는 숫자 + 남색 점 5개(채운 개수 = 강도/20)</li>
+        <li>감정 앱다운 따뜻함. 대신 명조 글꼴을 하나 더 들여와야 한다(앱에 직접 포함)</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <p class="cap">S-02 오늘</p>
+        <div class="B"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="top"><span class="serif" style="font-weight:700;font-size:15px">CBT 저널</span><span class="muted">설정</span></div>
+            <div class="hero"><div class="d">2026년 11월 1일 일요일</div><h1>오늘은 어떤<br>하루였나요?</h1></div>
+            <div class="write">
+              <div class="prompt">지금 기분을 적어 볼까요</div>
+              <div class="lines"></div>
+              <div class="btns"><button class="btn p">체크인</button><button class="btn">사고 기록 쓰기</button></div>
+            </div>
+            <div class="sec"><h3>이어 쓰기</h3></div>
+            <div class="entries"><div class="entry"><time class="num">3/8</time><div class="what">회의 끝나고… <span class="muted" style="font-size:13px">· 2시간 전</span></div></div></div>
+            <div class="sec"><h3>오늘</h3><span class="muted" style="font-size:13px">기록 전체 ›</span></div>
+            <div class="entries">
+              <div class="entry"><time class="num">09:12</time><div class="what">불안 <span class="num">60</span><span class="dots" data-dots="60"></span><br>무기력 <span class="num">40</span><span class="dots" data-dots="40"></span></div></div>
+              <div class="entry"><time class="num">13:40</time><div class="what">짜증 <span class="num">70</span><span class="dots" data-dots="70"></span></div></div>
+              <div class="entry"><time class="num">18:05</time><div class="what">사고 기록 · 불안 <span class="num">80 → 35</span></div></div>
+            </div>
+            <div style="height:100px"></div>
+          </div>
+          <div class="tab"><span class="on">오늘</span><span>기록</span><span>통계</span><span>설정</span></div>
+        </div></div>
+      </div>
+      <div>
+        <p class="cap">S-03 체크인</p>
+        <div class="B"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="hdr"><button class="x">×</button><span class="t">체크인</span><button class="sv">저장</button></div>
+            <div class="q"><h2>지금 어떤 감정인가요?</h2><span class="muted" style="font-size:14px">여러 개 골라도 돼요</span></div>
+            <div class="chips" data-chips></div>
+            <div data-sliders></div>
+            <div class="field"><label>메모 (선택)</label><input class="ruled" placeholder="한 줄로"></div>
+            <div class="field"><label>시각</label><div style="margin-top:6px">지금 · 21:40 ▾</div></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── C ─────────── -->
+  <section class="dir">
+    <div class="note">
+      <h2>C · 고요한 물결</h2>
+      <div class="tag">명상 · 호흡 앱 같은 부드러운 결</div>
+      <ul>
+        <li>옅은 남색 번짐 위에 반투명 유리 카드, 모서리 크게(28px)</li>
+        <li>체크인은 화면 가운데 큰 원 버튼 — "숨 한 번 고르고 누르기"</li>
+        <li>강도는 두꺼운 둥근 막대(남색 명도), 오늘 기록은 강도 색 동그라미</li>
+        <li>가장 부드럽고 손이 덜 긴장됨. 대신 유리 효과가 오래된 휴대폰에서 무거울 수 있다</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <p class="cap">S-02 오늘</p>
+        <div class="C"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="top"><span class="hello">11월 1일 일요일</span><button class="ghost" style="height:36px">설정</button></div>
+            <div class="hero"><h1>천천히,<br>지금 마음을 볼까요</h1></div>
+            <div class="orbwrap"><button class="orb"><b>체크인</b><span>10초면 돼요</span></button></div>
+            <div class="sub"><button class="ghost">사고 기록 쓰기</button></div>
+            <div class="glass">
+              <h3>오늘</h3>
+              <div class="it"><span class="blob" data-blob="60"></span><div class="tx">불안 60 · 무기력 40<small class="num">09:12</small></div></div>
+              <div class="it"><span class="blob" data-blob="70"></span><div class="tx">짜증 70<small class="num">13:40</small></div></div>
+              <div class="it"><span class="blob" data-blob="35"></span><div class="tx">사고 기록 · 불안 80 → 35<small class="num">18:05</small></div></div>
+            </div>
+            <div style="height:100px"></div>
+          </div>
+          <div class="tab"><span class="on">오늘</span><span>기록</span><span>통계</span><span>설정</span></div>
+        </div></div>
+      </div>
+      <div>
+        <p class="cap">S-03 체크인</p>
+        <div class="C"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="hdr"><button class="x">×</button><span class="t">체크인</span></div>
+            <div class="q"><h2>지금 어떤 감정인가요?</h2><span class="muted" style="font-size:14px">여러 개 골라도 돼요</span></div>
+            <div class="chips" data-chips></div>
+            <div class="glass" data-sliders></div>
+            <div class="field"><label>메모 (선택)</label><input placeholder="한 줄로"></div>
+            <div style="height:110px"></div>
+          </div>
+          <button class="save">저장</button>
+        </div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // 감정 10개 (DATA_MODEL 3.3절). 처음엔 불안 60 · 짜증 30이 골라져 있다(예시).
+  const EMOTIONS = ['불안', '두려움', '슬픔', '무기력', '분노', '짜증', '수치심', '죄책감', '외로움', '좌절'];
+  // 강도 색: accent (15 + 강도 × 0.85)% + surface-2 (DESIGN 6장)
+  const level = v => `color-mix(in oklab, var(--accent) ${15 + v * 0.85}%, var(--surface2))`;
+
+  document.querySelectorAll('[data-chips]').forEach(box => {
+    const phone = box.closest('.phone');
+    const sliders = phone.querySelector('[data-sliders]');
+    const dir = box.closest('.A, .B, .C').classList[0];
+    const picked = new Map([['불안', 60], ['짜증', 30]]);
+    const render = () => {
+      box.innerHTML = EMOTIONS.map(e => `<button class="chip ${picked.has(e) ? 'on' : ''}" aria-pressed="${picked.has(e)}">${e}</button>`).join('');
+      sliders.style.display = picked.size ? '' : 'none';
+      sliders.innerHTML = [...picked].map(([e, v]) => dir === 'C'
+        ? `<div class="sl"><span class="nm">${e}</span><span class="v num">${v}</span><div class="track" data-e="${e}" aria-label="${e} 강도"><i style="width:${v}%;background:${level(v)}"></i></div></div>`
+        : `<div class="sl"><span class="nm">${e}</span><span class="v num">${v}</span><input type="range" min="0" max="100" step="5" value="${v}" data-e="${e}" aria-label="${e} 강도"></div>`).join('');
+    };
+    box.addEventListener('click', ev => {
+      const b = ev.target.closest('.chip'); if (!b) return;
+      const e = b.textContent; picked.has(e) ? picked.delete(e) : picked.set(e, 50); // 칩을 고르면 50에서 시작 (DESIGN 4.2절)
+      render();
+    });
+    sliders.addEventListener('input', ev => { const e = ev.target.dataset.e; if (e) { picked.set(e, +ev.target.value); render(); } });
+    sliders.addEventListener('click', ev => {
+      const t = ev.target.closest('.track'); if (!t) return;
+      const r = t.getBoundingClientRect(); const v = Math.round(((ev.clientX - r.left) / r.width) * 20) * 5;
+      picked.set(t.dataset.e, Math.max(0, Math.min(100, v))); render();
+    });
+    render();
+  });
+  document.querySelectorAll('.lvl i').forEach(i => { const v = +i.dataset.v; i.style.width = v + '%'; i.style.background = level(v); });
+  document.querySelectorAll('[data-dots]').forEach(d => { const n = Math.round(+d.dataset.dots / 20); d.innerHTML = Array.from({ length: 5 }, (_, k) => `<i class="${k < n ? 'f' : ''}"></i>`).join(''); });
+  document.querySelectorAll('[data-blob]').forEach(b => { b.style.background = level(+b.dataset.blob); });
+
+  // 반대 테마: A는 .light, B · C는 .dark를 board에 붙인다. 주소에도 남긴다(?flip=1)
+  const flip = document.getElementById('flip');
+  const apply = on => { document.getElementById('board').className = 'board ' + (on ? 'light dark' : ''); };
+  flip.checked = new URLSearchParams(location.search).get('flip') === '1'; apply(flip.checked);
+  flip.addEventListener('change', () => { apply(flip.checked); history.replaceState(null, '', flip.checked ? '?flip=1' : location.pathname); });
+</script>
+</body>
+</html>
