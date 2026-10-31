@@ -42,8 +42,10 @@ ssh -i "$HOME\.ssh\cbt_vultr" sagming40@<서버 IP>
 ### 3.2 짧게 `ssh cbt`로 들어가기 (PC마다 한 번, **`task deploy`에 필요**)
 PC의 `~/.ssh/config`에 별명을 적어 두면 주소 · 열쇠 · 계정을 매번 안 친다. 이 파일은 PC에만 있고 저장소에는 안 들어간다. `task deploy`는 이 별명 `cbt`로 서버를 찾는다(저장소에 IP를 적지 않으려고).
 ```powershell
+if (-not (Test-Path "$HOME\.ssh\config")) { New-Item -ItemType File "$HOME\.ssh\config" }
 notepad "$HOME\.ssh\config"
 ```
+파일을 먼저 만드는 이유: 없는 파일을 메모장으로 열어 저장하면 `config.txt`가 되고, ssh는 그 파일을 안 읽는다(`Could not resolve hostname cbt` — 노트북에서 겪음). 확인: `ssh -G cbt`에 `hostname`이 서버 IP로 나오면 별명이 읽힌 것.
 메모장에 아래를 넣고 저장(`<서버 IP>`는 실제 값으로):
 ```text
 Host cbt
