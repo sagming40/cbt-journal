@@ -35,7 +35,11 @@
 
 ### 처음 한 번 (PC마다)
 ```powershell
-# 1. 도구 (Docker Desktop · Node 24는 따로 설치)
+# 0. 저장소 받기 (Git · Docker Desktop · Node 24는 먼저 설치)
+git clone https://github.com/sagming40/cbt-journal.git
+Set-Location cbt-journal
+
+# 1. 도구
 winget install --id GoLang.Go -e
 winget install --id pnpm.pnpm -e
 winget install --id Task.Task -e
@@ -52,9 +56,15 @@ task migrate
 # 4. 내 계정 만들기 (가입이 꺼져 있어서 명령으로 만든다. 비밀번호는 실행 중에 물어본다 — 12자 이상)
 task user -- create --email 내이메일 --nickname 내닉네임
 ```
-- 계정과 기록은 PC마다 따로다(DB가 기기마다 따로 — CLAUDE.md "기기 둘"). 두 PC에서 같은 계정을 쓰려면 각각 만든다. 실제로 쓰는 계정은 배포(M3) 뒤 서버에 하나만 둔다.
+- 계정과 기록은 PC마다 따로다(DB가 기기마다 따로 — CLAUDE.md "기기"). 여러 PC에서 같은 계정을 쓰려면 각각 만든다. 실제로 쓰는 계정은 배포(M3) 뒤 서버에 하나만 둔다.
 - 비밀번호는 영문 · 숫자 · `-` · `_`만 쓰는 게 편하다. `@` `:` `/` `?` `#` `%`가 있으면 `DATABASE_URL` 안에서 URL 인코딩해야 한다.
 - Postgres 비밀번호는 **볼륨을 처음 만들 때 한 번만** 정해진다. 나중에 `.env`의 `POSTGRES_PASSWORD`만 바꾸면 DB에는 반영되지 않는다(바꾸려면 볼륨을 지우고 다시 만든다 — 아래 "멈추기 · 지우기").
+- 확인: `task test` · `task lint`가 통과하고 `task dev`로 `http://localhost:5176`에 로그인되면 끝.
+
+### 운영 서버를 다루는 PC라면 (배포 · 백업 가져오기 · 서버 작업)
+1. **SSH 열쇠**: PC마다 따로 만들고, 이미 접속되는 PC(또는 Vultr 웹 콘솔)로 서버 `authorized_keys`에 한 줄 추가 — [SERVER.md](docs/SERVER.md) 3.4절. Vultr 화면에 등록만 해서는 이미 만든 서버에 안 들어간다. 열쇠 메모는 기기 이름으로(`home-pc` · `company-pc` · `laptop`).
+2. **ssh 별명 `cbt`**: `~/.ssh/config` — SERVER.md 3.2절. `task deploy` · `task backup:pull`이 쓴다. 확인: `ssh cbt` 접속.
+3. **`age`**(백업을 열 때): `winget install --id FiloSottile.age -e`. 여는 열쇠(개인키)는 만든 PC에서 비밀번호 관리자 등으로 옮긴다 — 저장소 · 대화에 넣지 않는다 (ARCHITECTURE 7.4절).
 
 ### 매일 시작할 때
 ```powershell
@@ -106,7 +116,7 @@ task migrate             # 남은 것 전부 적용 (= up)
 task migrate -- down     # 마지막 하나만 되돌림
 ```
 - 새 파일은 `internal/db/migrations/`에 다음 번호로 만든다: `00003_checkins.sql`. 파일 안에 `-- +goose Up` / `-- +goose Down` 표시가 있어야 한다.
-- **push한 마이그레이션 파일은 고치지 않는다.** 바꿀 게 있으면 새 번호로 만든다. 스키마는 고친 PC에서만 만든다 (CLAUDE.md "기기 둘").
+- **push한 마이그레이션 파일은 고치지 않는다.** 바꿀 게 있으면 새 번호로 만든다. 스키마는 고친 PC에서만 만든다 (CLAUDE.md "기기").
 
 ### Postgres · Valkey 직접 보기
 ```powershell

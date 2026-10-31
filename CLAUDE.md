@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 이 저장소에서 일하는 Claude가 지키는 공통 규칙이다.
-세션끼리는 기억을 공유하지 않고 기기 · 계정도 둘이라서(아래 "기기 둘") **저장소가 공용 노트**다. 이 파일과 `docs/`가 기억 역할을 한다. 기기와 상관없이 지킬 규칙은 Claude 메모리가 아니라 전부 이 파일에 적는다.
+세션끼리는 기억을 공유하지 않고 기기 · 계정도 여럿이라서(아래 "기기") **저장소가 공용 노트**다. 이 파일과 `docs/`가 기억 역할을 한다. 기기와 상관없이 지킬 규칙은 Claude 메모리가 아니라 전부 이 파일에 적는다.
 
 CBT 저널 v2: 인지행동치료의 사고 기록을 매일 짧게 연습하는 웹앱. 1인 취미 프로젝트다(혼자 쓰기로 시작, 나중에 공개 가능).
 Go(`net/http` · pgx · sqlc · goose) + PostgreSQL + Valkey(asynq) / SvelteKit SPA(Svelte 5 · TypeScript · shadcn-svelte · Tailwind), 실행 파일 하나로 배포.
@@ -103,11 +103,15 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 - **주석**: 한국어로, "왜 이렇게 했나"를 쓰고 필요하면 일상 비유를 곁들인다. 문서를 근거로 삼은 줄에는 `(DATA_MODEL 4.3절)`처럼 출처를 단다.
 - 백엔드 동작을 바꾸면 테스트도 같이 바꾼다.
 
-## 기기 둘
+## 기기
 | 기기 | Claude 계정 | 비고 |
 |---|---|---|
 | **회사 PC** (주 작업 기기) | 회사 계정 | Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, Miniconda(기본 Python 없음) |
 | 집 PC | 개인 계정 | Docker, PostgreSQL 18 직접 설치(5432 사용 중), Node 24 |
+| 노트북 (2026-10-31 추가) | (처음 작업할 때 채운다) | 아직 clone 전. OS · 설치된 도구도 처음 작업할 때 이 칸에 적는다 |
+
+- **새 기기 시작 순서**: README "처음 한 번" 0 ~ 4 → 배포 · 서버 일을 할 기기면 README "운영 서버를 다루는 PC라면" → 이 표에 그 기기 줄을 채운다.
+- Claude가 새 기기에서 처음 열리면 이 표에서 그 기기의 계정 · 도구를 사용자에게 물어 채운다.
 
 - 코드는 GitHub로만 주고받는다. `.env`, `node_modules/`, DB · Valkey 데이터는 기기마다 따로다(`.env.example` 참고).
 - DB 구조는 goose로 맞춘다: `git pull` 뒤 `task migrate`. 마이그레이션 파일은 **스키마를 고친 기기에서만** 만들고, 이미 push한 마이그레이션은 고치지 않는다(새 파일로).
@@ -136,7 +140,7 @@ task user -- create --email … --nickname …   # 계정 만들기 (reset-passw
 > `task`는 `.env`를 dotenv로 읽는다. `go run`으로 직접 실행하면 `.env`가 안 읽힌다. 명령 · 자주 막히는 것의 사람용 설명은 README "실행". Taskfile을 고치면 이 절과 README "실행"을 같이 고친다.
 
 ## 함정 (고치기 전에 확인)
-- **5432는 이미 차 있다**: 두 PC 모두 PostgreSQL을 직접 설치해 둬서 기본 포트를 쓴다. compose Postgres는 `5436`. 접속 문자열 포트를 헷갈리면 엉뚱한 DB(직접 설치한 쪽)에 붙는다.
+- **5432는 이미 차 있다**: 회사 · 집 PC 모두 PostgreSQL을 직접 설치해 둬서 기본 포트를 쓴다. compose Postgres는 `5436`. 접속 문자열 포트를 헷갈리면 엉뚱한 DB(직접 설치한 쪽)에 붙는다.
 - **줄바꿈은 LF**: `.gitattributes`가 모든 글자 파일을 `eol=lf`로 정한다(PC의 `core.autocrlf`보다 우선). 에디터가 새 파일을 CRLF로 저장해도 커밋할 때 LF로 들어간다. `*.ps1` · `*.cmd` · `*.bat`만 CRLF.
 - **Postgres 18 이미지 볼륨은 `/var/lib/postgresql`**: 17까지처럼 `.../data`에 묶는 예전 자료를 따라 하지 않는다(18 이미지의 `PGDATA`는 `/var/lib/postgresql/18/docker`라서 데이터가 볼륨 밖에 쌓이거나 시작이 실패한다).
 - **SvelteKit 3 구조는 예전 자료와 다르다**: `svelte.config.js`가 없고 adapter는 `web/vite.config.ts`의 `sveltekit({ adapter })` 안에 있다. 별칭은 `$lib`가 아니라 `#lib`(package.json `imports`)이고 import에 확장자를 붙인다(`#lib/api/client.js`, `#lib/components/ui/button/index.js`). 전역 CSS는 `src/routes/layout.css`.

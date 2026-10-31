@@ -63,13 +63,13 @@ SSH가 막혔을 때(방화벽 · SSH 설정 실수) 쓰는 문이다.
 - 웹 화면 안에서 `root`와 **Vultr 화면에 표시된 root 비밀번호**로 로그인한다. root 금지는 SSH에만 걸려 있어서 콘솔은 된다.
 - root 비밀번호는 이 비상구 말고는 쓰지 않는다. 어디에도 옮겨 적지 않는다.
 
-### 3.4 새 PC를 추가할 때 (예: 회사 PC)
+### 3.4 새 PC를 추가할 때 (회사 PC · 노트북 — 아직 안 함)
 PC마다 열쇠를 따로 만든다 — 한 PC를 잃으면 그 열쇠만 지우면 된다. **서버는 이미 만들어져 있어서 Vultr에 키를 등록해도 이 서버에는 안 들어간다.** 서버의 `authorized_keys`에 직접 한 줄 추가해야 한다.
 
 1. **새 PC에서** 열쇠 만들기
    ```powershell
    New-Item -ItemType Directory -Force "$HOME\.ssh"
-   ssh-keygen -t ed25519 -C "cbt-journal company-pc" -f "$HOME\.ssh\cbt_vultr"
+   ssh-keygen -t ed25519 -C "cbt-journal company-pc" -f "$HOME\.ssh\cbt_vultr"   # 노트북이면 laptop
    Get-Content "$HOME\.ssh\cbt_vultr.pub"
    ```
    마지막 줄(`ssh-ed25519 AAAA… cbt-journal company-pc`)을 복사한다. `.pub`가 아닌 파일(개인 키)은 열지도 옮기지도 않는다.
@@ -183,4 +183,4 @@ docker compose version             # v5.6.1
 | 날짜 | 내용 |
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
-| 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시 |
+| 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
