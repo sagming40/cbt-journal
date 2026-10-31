@@ -218,6 +218,11 @@ sudo ss -tlnp | grep -E ':5432|:6379'                               # 127.0.0.1�
   Test-NetConnection $ip -Port 5432 | Select-Object RemotePort, TcpTestSucceeded   # False (6379도 False, 22는 True)
   ```
 
+### 4.11 DNS (2026-10-31, Cloudflare 화면에서)
+- `sagming.com` → DNS → 레코드 추가: 형식 `A` · 이름 `cbt` · IPv4 서버 IP · 프록시 **끔(회색 구름, DNS 전용)** · TTL 자동.
+- 확인 (PC): `nslookup cbt.sagming.com 1.1.1.1`과 `nslookup cbt.sagming.com`(지금 네트워크의 DNS) 둘 다 서버 IP.
+- 프록시를 끄는 이유: 켜면 Cloudflare가 중간에 끼어 Caddy 인증서 발급 · 실제 접속 IP 규칙(ARCHITECTURE 3.3절)이 꼬인다. Cloudflare 화면의 "프록싱 필요" 안내 · `www` · 루트 도메인 권장 사항은 따르지 않는다(쓰는 이름은 `cbt` 하나).
+
 ## 5. 자주 쓰는 명령 (서버에서)
 
 | 하고 싶은 것 | 명령 |
@@ -252,4 +257,4 @@ sudo ss -tlnp | grep -E ':5432|:6379'                               # 127.0.0.1�
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS |

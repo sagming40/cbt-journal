@@ -92,7 +92,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] `scripts/deploy.ps1` · `task deploy` (자동, 사용자 지시 2026-10-31) — 거부 2가지 · `-DryRun` 확인, 실제 서버 배포는 아래 "첫 `task deploy`"에서
 - [x] 백업 스크립트 · 타이머 · `task backup:pull` (타이핑 학습 모드, 2026-10-31)
 - [ ] 서버: 스왑(이미 있던 2.3GB 유지 · swappiness 10 — 끝, 2026-10-31) · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose(여기까지 끝, 2026-10-31) · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관)
-- [ ] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저")
+- [ ] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인(여기까지 끝, 2026-10-31) → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저")
 - [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정
 - [ ] 백업 타이머 켜기 · 복원 연습, README "배포" · SERVER.md 갱신
 - **완료 기준**
