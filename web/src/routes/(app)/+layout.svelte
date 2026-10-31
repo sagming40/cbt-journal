@@ -37,6 +37,9 @@
 		{ href: resolve('/(app)/settings'), label: '설정', icon: Settings }
 	];
 	const isActive = (href: string) => page.url.pathname === href;
+	// 체크인 쓰는 중에는 메뉴를 숨긴다: 화면 아래 고정 [저장] 자리이고, 실수로 다른 탭을 눌러 흐름이 끊기지 않게
+	// (DESIGN 3.2절 — S-04와 같은 이유)
+	const focusMode = $derived(page.url.pathname.startsWith(resolve('/(app)/checkin')));
 </script>
 
 {#if auth.user}
@@ -44,7 +47,11 @@
 		<!-- 데스크톱: 왼쪽 사이드바 / 모바일: 아래 탭 (기준 48rem = md, DESIGN 3.2절) -->
 		<nav
 			aria-label="메뉴"
-			class="fixed inset-x-0 bottom-0 z-10 flex border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:min-h-dvh md:w-56 md:flex-col md:gap-1 md:border-t-0 md:border-r md:p-4 md:pb-4"
+			class={[
+				'fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:flex md:min-h-dvh md:w-56 md:flex-col md:gap-1 md:border-t-0 md:border-r md:p-4 md:pb-4',
+				// 체크인 중에는 모바일 하단 탭만 숨긴다(데스크톱 사이드바는 화면을 가리지 않아 둔다)
+				focusMode ? 'hidden' : 'flex'
+			]}
 		>
 			<a
 				href={resolve('/(app)')}
@@ -77,7 +84,12 @@
 		</nav>
 
 		<!-- 본문은 최대 40rem — 글을 쓰는 앱이라 한 줄이 너무 길면 읽기 · 쓰기가 불편하다 (DESIGN 3.2절) -->
-		<main class="mx-auto w-full max-w-[40rem] px-5 pt-6 pb-28 md:px-8 md:pt-10 md:pb-10">
+		<main
+			class={[
+				'mx-auto w-full max-w-[40rem] px-5 pt-6 md:px-8 md:pt-10 md:pb-10',
+				focusMode ? 'pb-6' : 'pb-28'
+			]}
+		>
 			{@render children()}
 		</main>
 	</div>
