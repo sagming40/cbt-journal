@@ -8,6 +8,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Checkin struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	OccurredAt pgtype.Timestamptz
+	Note       string
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+}
+
+type CheckinEmotion struct {
+	CheckinID pgtype.UUID
+	EmotionID int16
+	Intensity int16
+}
+
+type Emotion struct {
+	ID         int16
+	UserID     pgtype.UUID
+	Name       string
+	SortOrder  int16
+	ArchivedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
+}
+
 type Session struct {
 	ID         pgtype.UUID
 	UserID     pgtype.UUID

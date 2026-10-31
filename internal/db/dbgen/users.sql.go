@@ -76,6 +76,18 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	return i, err
 }
 
+const getUserTimezone = `-- name: GetUserTimezone :one
+SELECT timezone FROM users WHERE id = $1
+`
+
+// "그날"의 경계를 계산할 때만 쓴다 — 비밀번호 해시까지 읽어 올 필요가 없다.
+func (q *Queries) GetUserTimezone(ctx context.Context, id pgtype.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getUserTimezone, id)
+	var timezone string
+	err := row.Scan(&timezone)
+	return timezone, err
+}
+
 const updateUserPassword = `-- name: UpdateUserPassword :execrows
 UPDATE users
 SET password_hash = $1, updated_at = now()

@@ -120,8 +120,10 @@ func Reset(t testing.TB, pool *pgxpool.Pool, rdb *redis.Client) {
 	t.Helper()
 	ctx := context.Background()
 	// users를 지우면 CASCADE로 사용자 데이터가 전부 지워진다 (DATA_MODEL 1절).
-	if _, err := pool.Exec(ctx, "TRUNCATE users CASCADE"); err != nil {
-		t.Fatalf("TRUNCATE: %v", err)
+	// TRUNCATE … CASCADE가 아니라 DELETE: TRUNCATE CASCADE는 users를 참조하는 표를 "통째로" 비워서
+	// emotions의 기본 감정(user_id NULL, 마이그레이션 seed)까지 사라진다. DELETE는 users 행에 딸린 행만 지운다.
+	if _, err := pool.Exec(ctx, "DELETE FROM users"); err != nil {
+		t.Fatalf("DELETE users: %v", err)
 	}
 	if err := rdb.FlushDB(ctx).Err(); err != nil {
 		t.Fatalf("FLUSHDB: %v", err)

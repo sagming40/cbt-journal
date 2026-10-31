@@ -29,6 +29,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/sagming40/cbt-journal/internal/auth"
+	"github.com/sagming40/cbt-journal/internal/checkin"
 	"github.com/sagming40/cbt-journal/internal/testutil"
 )
 
@@ -44,6 +45,8 @@ type testApp struct {
 	pool *pgxpool.Pool
 	rdb  *redis.Client
 	svc  *auth.Service
+	// now가 비어 있지 않으면 체크인 서비스의 "지금"을 이 시각으로 고정한다(미래 시각 검사 · 오늘 계산 테스트용)
+	now time.Time
 }
 
 func newApp(t *testing.T, configure ...func(*auth.Options)) *testApp {
@@ -58,11 +61,18 @@ func newApp(t *testing.T, configure ...func(*auth.Options)) *testApp {
 		c(&opts)
 	}
 	svc := auth.NewService(opts)
-	h := New(Deps{Logger: discard, Checks: Checks{Postgres: okCheck, Valkey: okCheck}, Web: fstest.MapFS{}, Auth: svc})
+	a := &testApp{t: t, pool: pool, rdb: rdb, svc: svc}
+	ck := checkin.NewService(checkin.Options{Pool: pool, Valkey: rdb, Logger: discard, Now: func() time.Time {
+		if !a.now.IsZero() {
+			return a.now
+		}
+		return time.Now()
+	}})
+	h := New(Deps{Logger: discard, Checks: Checks{Postgres: okCheck, Valkey: okCheck}, Web: fstest.MapFS{}, Auth: svc, Checkin: ck})
 	// Secure 쿠키는 HTTPS에서만 오가므로 TLS 서버로 띄운다.
-	srv := httptest.NewTLSServer(h)
-	t.Cleanup(srv.Close)
-	return &testApp{t: t, srv: srv, pool: pool, rdb: rdb, svc: svc}
+	a.srv = httptest.NewTLSServer(h)
+	t.Cleanup(a.srv.Close)
+	return a
 }
 
 // device는 쿠키 저장소를 따로 가진 클라이언트 하나 — 기기 한 대처럼 쓴다.
@@ -521,6 +531,12 @@ func TestDefaultLock(t *testing.T) {
 		{"PATCH", "/api/me"},
 		{"PUT", "/api/me/password"},
 		{"POST", "/api/me/sessions/logout-others"},
+		{"GET", "/api/emotions"},
+		{"GET", "/api/checkins"},
+		{"POST", "/api/checkins"},
+		{"GET", "/api/checkins/01900000-0000-7000-8000-000000000000"},
+		{"PUT", "/api/checkins/01900000-0000-7000-8000-000000000000"},
+		{"DELETE", "/api/checkins/01900000-0000-7000-8000-000000000000"},
 	}
 	for _, l := range locked {
 		if r := a.call(c, l.method, l.path, map[string]string{}); r.status != http.StatusUnauthorized || r.errorCode() != "UNAUTHORIZED" {

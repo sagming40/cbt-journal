@@ -10,8 +10,11 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/sagming40/cbt-journal/internal/apigen"
 	"github.com/sagming40/cbt-journal/internal/auth"
+	"github.com/sagming40/cbt-journal/internal/checkin"
 	"github.com/sagming40/cbt-journal/internal/clientip"
 )
 
@@ -31,15 +34,28 @@ type Deps struct {
 	Checks         Checks
 	Web            fs.FS // 프론트 빌드 결과 (운영은 webdist.FS(), 테스트는 가짜 파일 묶음)
 	Auth           *auth.Service
+	Checkin        *checkin.Service
 	TrustedProxies []netip.Prefix
 }
+
+// 기능 패키지들이 모두 Handler라는 이름이라, 임베드할 때 필드 이름이 겹치지 않게 별칭을 붙인다.
+type checkinHandler = checkin.Handler
 
 // handler는 생성된 StrictServerInterface를 채운다.
 // 기능 패키지의 Handler를 임베드하면 그 메서드들이 위로 올라와 인터페이스를 채운다 (ARCHITECTURE 2절).
 type handler struct {
 	*auth.Handler
+	*checkinHandler
 	logger *slog.Logger
 	checks Checks
+}
+
+// currentUserID는 세션에서 사용자 id를 꺼낸다. 기능 패키지에는 이 함수만 넘긴다 — auth를 import하지 않게 (ARCHITECTURE 2절).
+func currentUserID(ctx context.Context) (pgtype.UUID, bool) {
+	if s := auth.CurrentSession(ctx); s != nil {
+		return s.UserID, true
+	}
+	return pgtype.UUID{}, false
 }
 
 // 컴파일할 때 확인: handler가 인터페이스의 메서드를 다 갖췄는가.
@@ -53,7 +69,12 @@ var _ apigen.StrictServerInterface = (*handler)(nil)
 //
 // 정적 파일 요청은 세션 조회 같은 API 미들웨어를 거치지 않는다 (ARCHITECTURE 1절).
 func New(d Deps) http.Handler {
-	h := &handler{Handler: auth.NewHandler(d.Auth), logger: d.Logger, checks: d.Checks}
+	h := &handler{
+		Handler:        auth.NewHandler(d.Auth),
+		checkinHandler: checkin.NewHandler(d.Checkin, currentUserID),
+		logger:         d.Logger,
+		checks:         d.Checks,
+	}
 	// 인증 서비스 없이 조립하는 건 health · 프론트만 보는 단위 테스트뿐이다.
 	var sessions *auth.Sessions
 	if d.Auth != nil {

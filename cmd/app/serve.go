@@ -9,6 +9,7 @@ import (
 
 	"github.com/sagming40/cbt-journal/internal/auth"
 	"github.com/sagming40/cbt-journal/internal/cache"
+	"github.com/sagming40/cbt-journal/internal/checkin"
 	"github.com/sagming40/cbt-journal/internal/config"
 	"github.com/sagming40/cbt-journal/internal/db"
 	"github.com/sagming40/cbt-journal/internal/server"
@@ -39,6 +40,8 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 		AllowSignup: cfg.AllowSignup,
 	})
 
+	checkinSvc := checkin.NewService(checkin.Options{Pool: pool, Valkey: rdb, Logger: logger})
+
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: server.New(server.Deps{
@@ -51,6 +54,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, _ []stri
 			},
 			Web:            webdist.FS(),
 			Auth:           authSvc,
+			Checkin:        checkinSvc,
 			TrustedProxies: cfg.TrustedProxies,
 		}),
 		// 헤더를 아주 느리게 보내 연결을 붙잡아 두는 공격(Slowloris)을 막는다.

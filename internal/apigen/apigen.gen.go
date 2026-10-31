@@ -9,8 +9,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -46,9 +48,62 @@ type ChangePasswordRequest struct {
 // CheckStatus 연결 하나의 상태. 원인은 서버 로그에만 남긴다.
 type CheckStatus string
 
+// Checkin defines model for Checkin.
+type Checkin struct {
+	// Emotions 감정 화면 순서대로
+	Emotions []CheckinEmotion `json:"emotions"`
+
+	// Id UUID
+	Id string `json:"id"`
+
+	// Note 한 줄 메모. 없으면 빈 문자열
+	Note string `json:"note"`
+
+	// OccurredAt 감정을 느낀 때 (UTC)
+	OccurredAt time.Time `json:"occurred_at"`
+}
+
+// CheckinDay defines model for CheckinDay.
+type CheckinDay struct {
+	// Date 내 시간대 기준 날짜 YYYY-MM-DD
+	Date  string    `json:"date"`
+	Items []Checkin `json:"items"`
+}
+
+// CheckinEmotion defines model for CheckinEmotion.
+type CheckinEmotion struct {
+	EmotionId int    `json:"emotion_id"`
+	Intensity int    `json:"intensity"`
+	Name      string `json:"name"`
+}
+
+// CheckinInput defines model for CheckinInput.
+type CheckinInput struct {
+	// Emotions 감정 1개 이상, 같은 감정은 한 번만
+	Emotions []struct {
+		EmotionId int `json:"emotion_id"`
+		Intensity int `json:"intensity"`
+	} `json:"emotions"`
+	Note *string `json:"note,omitempty"`
+
+	// OccurredAt 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.4절)
+	OccurredAt *time.Time `json:"occurred_at,omitempty"`
+}
+
 // Config defines model for Config.
 type Config struct {
 	AllowSignup bool `json:"allow_signup"`
+}
+
+// Emotion defines model for Emotion.
+type Emotion struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// EmotionList defines model for EmotionList.
+type EmotionList struct {
+	Items []Emotion `json:"items"`
 }
 
 // Error 오류 봉투 (ARCHITECTURE 3.2절)
@@ -126,6 +181,9 @@ type Conflict = Error
 // Forbidden 오류 봉투 (ARCHITECTURE 3.2절)
 type Forbidden = Error
 
+// NotFound 오류 봉투 (ARCHITECTURE 3.2절)
+type NotFound = Error
+
 // TooManyRequests 오류 봉투 (ARCHITECTURE 3.2절)
 type TooManyRequests = Error
 
@@ -135,11 +193,23 @@ type Unauthorized = Error
 // cookieAuthContextKey is the context key for cookieAuth security scheme
 type cookieAuthContextKey string
 
+// ListCheckinsParams defines parameters for ListCheckins.
+type ListCheckinsParams struct {
+	// Date 내 시간대 기준 날짜 YYYY-MM-DD
+	Date *string `form:"date,omitempty" json:"date,omitempty"`
+}
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
 // SignupJSONRequestBody defines body for Signup for application/json ContentType.
 type SignupJSONRequestBody = SignupRequest
+
+// CreateCheckinJSONRequestBody defines body for CreateCheckin for application/json ContentType.
+type CreateCheckinJSONRequestBody = CheckinInput
+
+// UpdateCheckinJSONRequestBody defines body for UpdateCheckin for application/json ContentType.
+type UpdateCheckinJSONRequestBody = CheckinInput
 
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateMeRequest
@@ -158,9 +228,27 @@ type ServerInterface interface {
 	// Signup 회원가입
 	// (POST /api/auth/signup)
 	Signup(w http.ResponseWriter, r *http.Request)
+	// ListCheckins 그날의 체크인 (C2)
+	// (GET /api/checkins)
+	ListCheckins(w http.ResponseWriter, r *http.Request, params ListCheckinsParams)
+	// CreateCheckin 체크인 남기기 (C1)
+	// (POST /api/checkins)
+	CreateCheckin(w http.ResponseWriter, r *http.Request)
+	// DeleteCheckin 체크인 지우기 (C4)
+	// (DELETE /api/checkins/{id})
+	DeleteCheckin(w http.ResponseWriter, r *http.Request, id string)
+	// GetCheckin 체크인 하나 (수정 화면용)
+	// (GET /api/checkins/{id})
+	GetCheckin(w http.ResponseWriter, r *http.Request, id string)
+	// UpdateCheckin 체크인 고치기 (C4)
+	// (PUT /api/checkins/{id})
+	UpdateCheckin(w http.ResponseWriter, r *http.Request, id string)
 	// GetConfig 공개 설정
 	// (GET /api/config)
 	GetConfig(w http.ResponseWriter, r *http.Request)
+	// ListEmotions 고를 수 있는 감정 목록 (기본 10개, DATA_MODEL 3.3절)
+	// (GET /api/emotions)
+	ListEmotions(w http.ResponseWriter, r *http.Request)
 	// GetHealth 서버와 저장소 연결 확인
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -235,11 +323,186 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r)
 }
 
+// ListCheckins operation middleware
+func (siw *ServerInterfaceWrapper) ListCheckins(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCheckinsParams
+
+	// ------------- Optional query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCheckins(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCheckin operation middleware
+func (siw *ServerInterfaceWrapper) CreateCheckin(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCheckin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCheckin operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCheckin(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCheckin(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCheckin operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckin(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCheckin(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCheckin operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCheckin(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCheckin(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetConfig operation middleware
 func (siw *ServerInterfaceWrapper) GetConfig(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetConfig(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEmotions operation middleware
+func (siw *ServerInterfaceWrapper) ListEmotions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEmotions(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -472,6 +735,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/me", wrapper.UpdateMe)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/me/password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/me/sessions/logout-others", wrapper.LogoutOtherSessions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/emotions", wrapper.ListEmotions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/checkins", wrapper.ListCheckins)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/checkins", wrapper.CreateCheckin)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/checkins/{id}", wrapper.DeleteCheckin)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/checkins/{id}", wrapper.GetCheckin)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/checkins/{id}", wrapper.UpdateCheckin)
 
 	return m
 }
@@ -481,6 +750,8 @@ type BadRequestJSONResponse Error
 type ConflictJSONResponse Error
 
 type ForbiddenJSONResponse Error
+
+type NotFoundJSONResponse Error
 
 type TooManyRequestsResponseHeaders struct {
 	RetryAfter *int
@@ -698,6 +969,265 @@ func (response Signup429JSONResponse) VisitSignupResponse(w http.ResponseWriter)
 	return err
 }
 
+type ListCheckinsRequestObject struct {
+	Params ListCheckinsParams
+}
+
+type ListCheckinsResponseObject interface {
+	VisitListCheckinsResponse(w http.ResponseWriter) error
+}
+
+type ListCheckins200JSONResponse CheckinDay
+
+func (response ListCheckins200JSONResponse) VisitListCheckinsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCheckins400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListCheckins400JSONResponse) VisitListCheckinsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCheckins401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCheckins401JSONResponse) VisitListCheckinsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCheckinRequestObject struct {
+	Body *CreateCheckinJSONRequestBody
+}
+
+type CreateCheckinResponseObject interface {
+	VisitCreateCheckinResponse(w http.ResponseWriter) error
+}
+
+type CreateCheckin201JSONResponse Checkin
+
+func (response CreateCheckin201JSONResponse) VisitCreateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCheckin400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateCheckin400JSONResponse) VisitCreateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCheckin401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateCheckin401JSONResponse) VisitCreateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCheckinRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteCheckinResponseObject interface {
+	VisitDeleteCheckinResponse(w http.ResponseWriter) error
+}
+
+type DeleteCheckin204Response struct {
+}
+
+func (response DeleteCheckin204Response) VisitDeleteCheckinResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCheckin401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteCheckin401JSONResponse) VisitDeleteCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCheckin404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCheckin404JSONResponse) VisitDeleteCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCheckinRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetCheckinResponseObject interface {
+	VisitGetCheckinResponse(w http.ResponseWriter) error
+}
+
+type GetCheckin200JSONResponse Checkin
+
+func (response GetCheckin200JSONResponse) VisitGetCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCheckin401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCheckin401JSONResponse) VisitGetCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCheckin404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetCheckin404JSONResponse) VisitGetCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCheckinRequestObject struct {
+	Id   string `json:"id"`
+	Body *UpdateCheckinJSONRequestBody
+}
+
+type UpdateCheckinResponseObject interface {
+	VisitUpdateCheckinResponse(w http.ResponseWriter) error
+}
+
+type UpdateCheckin200JSONResponse Checkin
+
+func (response UpdateCheckin200JSONResponse) VisitUpdateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCheckin400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateCheckin400JSONResponse) VisitUpdateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCheckin401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateCheckin401JSONResponse) VisitUpdateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCheckin404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCheckin404JSONResponse) VisitUpdateCheckinResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetConfigRequestObject struct {
 }
 
@@ -715,6 +1245,41 @@ func (response GetConfig200JSONResponse) VisitGetConfigResponse(w http.ResponseW
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEmotionsRequestObject struct {
+}
+
+type ListEmotionsResponseObject interface {
+	VisitListEmotionsResponse(w http.ResponseWriter) error
+}
+
+type ListEmotions200JSONResponse EmotionList
+
+func (response ListEmotions200JSONResponse) VisitListEmotionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEmotions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListEmotions401JSONResponse) VisitListEmotionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -946,9 +1511,27 @@ type StrictServerInterface interface {
 	// Signup 회원가입
 	// (POST /api/auth/signup)
 	Signup(ctx context.Context, request SignupRequestObject) (SignupResponseObject, error)
+	// ListCheckins 그날의 체크인 (C2)
+	// (GET /api/checkins)
+	ListCheckins(ctx context.Context, request ListCheckinsRequestObject) (ListCheckinsResponseObject, error)
+	// CreateCheckin 체크인 남기기 (C1)
+	// (POST /api/checkins)
+	CreateCheckin(ctx context.Context, request CreateCheckinRequestObject) (CreateCheckinResponseObject, error)
+	// DeleteCheckin 체크인 지우기 (C4)
+	// (DELETE /api/checkins/{id})
+	DeleteCheckin(ctx context.Context, request DeleteCheckinRequestObject) (DeleteCheckinResponseObject, error)
+	// GetCheckin 체크인 하나 (수정 화면용)
+	// (GET /api/checkins/{id})
+	GetCheckin(ctx context.Context, request GetCheckinRequestObject) (GetCheckinResponseObject, error)
+	// UpdateCheckin 체크인 고치기 (C4)
+	// (PUT /api/checkins/{id})
+	UpdateCheckin(ctx context.Context, request UpdateCheckinRequestObject) (UpdateCheckinResponseObject, error)
 	// GetConfig 공개 설정
 	// (GET /api/config)
 	GetConfig(ctx context.Context, request GetConfigRequestObject) (GetConfigResponseObject, error)
+	// ListEmotions 고를 수 있는 감정 목록 (기본 10개, DATA_MODEL 3.3절)
+	// (GET /api/emotions)
+	ListEmotions(ctx context.Context, request ListEmotionsRequestObject) (ListEmotionsResponseObject, error)
 	// GetHealth 서버와 저장소 연결 확인
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -1091,6 +1674,148 @@ func (sh *strictHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListCheckins operation middleware
+func (sh *strictHandler) ListCheckins(w http.ResponseWriter, r *http.Request, params ListCheckinsParams) {
+	var request ListCheckinsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCheckins(ctx, request.(ListCheckinsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCheckins")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCheckinsResponseObject); ok {
+		if err := validResponse.VisitListCheckinsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCheckin operation middleware
+func (sh *strictHandler) CreateCheckin(w http.ResponseWriter, r *http.Request) {
+	var request CreateCheckinRequestObject
+
+	var body CreateCheckinJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCheckin(ctx, request.(CreateCheckinRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCheckin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCheckinResponseObject); ok {
+		if err := validResponse.VisitCreateCheckinResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCheckin operation middleware
+func (sh *strictHandler) DeleteCheckin(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteCheckinRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCheckin(ctx, request.(DeleteCheckinRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCheckin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCheckinResponseObject); ok {
+		if err := validResponse.VisitDeleteCheckinResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCheckin operation middleware
+func (sh *strictHandler) GetCheckin(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetCheckinRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCheckin(ctx, request.(GetCheckinRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCheckin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCheckinResponseObject); ok {
+		if err := validResponse.VisitGetCheckinResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCheckin operation middleware
+func (sh *strictHandler) UpdateCheckin(w http.ResponseWriter, r *http.Request, id string) {
+	var request UpdateCheckinRequestObject
+
+	request.Id = id
+
+	var body UpdateCheckinJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCheckin(ctx, request.(UpdateCheckinRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCheckin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCheckinResponseObject); ok {
+		if err := validResponse.VisitUpdateCheckinResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetConfig operation middleware
 func (sh *strictHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	var request GetConfigRequestObject
@@ -1108,6 +1833,30 @@ func (sh *strictHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetConfigResponseObject); ok {
 		if err := validResponse.VisitGetConfigResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEmotions operation middleware
+func (sh *strictHandler) ListEmotions(w http.ResponseWriter, r *http.Request) {
+	var request ListEmotionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEmotions(ctx, request.(ListEmotionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEmotions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEmotionsResponseObject); ok {
+		if err := validResponse.VisitListEmotionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

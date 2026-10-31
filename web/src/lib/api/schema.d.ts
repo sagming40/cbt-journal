@@ -161,6 +161,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/emotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 고를 수 있는 감정 목록 (기본 10개, DATA_MODEL 3.3절) */
+        get: operations["listEmotions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/checkins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 그날의 체크인 (C2)
+         * @description "그날" = 내 시간대(users.timezone)의 0시 ~ 다음 날 0시 (DATA_MODEL 3.4절). 날짜를 안 주면 오늘. 시간순.
+         */
+        get: operations["listCheckins"];
+        put?: never;
+        /** 체크인 남기기 (C1) */
+        post: operations["createCheckin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/checkins/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 체크인 UUID. 모양이 틀려도 404(없는 것과 같은 응답) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 체크인 하나 (수정 화면용) */
+        get: operations["getCheckin"];
+        /**
+         * 체크인 고치기 (C4)
+         * @description 통째로 바꾼다. 나중에 저장한 쪽이 이긴다 (DATA_MODEL 3.4절).
+         */
+        put: operations["updateCheckin"];
+        post?: never;
+        /** 체크인 지우기 (C4) */
+        delete: operations["deleteCheckin"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -225,6 +288,49 @@ export interface components {
             /** @description 끊은 세션 수 */
             revoked: number;
         };
+        Emotion: {
+            id: number;
+            name: string;
+        };
+        EmotionList: {
+            items: components["schemas"]["Emotion"][];
+        };
+        CheckinEmotion: {
+            emotion_id: number;
+            name: string;
+            intensity: number;
+        };
+        Checkin: {
+            /** @description UUID */
+            id: string;
+            /**
+             * Format: date-time
+             * @description 감정을 느낀 때 (UTC)
+             */
+            occurred_at: string;
+            /** @description 한 줄 메모. 없으면 빈 문자열 */
+            note: string;
+            /** @description 감정 화면 순서대로 */
+            emotions: components["schemas"]["CheckinEmotion"][];
+        };
+        CheckinDay: {
+            /** @description 내 시간대 기준 날짜 YYYY-MM-DD */
+            date: string;
+            items: components["schemas"]["Checkin"][];
+        };
+        CheckinInput: {
+            /**
+             * Format: date-time
+             * @description 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.4절)
+             */
+            occurred_at?: string;
+            note?: string;
+            /** @description 감정 1개 이상, 같은 감정은 한 번만 */
+            emotions: {
+                emotion_id: number;
+                intensity: number;
+            }[];
+        };
     };
     responses: {
         /** @description 입력 오류. fields에 칸별 문구 */
@@ -247,6 +353,15 @@ export interface components {
         };
         /** @description 막힌 기능 */
         Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description 없음 — 남의 것도 같은 응답 (ARCHITECTURE 2절) */
+        NotFound: {
             headers: {
                 [name: string]: unknown;
             };
@@ -503,6 +618,156 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    listEmotions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 화면 순서대로 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmotionList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listCheckins: {
+        parameters: {
+            query?: {
+                /** @description 내 시간대 기준 날짜 YYYY-MM-DD */
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 그날의 체크인 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckinDay"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createCheckin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckinInput"];
+            };
+        };
+        responses: {
+            /** @description 남김 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Checkin"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getCheckin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 체크인 UUID. 모양이 틀려도 404(없는 것과 같은 응답) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 체크인 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Checkin"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCheckin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 체크인 UUID. 모양이 틀려도 404(없는 것과 같은 응답) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckinInput"];
+            };
+        };
+        responses: {
+            /** @description 바뀐 체크인 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Checkin"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCheckin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 체크인 UUID. 모양이 틀려도 404(없는 것과 같은 응답) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 지움 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
 }
