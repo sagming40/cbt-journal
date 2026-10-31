@@ -263,7 +263,7 @@ func TestCheckinDayFollowsTimezone(t *testing.T) {
 		return out
 	}
 
-	// 15:30Z = 서울 11월 2일 00:30 · 뉴욕 11월 1일 11:30 — 자정 근처 체크인
+	// 15:30Z = 서울 11월 2일 00:30 · 뉴욕 11월 1일 10:30(이날 06:00Z에 서머타임이 끝나 EST) — 서울 기준 자정 근처 체크인
 	nearMidnight := post("2026-11-01T15:30:00Z")
 	if got := day("2026-11-02"); len(got) != 1 || got[0] != nearMidnight {
 		t.Errorf("서울: 11월 2일에 있어야 한다: %v", got)
