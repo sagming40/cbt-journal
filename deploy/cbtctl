@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# cbtctl ─ 운영 설정(/etc/cbt/cbt.env)을 읽고, 전용 계정 cbt로 app을 실행하는 도우미 (ARCHITECTURE 7.2절)
+# 서버의 /usr/local/bin/cbtctl로 설치한다.
+# 비유: 관리인 대리 출입증 ─ 내가 직접 cbt 계정이 되거나 설정 파일을 손으로 읽어 오지 않아도, 한 줄로 같은 조건에서 실행한다.
+#
+# 쓰는 법:
+#   sudo cbtctl version
+#   sudo cbtctl migrate status
+#   sudo cbtctl user create --email 내이메일 --nickname 내닉네임   (비밀번호는 실행 중에 묻는다)
+
+# -e: 명령이 실패하면 바로 멈춘다 / -u: 없는 변수를 쓰면 멈춘다 / pipefail: 파이프 중간 실패도 실패로 친다.
+set -euo pipefail
+
+ENV_FILE=/etc/cbt/cbt.env
+APP=/opt/cbt/current/app
+
+# 설정 파일은 root만 읽을 수 있다(640 root:cbt) → sudo 없이 실행하면 친절하게 알려 준다.
+if [[ $EUID -ne 0 ]]; then
+	echo "sudo cbtctl …로 실행해 줘" >&2
+	exit 1
+fi
+if [[ ! -x $APP ]]; then
+	echo "실행 파일이 없다: $APP (아직 배포 전인가?)" >&2
+	exit 1
+fi
+
+# set -a: 지금부터 읽는 변수를 전부 환경변수로 내보낸다 → app이 받는다. 다 읽으면 set +a로 끈다.
+set -a
+# shellcheck source=/dev/null
+source "$ENV_FILE"
+set +a
+
+# setpriv: root 권한을 내려놓고 cbt 계정으로 바꿔서 실행한다. exec: 이 스크립트가 app으로 "변신"해서,
+# app의 종료 코드 · 입력(비밀번호 질문)이 그대로 내 터미널로 이어진다.
+exec setpriv --reuid=cbt --regid=cbt --init-groups "$APP" "$@"
