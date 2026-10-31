@@ -1,0 +1,18 @@
+# 매일 새벽 백업 알람 (ARCHITECTURE 7.4절)
+# 서버의 /etc/systemd/system/cbt-backup.timer로 복사하고 켠다: sudo systemctl enable --now cbt-backup.timer
+# 다음에 언제 도는지: systemctl list-timers cbt-backup.timer
+# 비유: 자명종 ─ 시각이 되면 같은 이름의 cbt-backup.service를 깨운다.
+
+[Unit]
+Description=CBT 저널 DB 백업 매일 04:00 (KST)
+
+[Timer]
+# 서버 시간대(UTC)와 상관없이 한국 시각으로 적는다. 새벽 4시 = 쓰는 사람이 거의 없는 시간.
+OnCalendar=*-*-* 04:00:00 Asia/Seoul
+# 그 시각에 서버가 꺼져 있었으면, 켜진 뒤 바로 한 번 돈다(놓친 백업을 건너뛰지 않는다).
+Persistent=true
+# 정각에 몰리지 않게 0~10분 사이로 흩는다.
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

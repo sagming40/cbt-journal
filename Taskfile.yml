@@ -106,6 +106,15 @@ tasks:
       # 확인 · 빌드 · 복사 · 서버 실행은 scripts/deploy.ps1이 한다 (ARCHITECTURE 7.3절)
       - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy.ps1 {{.CLI_ARGS}}
 
+  backup:pull:
+    desc: 서버의 암호화된 DB 백업을 전부 ~/cbt-backups/로 가져오기 (ssh 별명 cbt, 저장소 밖)
+    # passphrase를 물으려면 터미널을 그대로 넘겨야 한다.
+    interactive: true
+    platforms: [windows]
+    cmds:
+      # 서버 쪽 *는 scp가 서버에서 펼친다. 하나만 고르려면 ssh가 한 번 더 들어서 전부 가져온다 (ARCHITECTURE 7.4절)
+      - powershell -NoProfile -Command 'New-Item -ItemType Directory -Force "$HOME/cbt-backups" | Out-Null; scp "cbt:/var/backups/cbt/cbt-*.dump.age" "$HOME/cbt-backups/"; exit $LASTEXITCODE'
+
   serve:
     desc: task build로 만든 실행 파일 띄우기 (.env 자동) → http://127.0.0.1:8080
     cmds:

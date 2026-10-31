@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# cbt-backup ─ 운영 DB를 덤프해서 age로 잠가 /var/backups/cbt/에 둔다 (ARCHITECTURE 7.4절)
+# 서버의 /usr/local/bin/cbt-backup으로 설치한다. 매일 cbt-backup.timer가, 배포 직전에는 release.sh가 부른다.
+# 비유: 장부 사본을 떠서 금고에 넣기 ─ 금고는 자물쇠(공개키)로 잠그기만 하고, 여는 열쇠(개인키)는 집(PC)에만 있다.
+#       서버가 털려도 사본은 못 연다.
+
+set -euo pipefail
+
+COMPOSE_FILE=/srv/cbt/compose.yaml
+RECIPIENTS=/etc/cbt/backup.pub
+DEST=/var/backups/cbt
+KEEP=14
+
+die() {
+	echo "[backup] 실패: $*" >&2
+	exit 1
+}
+
+[[ $EUID -eq 0 ]] || die "sudo로 실행해야 한다"
+[[ -s $RECIPIENTS ]] || die "공개키가 없다: $RECIPIENTS"
+
+install -d -m 755 "$DEST"
+# 이름에 UTC 시각을 넣는다 → 이름순 = 시간순, 서버 시간대와 상관없다.
+NAME=cbt-$(date -u +%Y%m%dT%H%M%SZ).dump.age
+# 같은 초에 두 번 돌면(배포 직전 백업 + 타이머) 앞의 백업을 덮어쓰지 않게 거부한다.
+[[ ! -e $DEST/$NAME ]] || die "같은 이름이 이미 있다: $NAME (잠시 뒤 다시)"
+TMP=$DEST/.$NAME.tmp
+# 중간에 실패하면 임시 파일을 지운다. 비유: 복사하다 종이가 걸리면 반쪽짜리 사본은 버린다.
+trap 'rm -f "$TMP"' EXIT
+
+# pg_dump는 Postgres 컨테이너 안에서 돈다(서버에 Postgres 도구를 따로 깔지 않는다).
+# -T: 터미널 없이(타이머에서도 돈다). 사용자 · DB 이름은 컨테이너의 환경변수에서 읽는다.
+# -Fc: Postgres 전용 압축 형식 → pg_restore로 되살린다.
+# pipefail 덕분에 pg_dump가 실패하면 age가 성공해도 전체가 실패한다.
+# (크기로는 못 본다: 빈 입력도 age가 잠그면 200바이트쯤 된다. 그래서 pg_dump 종료 코드로 판단하고, 복원 연습으로 확인한다)
+docker compose -f "$COMPOSE_FILE" exec -T postgres \
+	sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' |
+	age -R "$RECIPIENTS" -o "$TMP" ||
+	die "pg_dump 또는 age가 실패했다"
+
+chmod 644 "$TMP"
+mv "$TMP" "$DEST/$NAME"
+echo "[backup] 만듦: $DEST/$NAME ($(stat -c %s "$DEST/$NAME") 바이트)"
+
+# 최근 KEEP개만 남긴다. 이름에 시각이 있어서 이름 역순 = 최신순.
+find "$DEST" -maxdepth 1 -name 'cbt-*.dump.age' -printf '%f\n' |
+	sort -r | tail -n +$((KEEP + 1)) |
+	while read -r old; do
+		echo "[backup] 정리: $old"
+		rm -f -- "$DEST/$old"
+	done

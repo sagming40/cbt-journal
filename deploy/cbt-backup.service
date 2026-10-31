@@ -1,0 +1,15 @@
+# 운영 DB 백업 한 번 (ARCHITECTURE 7.4절)
+# 서버의 /etc/systemd/system/cbt-backup.service로 복사한다. 직접 켜지 않고 cbt-backup.timer가 부른다.
+# 손으로 한 번 돌리기: sudo systemctl start cbt-backup → 결과: sudo journalctl -u cbt-backup -n 20
+
+[Unit]
+Description=CBT 저널 DB 백업 (pg_dump → age)
+# Docker(Postgres 컨테이너)가 떠 있어야 덤프할 수 있다.
+After=docker.service
+Requires=docker.service
+
+[Service]
+# oneshot: 한 번 돌고 끝나는 일. 서비스(cbt)처럼 계속 떠 있지 않는다.
+Type=oneshot
+# docker를 써야 해서 root로 돈다(docker 권한 = root 권한이라 다른 계정을 줘도 의미가 없다).
+ExecStart=/usr/local/bin/cbt-backup
