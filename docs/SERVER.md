@@ -225,6 +225,34 @@ sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt
 - 확인 (PC): `nslookup cbt.sagming.com 1.1.1.1`과 `nslookup cbt.sagming.com`(지금 네트워크의 DNS) 둘 다 서버 IP.
 - 프록시를 끄는 이유: 켜면 Cloudflare가 중간에 끼어 Caddy 인증서 발급 · 실제 접속 IP 규칙(ARCHITECTURE 3.3절)이 꼬인다. Cloudflare 화면의 "프록싱 필요" 안내 · `www` · 루트 도메인 권장 사항은 따르지 않는다(쓰는 이름은 `cbt` 하나).
 
+### 4.12 Caddy (2026-10-31, 노트북에서)
+설치 — [공식 문서](https://caddyserver.com/docs/install)의 apt 저장소 그대로:
+```bash
+sudo apt install --yes debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+sudo chmod o+r /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy           # 2.11.7, 설치하자마자 systemd 서비스 caddy로 켜진다
+```
+설정 — PC에서 `scp deploy/Caddyfile cbt:~/` 한 뒤 서버에서:
+```bash
+sudo install -m 644 -o root -g root ~/Caddyfile /etc/caddy/Caddyfile && rm ~/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile   # Valid configuration
+sudo systemctl reload caddy
+sudo journalctl -u caddy --since "5 min ago" --no-pager | grep -i 'certificate obtained'
+```
+확인 (PC):
+```powershell
+curl.exe -sI https://cbt.sagming.com    # 앱 배포 전엔 502 Bad Gateway (인증서 오류 없이 응답 = HTTPS 됨)
+curl.exe -sI http://cbt.sagming.com     # 308 → Location: https://cbt.sagming.com/
+```
+- 인증서: `CN=cbt.sagming.com`, 발급자 Let's Encrypt(`YE2`), TLS 1.3, 만료 2027-01-29 — 갱신은 Caddy가 알아서 한다.
+- IP로: `https://IP`는 TLS 연결 실패, `http://IP`는 `https://IP`로 308 후 실패 → 앱은 안 보인다.
+- **인증서를 받자마자 20초 안에 스캐너가 들어왔다**(`/.env` · `/phpinfo.php` · `/wp-admin/…` · `/database.sql`). 새 인증서는 공개 목록(Certificate Transparency)에 올라가고 봇이 그 목록을 지켜본다. 앱이 없어 전부 502였다. 정상적인 인터넷 소음이다 — 그래서 기본 잠금 · 요청 제한이 먼저 있어야 했다.
+- Caddy는 접근 로그를 안 남기지만, **오류(502 등) 때는 `journalctl -u caddy`에 접속 IP · 경로 · 헤더를 남긴다**. 쿠키 · `Authorization`은 Caddy가 기본으로 가린다. 경로에는 id만 있고 본문은 안 남아서 REQUIREMENTS 5.1절과 맞는다.
+
 ## 5. 자주 쓰는 명령 (서버에서)
 
 | 하고 싶은 것 | 명령 |
@@ -250,7 +278,7 @@ sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: Caddy · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
+운영 구성이 생기면 이 문서에 이어서 적는다: 백업 열쇠(`age`) · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
 
 ---
 
@@ -259,4 +287,4 @@ sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy |

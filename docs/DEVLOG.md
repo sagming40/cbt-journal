@@ -9,7 +9,7 @@
 | 단계 | **M3 첫 배포 진행 중** — 저장소 운영 파일(`deploy/` · `task deploy` · `task backup:pull`) 끝, 서버에서는 아직 안 돌림 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(회사 · 집 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | M3: 운영 파일은 단계마다 사용자가 타이핑하거나 자동으로 맡긴다(단계마다 사용자가 정함). 타이핑이면 "코드 검수!" → Claude 리뷰 → 커밋 · push |
-| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose~~ · ~~DNS~~(끝, 4.7 ~ 4.11절) · Caddy · `age`) → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
+| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose · DNS · Caddy~~(끝, 4.7 ~ 4.12절) · `age` 열쇠 · 운영 파일 설치) → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
 | **서버에 접속되는 기기** | **집 PC · 노트북**(노트북은 2026-10-31 추가). 회사 PC에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC · 노트북으로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3 · 3.4절)로. 넣으면 이 칸을 고친다 |
 | 기기별로 할 일 | **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: 다 끝남(2026-10-31 — 처음 한 번 · 열쇠 `laptop` · 별명 `cbt` · `age` 1.3.2) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
@@ -51,7 +51,7 @@
 - 배운 것: 서버를 바꾸는 명령 앞에 **지금 상태를 보는 명령**을 둔다 — 이번에는 그 덕에 바로 잡혔다. "0%"는 사용률이지 크기가 아니다.
 
 ### 이번 세션 커밋
-`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / `2a5a8aa` `cbt` 계정 · 폴더 / `5bc8098` 비밀값 · 운영 compose / (이 커밋) DNS — 전부 문서만, 동작 변경 없음
+`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / `2a5a8aa` `cbt` 계정 · 폴더 / `5bc8098` 비밀값 · 운영 compose / `5ca01f3` DNS / `f7b60be` psql / (이 커밋) Caddy — 전부 문서만, 동작 변경 없음
 
 ### 서버: 앱 전용 계정 `cbt` · 폴더
 - 사용자가 침(SERVER 4.8절). 본 값: `uid=999(cbt) gid=987(cbt)`, 셸 `nologin`, `sudo su - cbt` 거부, `/opt/cbt` · `/etc/cbt` 755 · `/srv/cbt` 700 전부 root.
@@ -65,8 +65,20 @@
 ### DNS
 - 사용자가 Cloudflare에 `cbt` A 레코드(DNS 전용)를 만듦(SERVER 4.11절). 본 값: 목록에 `cbt.sagming.com A … DNS 전용 · 자동`, 노트북 `nslookup`이 1.1.1.1 · 지금 네트워크 DNS 둘 다 서버 IP.
 
+### Caddy
+- 사용자가 침(SERVER 4.12절): 공식 apt로 2.11.7, `deploy/Caddyfile` → `validate` `Valid configuration` → reload.
+- Claude가 노트북에서 본 값: `https://cbt.sagming.com` → `502 Bad Gateway`(앱 없음, 인증서 오류 없음), `http://` → `308` `Location: https://cbt.sagming.com/`, 인증서 `CN=cbt.sagming.com` · Let's Encrypt `YE2` · TLS 1.3 · 만료 2027-01-29, `https://IP` → TLS 실패, `http://IP` → `https://IP`로 308.
+- **확인 못 한 것**: 보안 헤더. 502 응답에는 HSTS 등이 없고 `Server: Caddy`도 남아 있었다 — 오류 응답은 Caddy가 처리 줄을 거치지 않고 새로 써서 `header` 설정이 안 붙는 것으로 보인다. 앱이 정상 응답할 때(첫 배포 뒤) 본다(PLAN M3에 추가).
+- ARCHITECTURE 7.2절의 "`http://IP`는 빈 응답"은 실제와 달라서 고침(308 후 끊김, 앱은 여전히 안 보임).
+
+### 인증서를 받자마자 스캐너가 들어옴
+- 증상: reload 20초 뒤 `journalctl`에 해외 IP 한 곳에서 `/.env` · `/api/.env` · `/phpinfo.php` · `/wp-admin/setup-config.php` · `/database.sql` 요청이 몰렸다(전부 502).
+- 원인: 새 인증서는 공개 목록(Certificate Transparency)에 올라가고, 봇이 그 목록을 보고 새 이름을 바로 훑는다. 우리를 노린 게 아니라 인터넷 소음이다.
+- 대응: 없음 — 앱이 없었고, 비밀값은 저장소 · 웹 경로 밖(`/etc/cbt` · `/srv/cbt`)에 있다. 앱이 뜨면 기본 잠금 · 요청 제한이 받는다.
+- 배운 것: 이름이 공개되는 순간부터 공격 대상이다 — "배포 전에 인증 먼저"(PLAN 1장)가 맞았다. Caddy는 접근 로그를 안 남겨도 오류 때는 IP · 경로를 journald에 남긴다(쿠키는 가림).
+
 ### 다음에 할 일
-- Caddy 설치(공식 apt) · Caddyfile → 인증서 발급 확인 (DNS는 끝) → `age` 열쇠 (PLAN M3).
+- 백업 열쇠: PC에서 `age-keygen`(개인키 따로 보관) → 공개키를 서버 `/etc/cbt/backup.pub` → 운영 파일 설치(`cbtctl` · `cbt.service` · 백업 스크립트 · 타이머) → 첫 `task deploy` → `age` 열쇠 (PLAN M3).
 
 ---
 
