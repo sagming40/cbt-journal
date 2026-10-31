@@ -278,6 +278,23 @@ Remove-Item "$env:TEMP\keytest.age"
 - 잃으면 모든 백업을 못 연다 → 새 열쇠를 만들어 `backup.pub`를 바꾸고, 그 전 백업은 버린다.
 - `age-keygen`의 `writing secret key to a world-readable file` 경고는 Unix 권한 기준이다. Windows 홈 폴더는 기본으로 본인 · 관리자만 읽는다.
 
+### 4.14 운영 파일 · 백업 타이머 (2026-10-31, 노트북에서)
+PC에서 `scp deploy/cbtctl deploy/cbt-backup deploy/cbt.service deploy/cbt-backup.service deploy/cbt-backup.timer cbt:~/` 한 뒤 서버에서:
+```bash
+sudo install -m 755 -o root -g root ~/cbtctl ~/cbt-backup /usr/local/bin/
+sudo install -m 644 -o root -g root ~/cbt.service ~/cbt-backup.service ~/cbt-backup.timer /etc/systemd/system/
+rm ~/cbtctl ~/cbt-backup ~/cbt.service ~/cbt-backup.service ~/cbt-backup.timer
+sudo systemctl daemon-reload
+sudo systemd-analyze verify /etc/systemd/system/cbt.service /etc/systemd/system/cbt-backup.service /etc/systemd/system/cbt-backup.timer
+sudo systemctl start cbt-backup                     # 손으로 한 번
+sudo journalctl -u cbt-backup -n 10 --no-pager      # [backup] 만듦: /var/backups/cbt/cbt-…Z.dump.age
+sudo systemctl enable --now cbt-backup.timer
+systemctl list-timers cbt-backup.timer --no-pager   # NEXT 19:0x UTC = 04:0x KST
+```
+- 첫 배포 전에는 `verify`가 `cbt.service: Command /opt/cbt/current/app is not executable`를 낸다 — 실행 파일은 첫 `task deploy`가 넣는다. 나머지 두 파일은 출력 없음(정상).
+- `cbt.service`는 여기서 켜지 않는다. 첫 배포의 `release.sh`가 `enable` · `restart` 한다.
+- 결과: 빈 DB 백업 1096바이트(`-rw-r--r-- root`), PC에서 `task backup:pull` → `~/cbt-backups/`, 개인키로 풀어 896바이트 · 머리글 `PGDMP`(pg_dump 형식).
+
 
 ## 5. 자주 쓰는 명령 (서버에서)
 
@@ -304,7 +321,7 @@ Remove-Item "$env:TEMP\keytest.age"
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
+운영 구성이 생기면 이 문서에 이어서 적는다: 첫 배포(`task deploy`) · 내 계정 만들기 · 복원.
 
 ---
 
@@ -313,4 +330,4 @@ Remove-Item "$env:TEMP\keytest.age"
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠 |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠, 4.14절 운영 파일 · 백업 타이머 |

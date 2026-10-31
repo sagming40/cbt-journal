@@ -92,10 +92,10 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] `scripts/deploy.ps1` · `task deploy` (자동, 사용자 지시 2026-10-31) — 거부 2가지 · `-DryRun` 확인, 실제 서버 배포는 아래 "첫 `task deploy`"에서
 - [x] 백업 스크립트 · 타이머 · `task backup:pull` (타이핑 학습 모드, 2026-10-31)
 - [x] 서버: 스왑(이미 있던 2.3GB 유지 · swappiness 10) · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관) (사용자 직접, 2026-10-31 노트북 — SERVER 4.7 ~ 4.13절)
-- [ ] 운영 파일 설치(`cbtctl` · `cbt.service` · `cbt-backup` · 타이머) · 백업 한 번 손으로 *(계획에 없던 작업 — 위 서버 줄과 첫 배포 사이에 빠져 있었다)*
+- [x] 운영 파일 설치(`cbtctl` · `cbt.service` · `cbt-backup` · 타이머) · 백업 한 번 손으로 · 타이머 켜기 · `task backup:pull` (2026-10-31, SERVER 4.14절) *(계획에 없던 작업 — 위 서버 줄과 첫 배포 사이에 빠져 있었다)*
 - [x] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저") — 인증서 발급 · 308 확인 (2026-10-31)
 - [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정 → 보안 헤더(HSTS · nosniff · DENY · Referrer, `Server` 없음) 확인 *(앱 없을 때 502 응답에는 헤더가 안 붙어서 미뤄 둔 확인)*
-- [ ] 백업 타이머 켜기 · 복원 연습, README "배포" · SERVER.md 갱신
+- [ ] ~~백업 타이머 켜기~~(위에서 함) · 복원 연습, README "배포" · SERVER.md 갱신
 - **완료 기준**
   - 휴대폰(모바일 데이터)과 회사 PC에서 접속해 로그인 · 로그아웃이 된다.
   - 바깥에서 DB · Valkey 포트 접속이 실패한다.
