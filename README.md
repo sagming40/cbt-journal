@@ -16,7 +16,7 @@
 자세한 범위는 [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
 ## 상태
-**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 로그인까지 되는 빈 앱이고, `https://cbt.sagming.com`에 배포돼 있다(2026-10-31). v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
+**v2 재작성 중.** 2026-07의 v1(Express + React)을 버리고 새 스택으로 다시 만들고 있다. 지금은 로그인 · 체크인까지 되고(사고 기록은 다음 단계), `https://cbt.sagming.com`에 배포돼 있다. v1 코드는 태그 [`v1-legacy`](https://github.com/sagming40/cbt-journal/tree/v1-legacy).
 
 어디까지 왔는지는 [docs/PLAN.md](docs/PLAN.md) 2장에서 본다(이 README에는 진행 상황을 적지 않는다).
 

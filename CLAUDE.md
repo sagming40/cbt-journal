@@ -154,6 +154,7 @@ task user -- create --email … --nickname …   # 계정 만들기 (reset-passw
 - **휴대폰 확인은 배포 서버로**: 개발 서버(`http://IP주소`)에서는 `Secure` 쿠키가 저장되지 않아 휴대폰 로그인이 안 된다. 휴대폰이 필요한 확인은 M3(첫 배포) 이후 배포 서버에서 한다 (ARCHITECTURE 6절).
 - **세션을 지우면 Valkey 캐시도 지운다**: 빠뜨리면 로그아웃 · 비밀번호 변경 뒤에도 옛 세션이 최대 10분 살아 있다 (ARCHITECTURE 4절).
 - **목업은 로컬 서버로 연다**: `file://`로 열면 `shared.js` · `shared.css`를 못 불러온다 (`docs/mockups/README.md`).
+- **`task dev`는 가끔 다시 띄운다**: shadcn 부품을 새로 깔았으면 Tailwind가 그 파일 클래스를 안 만들어 창이 엉뚱한 데 뜨고, `gofmt -w` 등으로 Go 파일을 통째로 다시 쓰면 air가 감시를 놓쳐 옛 코드로 돈다(새 API가 404). 이상하면 먼저 `task dev`를 끄고 다시 켠다 (DEVLOG 2026-11-01 (3)).
 
 ## 하지 말 것
 - `.env`를 커밋하지 않는다.
