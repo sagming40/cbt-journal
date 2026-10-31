@@ -97,6 +97,15 @@ tasks:
       # ─ -trimpath: 내 PC 폴더 경로(D:\_dev\…)를 실행 파일에서 지운다. -s -w: 디버그 정보를 제외시켜 크기를 줄인다
       - cmd: go build -trimpath -ldflags "-s -w -X main.version={{.COMMIT}}" -o bin/app-linux-amd64 ./cmd/app
 
+  deploy:
+    desc: 운영 서버에 배포 (커밋 · push된 main만, ssh 별명 cbt) — task deploy -- -DryRun은 서버에 안 보내고 확인만
+    # passphrase · sudo 비밀번호를 물으려면 터미널을 그대로 넘겨야 한다.
+    interactive: true
+    platforms: [windows]
+    cmds:
+      # 확인 · 빌드 · 복사 · 서버 실행은 scripts/deploy.ps1이 한다 (ARCHITECTURE 7.3절)
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy.ps1 {{.CLI_ARGS}}
+
   serve:
     desc: task build로 만든 실행 파일 띄우기 (.env 자동) → http://127.0.0.1:8080
     cmds:
