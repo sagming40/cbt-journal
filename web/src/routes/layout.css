@@ -3,37 +3,42 @@
 @import 'shadcn-svelte/tailwind.css';
 /* 글꼴은 npm 패키지에서: 빌드 결과에 같이 들어가 외부 CDN 요청이 없다 (DESIGN 6장 "서체") */
 @import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+/* 명조(고운바탕)도 npm 패키지에서, 400 · 700만. 글자 범위로 잘게 나뉘어 있어 화면에 나온 글자 조각만 받는다 */
+@import '@fontsource/gowun-batang/400.css';
+@import '@fontsource/gowun-batang/700.css';
 
 @custom-variant dark (&:is(.dark *));
 
-/* 색 토큰: DESIGN 6장 "B · 차분한 남색"이 원본이다. 화면 코드에서는 hex를 쓰지 않고 이 변수만 쓴다.
+/* 색 토큰: DESIGN 6장 "스타일 D2 · 미색 종이 + 잉크 남색"이 원본이다. 화면 코드에서는 hex를 쓰지 않고 이 변수만 쓴다.
    shadcn 변수 ↔ 우리 토큰 짝은 DESIGN 6장 "shadcn-svelte 변수 연결" 표를 따른다. */
 :root {
-	--radius: 0.625rem; /* 아래 @theme의 배율로 md = 8px (버튼 · 입력, DESIGN 6장 "모양") */
+	--radius: 0.46875rem; /* 7.5px — 아래 @theme의 배율로 md = 6px (버튼 · 입력 · 칩, DESIGN 6장 "모양 D2") */
 
-	--background: #f7f7f5; /* bg */
-	--foreground: #1b1b1f; /* text */
-	--card: #ffffff; /* surface */
-	--card-foreground: #1b1b1f;
-	--popover: #ffffff;
-	--popover-foreground: #1b1b1f;
-	--primary: #4457c2; /* accent */
-	--primary-foreground: #ffffff; /* on-accent */
-	--secondary: #efefec; /* surface-2 */
-	--secondary-foreground: #1b1b1f;
-	--muted: #efefec;
-	--muted-foreground: #5f5f66; /* muted */
-	--accent: #efefec; /* shadcn의 accent는 hover 바탕이다 — 우리 accent와 이름만 같다 */
-	--accent-foreground: #1b1b1f;
-	--destructive: #1b1b1f; /* 오류도 빨강이 아니라 text 색 (DESIGN 6장 "오류 표시") */
-	--border: #e3e3df; /* 장식 테두리 */
-	--input: #8a8a93; /* 입력칸 · 버튼 테두리 3.4:1 */
-	--ring: #4457c2;
+	--background: #f5f2ea; /* bg — 미색 종이 */
+	--foreground: #22211d; /* text 14.4:1 */
+	--card: #fbf9f4; /* surface — 입력칸 · 칩 · 보조 버튼 */
+	--card-foreground: #22211d;
+	--popover: #fbf9f4;
+	--popover-foreground: #22211d;
+	--primary: #33449e; /* accent — 잉크 남색 (라이트만 한 단계 진하게, 종이 위에서 #4457C2가 떠 보여서) */
+	--primary-foreground: #ffffff; /* on-accent 8.5:1 */
+	--secondary: #e9e4d8; /* surface-2 */
+	--secondary-foreground: #22211d;
+	--muted: #e9e4d8;
+	--muted-foreground: #6a665c; /* muted 5.1:1 */
+	--accent: #e9e4d8; /* shadcn의 accent는 hover 바탕이다 — 우리 accent와 이름만 같다 */
+	--accent-foreground: #22211d;
+	--destructive: #22211d; /* 오류도 빨강이 아니라 text 색 (DESIGN 6장 "오류 표시") */
+	--border: #ddd6c7; /* 장식 선 · 점선 — 입력칸에 쓰지 않는다 */
+	--input: #8c8576; /* 입력칸 · 버튼 · 칩 테두리 3.5:1 */
+	--ring: #33449e;
 
 	/* 우리 토큰 중 shadcn에 짝이 없는 것 */
-	--accent-text: #3949a8;
-	--accent-tint: color-mix(in oklab, var(--primary) 9%, var(--card));
+	--accent-text: #2e3d90; /* 포인트 글자 8.6:1 */
+	--accent-tint: color-mix(in oklab, var(--primary) 8%, var(--card));
 	--accent-line: color-mix(in oklab, var(--primary) 45%, var(--card));
+	--rule: color-mix(in oklab, var(--primary) 13%, transparent); /* 공책 줄 (장식) */
+	--dot: var(--primary); /* 강도 점 — 다크는 accent-text (DESIGN 6장) */
 
 	/* 차트도 포인트 색 하나의 명도 단계로만 (감정마다 다른 색 금지, DESIGN 6장 "색 원칙") */
 	--chart-1: var(--primary);
@@ -53,32 +58,43 @@
 }
 
 .dark {
-	--background: #111214;
-	--foreground: #ededf0;
-	--card: #191a1d;
-	--card-foreground: #ededf0;
-	--popover: #191a1d;
-	--popover-foreground: #ededf0;
-	--primary: #4457c2;
+	--background: #15161a; /* 먹색 종이 */
+	--foreground: #eceae4; /* 15.0:1 */
+	--card: #1b1c21;
+	--card-foreground: #eceae4;
+	--popover: #1b1c21;
+	--popover-foreground: #eceae4;
+	--primary: #4457c2; /* 버튼 글자 6.2:1 */
 	--primary-foreground: #ffffff;
-	--secondary: #24252a;
-	--secondary-foreground: #ededf0;
-	--muted: #24252a;
-	--muted-foreground: #a3a3ad;
-	--accent: #24252a;
-	--accent-foreground: #ededf0;
-	--destructive: #ededf0;
-	--border: #2e2f35;
-	--input: #6b6c75;
+	--secondary: #2a2b31;
+	--secondary-foreground: #eceae4;
+	--muted: #2a2b31;
+	--muted-foreground: #a8a59c; /* 7.3:1 */
+	--accent: #2a2b31;
+	--accent-foreground: #eceae4;
+	--destructive: #eceae4;
+	--border: #2e2f36;
+	--input: #6e6f78; /* 3.4:1 */
 	--ring: #4457c2;
 
-	--accent-text: #9aa6f0;
-	--accent-tint: color-mix(in oklab, var(--primary) 18%, var(--card));
+	--accent-text: #a3aef0; /* 8.5:1 */
+	--accent-tint: color-mix(in oklab, var(--primary) 16%, var(--card));
 	--accent-line: color-mix(in oklab, var(--primary) 60%, var(--card));
+	--rule: color-mix(in oklab, var(--accent-text) 12%, transparent);
+	/* accent는 다크 바탕 대비 2.9:1이라 그림 요소 기준 3:1 미달 → 점은 accent-text (DESIGN 6장) */
+	--dot: var(--accent-text);
 }
 
 @theme inline {
 	--font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+	/* 명조는 천천히 읽는 자리에만: 날짜 · 큰 제목 · 질문 · 구역 제목 · 감정 이름 · 시각 여백 (DESIGN 6장 "서체") */
+	--font-serif: 'Gowun Batang', serif;
+	/* 종이에 쓴 것처럼 납작하게 — 생성 부품(shadcn)이 붙이는 shadow-xs · sm까지 전부 끈다 (DESIGN 6장 "모양 D2") */
+	--shadow-2xs: 0 0 #0000;
+	--shadow-xs: 0 0 #0000;
+	--shadow-sm: 0 0 #0000;
+	--color-rule: var(--rule);
+	--color-dot: var(--dot);
 	/* 우리 토큰을 Tailwind 클래스로 쓰게 등록한다: text-accent-text, bg-accent-tint, border-accent-line */
 	--color-accent-text: var(--accent-text);
 	--color-accent-tint: var(--accent-tint);
@@ -129,6 +145,9 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		/* 한국어는 낱말 중간에서 줄을 바꾸지 않는다("보세 / 요" 방지). 너무 긴 낱말만 어디서든 끊는다 */
+		word-break: keep-all;
+		overflow-wrap: anywhere;
 	}
 	html {
 		@apply font-sans;

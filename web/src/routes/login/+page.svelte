@@ -8,8 +8,8 @@
 	import { NETWORK_ERROR, errorMessage, fieldErrors, retryAfterText } from '#lib/api/errors.js';
 	import { auth } from '#lib/auth.svelte.js';
 	import FormError from '#lib/components/FormError.svelte';
+	import Logo from '#lib/components/Logo.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Card from '#lib/components/ui/card/index.js';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -76,13 +76,14 @@
 	}
 </script>
 
-<main class="mx-auto flex min-h-dvh max-w-sm flex-col justify-center p-4">
-	<Card.Root>
-		<Card.Header>
-			<Card.Title class="text-xl">CBT 저널</Card.Title>
-			<Card.Description>로그인하고 이어서 기록해 보세요</Card.Description>
-		</Card.Header>
-		<Card.Content>
+<!-- 종이 위에 바로 쓴다 — 카드 상자 없이 로고 · 제목 · 입력 (DESIGN 6장 "모양 D2") -->
+<main class="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+	<header class="mb-8">
+		<Logo size={44} wordmark tagline />
+		<h1 class="mt-8 font-serif text-2xl font-bold">로그인하고 이어서 기록해 보세요</h1>
+	</header>
+	<div>
+		<div>
 			<form class="space-y-4" onsubmit={submit} novalidate>
 				<div class="space-y-1.5">
 					<Label for="email">이메일</Label>
@@ -122,13 +123,13 @@
 					{submitting ? '로그인하는 중…' : '로그인'}
 				</Button>
 			</form>
-		</Card.Content>
+		</div>
 		{#if allowSignup}
-			<Card.Footer class="justify-center text-sm">
+			<p class="mt-6 border-t pt-4 text-center text-sm">
 				<a href={resolve('/signup')} class="text-accent-text underline-offset-4 hover:underline"
 					>처음이세요? 가입하기</a
 				>
-			</Card.Footer>
+			</p>
 		{/if}
-	</Card.Root>
+	</div>
 </main>

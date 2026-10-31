@@ -9,7 +9,6 @@
 	import { auth } from '#lib/auth.svelte.js';
 	import FormError from '#lib/components/FormError.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Card from '#lib/components/ui/card/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Separator } from '#lib/components/ui/separator/index.js';
@@ -147,14 +146,13 @@
 	}
 </script>
 
-<h1 class="mb-4 text-xl font-bold">설정</h1>
+<h1 class="mb-6 font-serif text-2xl font-bold">설정</h1>
 
-<div class="space-y-4">
-	<Card.Root>
-		<Card.Header>
-			<Card.Title>계정</Card.Title>
-		</Card.Header>
-		<Card.Content class="space-y-6">
+<!-- 구역은 상자 대신 선으로, 구역 제목은 명조 (DESIGN 6장 "모양 D2") -->
+<div class="space-y-10">
+	<section class="border-t pt-5" aria-labelledby="account-title">
+		<h2 id="account-title" class="mb-5 font-serif text-lg font-bold">계정</h2>
+		<div class="space-y-6">
 			<form class="space-y-1.5" onsubmit={saveNickname} novalidate>
 				<Label for="nickname">닉네임</Label>
 				<div class="flex gap-2">
@@ -167,7 +165,7 @@
 					<Button
 						type="submit"
 						variant="outline"
-						class="min-h-11"
+						class="min-h-11 border-input"
 						disabled={savingNickname || nickname === me.nickname}>저장</Button
 					>
 				</div>
@@ -223,7 +221,7 @@
 				<Button
 					type="submit"
 					variant="outline"
-					class="min-h-11"
+					class="min-h-11 border-input"
 					disabled={changingPassword || !currentPassword || !newPassword}
 				>
 					{changingPassword ? '바꾸는 중…' : '비밀번호 바꾸기'}
@@ -235,19 +233,22 @@
 			<div class="space-y-1.5">
 				<p class="text-sm font-medium">다른 기기 모두 로그아웃</p>
 				<p class="text-xs text-muted-foreground">이 기기만 남기고 로그인된 곳을 모두 끊어요</p>
-				<Button variant="outline" class="min-h-11" onclick={logoutOthers} disabled={revoking}>
+				<Button
+					variant="outline"
+					class="min-h-11 border-input"
+					onclick={logoutOthers}
+					disabled={revoking}
+				>
 					{revoking ? '끊는 중…' : '다른 기기 로그아웃'}
 				</Button>
 				<FormError message={revokeMessage} />
 			</div>
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</section>
 
-	<Card.Root>
-		<Card.Header>
-			<Card.Title>표시</Card.Title>
-		</Card.Header>
-		<Card.Content class="space-y-6">
+	<section class="border-t pt-5" aria-labelledby="display-title">
+		<h2 id="display-title" class="mb-5 font-serif text-lg font-bold">표시</h2>
+		<div class="space-y-6">
 			<div class="space-y-1.5">
 				<Label for="timezone">시간대</Label>
 				<select
@@ -279,11 +280,12 @@
 					<ToggleGroup.Item value="dark" class="min-h-11 px-4">다크</ToggleGroup.Item>
 				</ToggleGroup.Root>
 			</div>
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</section>
 
-	<div class="space-y-1.5">
-		<Button variant="outline" class="min-h-11 w-full" onclick={logout}>로그아웃</Button>
+	<div class="space-y-1.5 border-t pt-6">
+		<Button variant="outline" class="min-h-11 w-full border-input" onclick={logout}>로그아웃</Button
+		>
 		<FormError message={logoutMessage} />
 	</div>
 </div>

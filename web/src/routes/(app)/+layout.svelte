@@ -10,6 +10,7 @@
 	import { NETWORK_ERROR } from '#lib/api/errors.js';
 	import { auth } from '#lib/auth.svelte.js';
 	import FormError from '#lib/components/FormError.svelte';
+	import Logo from '#lib/components/Logo.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import type { LayoutProps } from './$types';
 
@@ -43,28 +44,40 @@
 		<!-- 데스크톱: 왼쪽 사이드바 / 모바일: 아래 탭 (기준 48rem = md, DESIGN 3.2절) -->
 		<nav
 			aria-label="메뉴"
-			class="fixed inset-x-0 bottom-0 z-10 flex border-t bg-background md:static md:w-56 md:flex-col md:gap-1 md:border-t-0 md:border-r md:p-3"
+			class="fixed inset-x-0 bottom-0 z-10 flex border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:min-h-dvh md:w-56 md:flex-col md:gap-1 md:border-t-0 md:border-r md:p-4 md:pb-4"
 		>
-			<p class="hidden px-3 py-2 text-lg font-bold md:block">CBT 저널</p>
+			<a
+				href={resolve('/(app)')}
+				class="mb-6 hidden px-2 pt-1 md:block"
+				aria-label="CBT 저널 — 오늘"
+			>
+				<Logo size={30} wordmark />
+			</a>
 			{#each nav as item (item.href)}
 				<a
 					href={item.href}
 					aria-current={isActive(item.href) ? 'page' : undefined}
 					class={[
-						'flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 text-xs md:flex-none md:flex-row md:justify-start md:gap-2 md:rounded-lg md:px-3 md:text-sm',
+						'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 text-xs md:min-h-11 md:flex-none md:flex-row md:justify-start md:gap-2.5 md:rounded-md md:px-3 md:text-sm',
 						isActive(item.href)
 							? 'font-semibold text-accent-text md:bg-accent-tint'
 							: 'text-muted-foreground hover:text-foreground'
 					]}
 				>
 					<item.icon class="size-5 md:size-4" aria-hidden="true" />
-					{item.label}
+					<!-- 모바일 하단 탭: 고른 탭은 글자 아래 밑줄 2px (DESIGN 6장 "모양 D2"). 데스크톱은 옅은 바탕으로 -->
+					<span
+						class={[
+							'border-b-2 pb-0.5 md:border-b-0 md:pb-0',
+							isActive(item.href) ? 'border-primary dark:border-accent-text' : 'border-transparent'
+						]}>{item.label}</span
+					>
 				</a>
 			{/each}
 		</nav>
 
 		<!-- 본문은 최대 40rem — 글을 쓰는 앱이라 한 줄이 너무 길면 읽기 · 쓰기가 불편하다 (DESIGN 3.2절) -->
-		<main class="mx-auto w-full max-w-[40rem] p-4 pb-24 md:pb-4">
+		<main class="mx-auto w-full max-w-[40rem] px-5 pt-6 pb-28 md:px-8 md:pt-10 md:pb-10">
 			{@render children()}
 		</main>
 	</div>
