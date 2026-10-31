@@ -59,14 +59,14 @@
 ### 서버: 비밀값 · 운영 compose
 - 사용자가 침(SERVER 4.9 · 4.10절). 비밀번호는 서버에서 `openssl rand -hex 32`로 만들어 화면에 띄우지 않고 두 파일에 넣음.
 - 본 값: 비밀번호 길이 64 · 64, 두 파일 일치, 권한 `.env` 600 · `cbt.env` 640 root:cbt, `compose config` OK. Postgres · Valkey `Up (healthy)`, `PONG`, 로그 제한 `max-file:3 max-size:10m`, `ss`에서 127.0.0.1만 LISTEN, 노트북에서 `Test-NetConnection` 22 True · 5432 False · 6379 False(PLAN M3 완료 기준 "바깥에서 DB · Valkey 포트 접속 실패" 관찰).
-- **확인 못 한 것**: `psql … -c 'select version();'`이 아무것도 출력하지 않았다(오류도 없음). 상태 확인(`pg_isready -U cbt -d cbt_journal`)은 통과. 다음 접속 때 `exec -T … -tAc 'show server_version;'`로 다시 본다.
+- `psql … -c 'select version();'`이 아무것도 출력하지 않았다(오류도 없음) → `exec -T … -tAc 'show server_version;'`로 다시 봐서 `18.6 (Debian 18.6-1.pgdg13+2)`. TTY를 붙인 쪽의 원인은 따로 파지 않았다.
 - Claude 실수 두 개(확인 명령): `grep -c '<'`가 주석 줄의 `<…>`까지 세서 1, `ls -l`이 `.env`를 숨김 → `grep -n` · `ls -la`로 다시 봐서 정상 확인.
 
 ### DNS
 - 사용자가 Cloudflare에 `cbt` A 레코드(DNS 전용)를 만듦(SERVER 4.11절). 본 값: 목록에 `cbt.sagming.com A … DNS 전용 · 자동`, 노트북 `nslookup`이 1.1.1.1 · 지금 네트워크 DNS 둘 다 서버 IP.
 
 ### 다음에 할 일
-- `psql` 버전 다시 보기 → Caddy 설치(공식 apt) · Caddyfile → 인증서 발급 확인 (DNS는 끝) → `age` 열쇠 (PLAN M3).
+- Caddy 설치(공식 apt) · Caddyfile → 인증서 발급 확인 (DNS는 끝) → `age` 열쇠 (PLAN M3).
 
 ---
 

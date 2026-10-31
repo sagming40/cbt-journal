@@ -210,7 +210,9 @@ sudo docker compose -f /srv/cbt/compose.yaml ps                    # 둘 다 Up 
 sudo docker compose -f /srv/cbt/compose.yaml exec valkey valkey-cli ping   # PONG (VALKEYCLI_AUTH로 비밀번호)
 sudo docker inspect --format '{{.Name}} {{.HostConfig.LogConfig.Config}}' $(sudo docker compose -f /srv/cbt/compose.yaml ps -q)   # max-file:3 max-size:10m
 sudo ss -tlnp | grep -E ':5432|:6379'                               # 127.0.0.1만 LISTEN
+sudo docker compose -f /srv/cbt/compose.yaml exec -T postgres psql -U cbt -d cbt_journal -tAc 'show server_version;'   # 18.6
 ```
+- `psql`은 `exec -T`(TTY 없이)로 부른다. TTY를 붙인 `exec … -c 'select version();'`은 아무것도 출력하지 않았다.
 - 이미지 `postgres:18` · `valkey/valkey:9`, 볼륨 `cbt_pgdata` · `cbt_valkeydata`.
 - 바깥에서 막혔는지 (PC에서, IP는 ssh 별명에서 읽어 저장소 · 화면에 적지 않는다):
   ```powershell
