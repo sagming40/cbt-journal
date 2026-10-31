@@ -21,12 +21,12 @@ cbt.sagming.com {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		# 응답에 "Server: Caddy"를 제외시켜 무슨 program인지 굳이 알리지 않는다
 		-Server
+		# reverse_proxy가 붙이는 "Via: 1.1 Caddy"도 같은 이유로 뺀다
+		# (reverse_proxy 안의 header_down -Via로는 안 지워졌다 ─ 2026-11-01 서버에서 확인. 여기 지우기는 응답을 내보내기 직전에 적용된다)
+		-Via
 	}
 
 	# app으로 넘긴다 ─ Caddy는 외부에서 온 X-Forwarded-For를 버리고 실제 접속 IP를 새로 붙인다
 	# → app의 TRUSTED_PROXIES=127.0.0.1 규칙으로 진짜 IP가 나온다 (ARCHITECTURE 3.3절)
-	reverse_proxy 127.0.0.1:8080 {
-		# Caddy가 응답에 붙이는 "Via: 1.1 Caddy"도 뺀다 ─ 위 -Server와 같은 이유(무슨 program인지 굳이 알리지 않는다)
-		header_down -Via
-	}
+	reverse_proxy 127.0.0.1:8080
 }
