@@ -6,11 +6,11 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | **M3 첫 배포 진행 중** — 운영 구성 결정 · 설계 문서(ARCHITECTURE 7절) 끝, 운영 파일 타이핑 중 (PLAN 2장) |
+| 단계 | **M3 첫 배포 진행 중** — 운영 파일(`deploy/`) · `task deploy` 끝, 서버에서는 아직 안 돌림 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(두 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
-| 진행 중 | M3: 저장소 운영 파일을 **타이핑 학습 모드**로 — 사용자가 치고 "코드 검수!" → Claude 리뷰 → 이상 없으면 Claude가 커밋 · push (PLAN M3 순서) |
-| 다음에 할 일 | 운영 파일(타이핑) → 서버 작업(스왑 · `cbt` 계정 · 비밀값 · compose · Caddy · `age`) → DNS → 첫 배포 → 완료 기준 확인 (PLAN M3) |
-| 기기별로 할 일 | **회사 PC**: 서버 접속용 SSH 키를 따로 만들어 서버 `authorized_keys`에 추가 — 순서는 [SERVER.md](SERVER.md) 3.4절 (Vultr에 등록만 해서는 이미 만든 서버에 안 들어간다) |
+| 진행 중 | M3: 운영 파일은 단계마다 사용자가 타이핑하거나 자동으로 맡긴다(단계마다 사용자가 정함). 타이핑이면 "코드 검수!" → Claude 리뷰 → 커밋 · push |
+| 다음에 할 일 | 백업 스크립트 · 타이머 · `task backup:pull` → 서버 작업(스왑 · `cbt` 계정 · 비밀값 · compose · Caddy · `age`) → DNS → 첫 배포 → 완료 기준 확인 (PLAN M3) |
+| 기기별로 할 일 | **두 PC 모두**: `~/.ssh/config`에 별명 `cbt`([SERVER.md](SERVER.md) 3.2절) — `task deploy`가 쓴다. **회사 PC**: 서버 접속용 SSH 키를 따로 만들어 서버 `authorized_keys`에 추가 — 3.4절 (Vultr에 등록만 해서는 이미 만든 서버에 안 들어간다) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
 ## 작성 규칙
@@ -18,6 +18,54 @@
 - 막혔던 일은 해결됐어도 남긴다. 형식: **증상 / 원인 / 해결 / 배운 것**.
 - 구현 중에 설계를 바꿨으면 `[설계]` 항목으로 이유를 적고, 해당 설계 문서의 변경 이력도 고친다.
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
+
+---
+
+## 2026-10-31 (2) · M3 운영 파일 2 ~ 6단계 (집 PC)
+
+### 한 일
+- 타이핑(사용자가 치고 Claude 검수): 2 운영 compose · env 예시, 3 Caddyfile, 4 `cbt.service` · `cbtctl`, 5 서버 쪽 배포 `release.sh`.
+- 자동(사용자 지시): 6 `scripts/deploy.ps1` · `task deploy`.
+- 설계 문서 먼저: ARCHITECTURE 7.2절(Caddy 인증서 이메일 안 넣음), 7.3절(서버 쪽 · PC 쪽 배포 세부), SERVER 3.2절(ssh 별명 `cbt`가 필요).
+- 확인한 값:
+  - Caddyfile: `caddy validate` → `Valid configuration`, `caddy fmt --diff` 0줄.
+  - `cbt.service`: Ubuntu 24.04 컨테이너에서 `systemd-analyze verify` exit 0, `security --offline` 4.5 OK.
+  - `cbtctl` · `release.sh`: `bash -n` · ShellCheck 경고 0.
+  - `release.sh`: 컨테이너에서 시나리오 10개(첫 배포 · 백업 스크립트 없음 거부 · 정상 · 헬스체크 실패 되돌림 · migrate 실패 · 버전 불일치 · `-dirty` 거부 · 같은 커밋 재배포 · 백업 실패 · 동시 배포) + 6번 배포 뒤 5개만 남음. `systemctl` · `curl`은 가짜.
+  - `task deploy`: 커밋 안 한 변경 → 거부, push 안 한 커밋 → 거부, `-DryRun` → 보낼 폴더에 `ELF` 실행 파일(컨테이너에서 `version` = 커밋 번호) + LF `release.sh`, 빌드 뒤 작업 트리 깨끗.
+- **확인 못 한 것**: 실제 서버에서의 `scp` · `ssh -t` · `sudo` · systemd 재시작 · 헬스체크. 서버 준비 뒤 첫 배포에서 본다.
+
+### [설계] 정하면서 바꾼 것
+- Caddy 인증서 이메일을 안 넣는다: Let's Encrypt가 2025년에 만료 알림 메일을 없애서 쓸 곳이 없다(어제 계획한 `ACME_EMAIL` env 철회, ARCHITECTURE 7.2절).
+- `release.sh`(시나리오를 돌려 찾음): 백업 스크립트가 아직 없을 때 첫 배포만 건너뛴다(DB가 비어 있음), 실행 파일을 `app.new`로 넣고 버전 확인 뒤 바꾼다, 링크는 `mv`로 바꿔치기, 동시 배포 잠금(`flock`).
+- `deploy.ps1`: 서버에서 임시 폴더를 만들면 ssh가 한 번 더 들어서, PC에서 폴더를 만들어 `scp -r` 한 번으로 보낸다. 서버 주소는 ssh 별명 — 저장소에 IP를 적지 않는다.
+
+### 막혔던 일
+**Caddyfile 검사가 Git Bash에서 "파일 없음"으로 실패했는데 "통과"로 커밋할 뻔함**
+- 원인: Git Bash(MSYS)가 `/etc/caddy/Caddyfile` 같은 인자를 Windows 경로로 바꿔 Docker에 넘겼다.
+- 해결: `MSYS_NO_PATHCONV=1`로 다시 돌려 `Valid configuration` 확인. 커밋 내용은 맞았다.
+- 배운 것: 검사 명령은 **출력까지 읽고** 나서 "통과"라고 쓴다.
+
+**`bash -n .\deploy\cbtctl` → `.deploycbtctl: No such file`**
+- 원인: PowerShell에서 bash에 백슬래시 경로를 넘기면 bash가 `\`를 이스케이프로 먹는다.
+- 해결: bash에 주는 경로는 `deploy/cbtctl`(슬래시).
+
+**`release.sh` 들여쓰기에 탭과 공백이 섞임**
+- 증상: 화면에서는 똑바로 보이는데 파일에는 `··→`처럼 섞여 있었다. "Convert Indentation to Tabs"는 4칸만 탭으로 바꾸고 2칸은 남겼다.
+- 원인: 에디터가 `Spaces: 2` 설정이라 Tab 키가 공백을 넣고, 탭도 2칸 폭으로 보여 줘서 눈으로 구분이 안 됐다.
+- 해결: 공백만 Claude가 고쳐 커밋(사용자 지시). 에디터를 "Indent Using Tabs"로 바꾸기를 권함.
+- 배운 것: 들여쓰기는 눈이 아니라 `cat -A`(탭 = `^I`)로 본다.
+
+**PowerShell 5.1은 BOM 없는 `.ps1`의 한글을 깨뜨린다**
+- 원인: Windows PowerShell 5.1은 BOM이 없으면 파일을 시스템 코드 페이지(CP949)로 읽는다.
+- 해결: `scripts/deploy.ps1`을 UTF-8(BOM) + CRLF로 저장(`.gitattributes`가 `*.ps1`을 CRLF로 지킨다). 실행해서 한글 출력 확인.
+
+### 이번 세션 커밋
+`cb5164c` compose · env 예시 / `494949f` Caddy 이메일 안 넣기 / `d7db848` Caddyfile / `0b9c06c` `cbt.service` · `cbtctl` / `f4523a1` · `67192ec` `release.sh` 설계 · 파일 / `8ecf23b` · `dbcd689` `deploy.ps1` 설계 · 파일 / (이 커밋) 문서 반영
+
+### 다음에 할 일
+- 7단계: 백업 스크립트(`pg_dump` → `age` → `/var/backups/cbt`, 14개) · systemd 타이머 · `task backup:pull` — `release.sh`가 부르는 `cbt-backup`
+- 그다음 서버 작업(SERVER.md에 적으며): 스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose · Caddy · `age` 열쇠
 
 ---
 

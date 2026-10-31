@@ -86,6 +86,8 @@ task serve       # 화면은 http://127.0.0.1:8080 (Vite 필요 없음). 끌 때
 
 운영 서버(Linux)용은 `task build:linux` → `bin/app-linux-amd64`. 실행 파일에 커밋 번호가 들어가고(`app version`), 커밋 안 한 변경이 있으면 번호 끝에 `-dirty`가 붙는다. Windows에서는 실행되지 않는다.
 
+운영 서버에 올리기는 `task deploy`(커밋 · push된 `main`만, `~/.ssh/config`의 별명 `cbt` 필요 — [SERVER.md](docs/SERVER.md) 3.2절). `task deploy -- -DryRun`은 확인 · 빌드까지만 하고 서버에 안 보낸다. 흐름은 [ARCHITECTURE](docs/ARCHITECTURE.md) 7.3절. 서버 준비가 끝나면 여기에 "배포" 절을 따로 쓴다.
+
 ### 코드 생성 (`api/openapi.yaml` · `internal/db/queries/*.sql`을 고친 뒤)
 ```powershell
 task gen         # → internal/apigen (Go) + internal/db/dbgen (sqlc, Docker로 실행) + web/src/lib/api/schema.d.ts (TS)

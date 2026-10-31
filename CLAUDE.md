@@ -127,6 +127,7 @@ task fmt                 # gofmt · goimports · Prettier로 형식 맞추기
 task migrate             # goose up (task migrate -- status | down)
 task build               # 프론트 빌드 → embed 복사 → bin/app 하나
 task build:linux         # 운영 서버용 → bin/app-linux-amd64 (커밋 번호 포함, 커밋 안 한 변경이 있으면 -dirty)
+task deploy              # 운영 서버에 배포 (push된 main만, ssh 별명 cbt). -- -DryRun은 서버에 안 보냄
 task serve               # bin/app serve
 task user -- create --email … --nickname …   # 계정 만들기 (reset-password도). 비밀번호는 실행 중에 묻는다
 ```
