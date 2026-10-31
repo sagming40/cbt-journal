@@ -166,6 +166,16 @@ sudo sysctl --system | grep swappiness                            # vm.swappines
 - **Vultr가 서버를 만들 때 `/swapfile` 2.3GB를 넣어 둔다.** 접속 화면의 `Swap usage: 0%`는 "없다"가 아니라 "안 쓴다"다. 새로 만들려던 `fallocate`는 `Text file busy`로 실패했다(쓰는 중인 파일) — 바뀐 것은 없다.
 - 2.3GB를 그대로 쓴다(디스크 여유 16G). swappiness 10: 메모리가 정말 모자랄 때만 디스크로 내려 DB가 느려지지 않게.
 
+### 4.8 앱 전용 계정 `cbt` · 폴더 (2026-10-31, 노트북에서)
+```bash
+sudo useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin cbt
+sudo install -d -m 755 /opt/cbt    # 실행 파일(releases/ · current) — 하위 폴더는 release.sh가 만든다
+sudo install -d -m 755 /etc/cbt    # cbt.env(640 root:cbt) · backup.pub — 권한은 파일마다
+sudo install -d -m 700 /srv/cbt    # 운영 compose · DB 비밀번호 .env — 폴더째 root만
+```
+- 결과: `uid=999(cbt) gid=987(cbt)`, `getent passwd cbt` → `…:/nonexistent:/usr/sbin/nologin`, `sudo su - cbt` → `This account is currently not available.`(로그인 거부가 정상, 앞의 `cannot change directory to /nonexistent` 경고도 정상).
+- 폴더 주인은 전부 root — 앱(`cbt`)은 읽기만 한다. 앱은 파일을 쓰지 않는다(로그는 journald).
+
 ## 5. 자주 쓰는 명령 (서버에서)
 
 | 하고 싶은 것 | 명령 |
@@ -191,7 +201,7 @@ sudo sysctl --system | grep swappiness                            # vm.swappines
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 앱 전용 계정 `cbt` · 운영용 compose(Postgres · Valkey) · Caddy · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
+운영 구성이 생기면 이 문서에 이어서 적는다: 비밀값 · 운영용 compose(Postgres · Valkey) · Caddy · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
 
 ---
 
@@ -200,4 +210,4 @@ sudo sysctl --system | grep swappiness                            # vm.swappines
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑 |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더 |
