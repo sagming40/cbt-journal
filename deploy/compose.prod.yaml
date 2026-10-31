@@ -1,0 +1,62 @@
+# 운영 서버용 Postgres · Valkey (ARCHITECTURE 7.2절)
+# 서버의 /srv/cbt/compose.yaml로 복사해 사용한다. 비밀번호는 같은 폴더의 .env(권한 600)에서 읽는다.
+# app은 여기 존재하지 않는다 ─ app은 실행 파일 하나를 systemd가 띄운다(7.2절) 이 곳은 "창고(Postgres)와 포스트잇(Valkey)"만
+name: cbt
+
+# log 크기 제한: Docker는 기본으로 log를 끝없이 쌓아서, 오래 두면 25GB 디스크가 금방 차버린다 (7.5절)
+# 비유 ─ 일기장 10쪽짜리 공책 3권으로 돌려 쓰기 → 3권이 다 차면 제일 오래된 공책부터 지우고 새로 쓴다
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:18
+    # 직접 stop 한 경우를 제외하고, server가 reboot되거나 container가 죽어도 다시 띄운다. (7.5절 "재부팅하면 저절로 살아나야 한다")
+    restart: unless-stopped
+    environment:
+      # :? → .env에 값이 없으면 시작을 거부한다. 빈 비밀번호로 시작되는 사고를 미연에 방지한다
+      POSTGRES_USER: ${POSTGRES_USER:?/srv/cbt/.env에 POSTGRES_USER가 없다}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?/srv/cbt/.env에 POSTGRES_PASSWORD가 없다}
+      POSTGRES_DB: ${POSTGRES_DB:?/srv/cbt/.env에 POSTGRES_DB가 없다}
+    ports:
+      # 127.0.0.1에만 연다. Docker는 ufw(방화벽)를 우회하여 port를 열기 때문에, 0.0.0.0으로 열면 Internet 전체에 DB가 열린다 (SERVER.md 4.2절)
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Postgres 18 이미지는 /var/lib/postgresql 자체를 묶는다 (17까지는 .../data ─ CLAUDE.md 함정)
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  valkey:
+    image: valkey/valkey:9
+    restart: unless-stopped
+    # --appendonly yes: 사용하는 명령을 file에 적어 두고 재시작 시 다시 읽는다 → 초안이 살아남는다 (DATA_MODEL 4.1절)
+    # --requirepass: 비밀번호를 아는 프로그램만 붙는다
+    # ⚠️ 주의: 이 값은 server의 process 목록(ps)에 보인다. 이 server의 계정은 나와 app 계정뿐이라 받아들인다
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass",
+              "${VALKEY_PASSWORD:?/srv/cbt/.env에 VALKEY_PASSWORD가 없다}"]
+    environment:
+      # 상태 확인용 valkey-cli가 이 환경변수를 비밀번호로 쓴다
+      # ─ 없으면 ping이 거절돼 계속 unhealthy로 나온다 (DEVLOG 2026-10-31 사전 검증 7번)
+      VALKEYCLI_AUTH: ${VALKEY_PASSWORD}
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+volumes:
+  pgdata:
+  valkeydata:
