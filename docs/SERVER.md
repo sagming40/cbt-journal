@@ -39,8 +39,8 @@ ssh -i "$HOME\.ssh\cbt_vultr" sagming40@<서버 IP>
 - 처음 접속하는 PC면 `Are you sure you want to continue connecting (yes/no/[fingerprint])?` → `yes`. PC가 서버 지문을 기억해 두고, 나중에 다른 서버가 끼어들면 경고한다.
 - 나갈 때: 서버에서 `exit`
 
-### 3.2 짧게 `ssh cbt`로 들어가기 (PC마다 한 번, 선택)
-PC의 `~/.ssh/config`에 별명을 적어 두면 주소 · 열쇠 · 계정을 매번 안 친다. 이 파일은 PC에만 있고 저장소에는 안 들어간다.
+### 3.2 짧게 `ssh cbt`로 들어가기 (PC마다 한 번, **`task deploy`에 필요**)
+PC의 `~/.ssh/config`에 별명을 적어 두면 주소 · 열쇠 · 계정을 매번 안 친다. 이 파일은 PC에만 있고 저장소에는 안 들어간다. `task deploy`는 이 별명 `cbt`로 서버를 찾는다(저장소에 IP를 적지 않으려고).
 ```powershell
 notepad "$HOME\.ssh\config"
 ```
@@ -183,3 +183,4 @@ docker compose version             # v5.6.1
 | 날짜 | 내용 |
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
+| 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시 |
