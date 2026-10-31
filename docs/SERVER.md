@@ -295,6 +295,19 @@ systemctl list-timers cbt-backup.timer --no-pager   # NEXT 19:0x UTC = 04:0x KST
 - `cbt.service`는 여기서 켜지 않는다. 첫 배포의 `release.sh`가 `enable` · `restart` 한다.
 - 결과: 빈 DB 백업 1096바이트(`-rw-r--r-- root`), PC에서 `task backup:pull` → `~/cbt-backups/`, 개인키로 풀어 896바이트 · 머리글 `PGDMP`(pg_dump 형식).
 
+### 4.15 첫 배포 · 내 계정 (2026-10-31, 노트북에서)
+```powershell
+task deploy     # PC에서. passphrase 2번(복사 · 실행) + sudo 비밀번호 1번
+```
+```bash
+sudo cbtctl user create --email 내이메일 --nickname 내닉네임   # 서버에서. 비밀번호는 실행 중에 묻는다
+systemctl is-active cbt                                        # active
+sudo systemd-analyze verify /etc/systemd/system/cbt.service    # 출력 없음 (4.14절의 "실행 파일 없음"이 사라짐)
+```
+- 확인 (PC): `curl.exe -sI https://cbt.sagming.com` → `200`, HSTS `max-age=86400` · `nosniff` · `DENY` · `Referrer-Policy` 있음, `Server` 없음. `/api/health` → postgres · valkey `ok`, 로그인 없이 `/api/me` → `401`.
+- 로그인 · 설정 · 로그아웃: 노트북 브라우저, 휴대폰(LTE, 와이파이 끔) 둘 다 됨.
+- 응답에 `Via: 1.1 Caddy`가 붙는다(Caddy가 프록시할 때 넣는 표준 헤더).
+
 
 ## 5. 자주 쓰는 명령 (서버에서)
 
@@ -321,7 +334,7 @@ systemctl list-timers cbt-backup.timer --no-pager   # NEXT 19:0x UTC = 04:0x KST
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 첫 배포(`task deploy`) · 내 계정 만들기 · 복원.
+운영 구성이 생기면 이 문서에 이어서 적는다: 복원.
 
 ---
 
@@ -330,4 +343,4 @@ systemctl list-timers cbt-backup.timer --no-pager   # NEXT 19:0x UTC = 04:0x KST
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠, 4.14절 운영 파일 · 백업 타이머 |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey, 4.11절 DNS, 4.12절 Caddy, 4.13절 백업 열쇠, 4.14절 운영 파일 · 백업 타이머, 4.15절 첫 배포 · 내 계정 |

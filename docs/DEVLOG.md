@@ -6,10 +6,10 @@
 ## 현재 상태
 | 항목 | 내용 |
 |---|---|
-| 단계 | **M3 첫 배포 진행 중** — 저장소 운영 파일(`deploy/` · `task deploy` · `task backup:pull`) 끝, 서버에서는 아직 안 돌림 (PLAN 2장) |
+| 단계 | **M3 첫 배포 진행 중** — `https://cbt.sagming.com`에 배포됨(2026-10-31), 완료 기준 2개 남음 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(회사 · 집 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | M3: 운영 파일은 단계마다 사용자가 타이핑하거나 자동으로 맡긴다(단계마다 사용자가 정함). 타이핑이면 "코드 검수!" → Claude 리뷰 → 커밋 · push |
-| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose · DNS · Caddy · `age` 열쇠 · 운영 파일 · 백업 타이머~~(끝, 4.7 ~ 4.14절)) → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
+| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose · DNS · Caddy · `age` 열쇠 · 운영 파일 · 백업 타이머~~ → ~~첫 배포~~(끝, SERVER 4.7 ~ 4.15절)) → 완료 기준 남은 것: 실제 IP 요청 제한 · 복원 연습 (PLAN M3) → M4. 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
 | **서버에 접속되는 기기** | **집 PC · 노트북**(노트북은 2026-10-31 추가). 회사 PC에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC · 노트북으로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3 · 3.4절)로. 넣으면 이 칸을 고친다 |
 | 기기별로 할 일 | **집 · 회사 PC**: 백업 개인키 `$HOME\cbt-backup.key`를 노트북에서 USB로 옮기기(SERVER 4.13절). **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: 다 끝남(2026-10-31 — 처음 한 번 · 열쇠 `laptop` · 별명 `cbt` · `age` 1.3.2) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
@@ -51,7 +51,7 @@
 - 배운 것: 서버를 바꾸는 명령 앞에 **지금 상태를 보는 명령**을 둔다 — 이번에는 그 덕에 바로 잡혔다. "0%"는 사용률이지 크기가 아니다.
 
 ### 이번 세션 커밋
-`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / `2a5a8aa` `cbt` 계정 · 폴더 / `5bc8098` 비밀값 · 운영 compose / `5ca01f3` DNS / `f7b60be` psql / `3c47714` Caddy / `f587856` 백업 열쇠 / (이 커밋) 운영 파일 · 백업 타이머 — 전부 문서만, 동작 변경 없음
+`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / `2a5a8aa` `cbt` 계정 · 폴더 / `5bc8098` 비밀값 · 운영 compose / `5ca01f3` DNS / `f7b60be` psql / `3c47714` Caddy / `f587856` 백업 열쇠 / `1a04de8` 운영 파일 · 백업 타이머 / (이 커밋) 첫 배포 — 전부 문서만, 동작 변경 없음
 
 ### 서버: 앱 전용 계정 `cbt` · 폴더
 - 사용자가 침(SERVER 4.8절). 본 값: `uid=999(cbt) gid=987(cbt)`, 셸 `nologin`, `sudo su - cbt` 거부, `/opt/cbt` · `/etc/cbt` 755 · `/srv/cbt` 700 전부 root.
@@ -87,8 +87,15 @@
 - Claude가 노트북에서: 받은 백업을 개인키로 풀어 896바이트 · 머리글 `PGDMP` — **실제 Postgres의 `pg_dump` → `age` → 가져오기 → 풀기**가 처음으로 끝까지 됐다(2026-10-31 (3)의 "확인 못 한 것" 중 `pg_dump`).
 - Claude가 노트북에서 `task deploy -- -DryRun`: 프론트 빌드 → embed → `bin/app-linux-amd64`(`main.version=f587856d1fd0`) → 보낼 폴더까지 성공, 작업 트리 깨끗.
 
+### 첫 배포
+- 사용자가 `task deploy`(커밋 `1a04de8`) → `sudo cbtctl user create`(SERVER 4.15절). `cbt` active, `verify` 출력 없음.
+- Claude가 노트북에서: `https://cbt.sagming.com` `200` + 보안 헤더 4개 · `Server` 없음(Caddy 단계에서 미룬 확인 끝), `/api/health` postgres · valkey ok, 비로그인 `/api/me` `401`.
+- 사용자 화면: 노트북 브라우저 · 휴대폰(LTE) 로그인 → 오늘 · 설정 → 로그아웃 둘 다 됨. 휴대폰 오늘 화면 서버 상태 Postgres · Valkey `ok`. — **PLAN M3 완료 기준 1(휴대폰 · PC 로그인)**, 단 "회사 PC"가 아니라 노트북으로 봤다.
+- 남은 점: 응답에 `Via: 1.1 Caddy`(프로그램 이름을 숨기려던 `-Server`와 어긋남, 보안 영향은 작음).
+
 ### 다음에 할 일
-- 첫 `task deploy`(사용자가 친다 — passphrase · sudo 비밀번호) → `sudo cbtctl user create` → 노트북 · 휴대폰(모바일 데이터) 로그인 → 보안 헤더 → 복원 연습 → 완료 기준
+- 완료 기준 남은 것: 요청 제한이 실제 IP 기준인지(노트북에서 없는 이메일로 21번 → 429, 그 사이 휴대폰 LTE는 로그인됨) · 복원 연습(백업 → 빈 DB → 사용자 건수 1)
+- 선택: Caddyfile `reverse_proxy`에 `header_down -Via`
 ---
 
 ## 2026-10-31 (4) · 세 번째 기기(노트북) 준비 문서 (집 PC)

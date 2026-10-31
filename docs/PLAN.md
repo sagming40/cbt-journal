@@ -16,7 +16,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
 | M2 | 인증 | ✅ 2026-10-30 |
-| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 저장소 운영 파일 전부 끝(서버에서는 아직), 다음은 서버 작업 |
+| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 `cbt.sagming.com`에 배포 · 휴대폰 로그인 됨(2026-10-31), 남은 완료 기준: 실제 IP 요청 제한 · 복원 연습 |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
 | M6 | 기록 목록 · 통계 → **혼자 쓰기 시작** | ⬜ |
@@ -94,7 +94,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] 서버: 스왑(이미 있던 2.3GB 유지 · swappiness 10) · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관) (사용자 직접, 2026-10-31 노트북 — SERVER 4.7 ~ 4.13절)
 - [x] 운영 파일 설치(`cbtctl` · `cbt.service` · `cbt-backup` · 타이머) · 백업 한 번 손으로 · 타이머 켜기 · `task backup:pull` (2026-10-31, SERVER 4.14절) *(계획에 없던 작업 — 위 서버 줄과 첫 배포 사이에 빠져 있었다)*
 - [x] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저") — 인증서 발급 · 308 확인 (2026-10-31)
-- [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정 → 보안 헤더(HSTS · nosniff · DENY · Referrer, `Server` 없음) 확인 *(앱 없을 때 502 응답에는 헤더가 안 붙어서 미뤄 둔 확인)*
+- [x] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정 → 보안 헤더(HSTS · nosniff · DENY · Referrer, `Server` 없음) 확인 *(앱 없을 때 502 응답에는 헤더가 안 붙어서 미뤄 둔 확인)* (2026-10-31, SERVER 4.15절)
 - [ ] ~~백업 타이머 켜기~~(위에서 함) · 복원 연습, README "배포" · SERVER.md 갱신
 - **완료 기준**
   - 휴대폰(모바일 데이터)과 회사 PC에서 접속해 로그인 · 로그아웃이 된다.
