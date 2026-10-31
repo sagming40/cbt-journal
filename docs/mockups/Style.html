@@ -154,6 +154,9 @@
   @media (prefers-reduced-motion: reduce) { .D .orb::before { animation: none; } }
   .D .breath { font-size: 14px; color: var(--muted); }
   .D .ghostp { height: 46px; padding: 0 20px; border-radius: 6px; border: 1px solid var(--input); background: var(--surface); font-weight: 700; }
+  /* D2: D와 같고 본문만 Pretendard. 명조는 제목 · 날짜 · 질문(+ 화면 이름 · 감정 이름 · 시각 여백)에만 */
+  .D2 .phone { font-family: 'Pretendard', system-ui, sans-serif; }
+  .D2 .hero .d, .D2 .orb b, .D2 .serif { font-family: 'Gowun Batang', serif; }
 
   /* ════════ C · 고요한 물결 ════════ */
   .C { --bg:#EEF0F8; --surface:rgba(255,255,255,.72); --surface2:#DEE2F1; --border:rgba(255,255,255,.9); --input:#878BA0; --text:#1A1C29; --muted:#5B5F75;
@@ -218,7 +221,7 @@
   <!-- ─────────── D (B + C 조합) ─────────── -->
   <section class="dir">
     <div class="note">
-      <h2>D · 종이 노트 + 숨 고르기</h2>
+      <h2>D · 종이 노트 + 숨 고르기 (전부 명조)</h2>
       <div class="tag">B를 바탕으로 C의 원 체크인을 접목 (사용자 조합)</div>
       <ul>
         <li>B의 미색 종이 · 선 · 일기 형식은 그대로</li>
@@ -257,6 +260,60 @@
       <div>
         <p class="cap">S-03 체크인</p>
         <div class="B D"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="hdr"><button class="x">×</button><span class="t">체크인</span><button class="sv">저장</button></div>
+            <div class="q"><h2>지금 어떤 감정인가요?</h2><span class="muted" style="font-size:14px">여러 개 골라도 돼요</span></div>
+            <div class="chips" data-chips></div>
+            <div data-sliders></div>
+            <div class="field"><label>메모 (선택)</label><input class="ruled" placeholder="한 줄로"></div>
+            <div class="field"><label>시각</label><div style="margin-top:6px">지금 · 21:40 ▾</div></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── D2 (D와 같고 본문만 Pretendard) ─────────── -->
+  <section class="dir">
+    <div class="note">
+      <h2>D2 · 제목만 명조</h2>
+      <div class="tag">D와 같고, 본문은 Pretendard</div>
+      <ul>
+        <li>명조(고운바탕): 날짜 · 큰 제목 · 질문 · 구역 제목("이어 쓰기" · "오늘") · 화면 이름 · 감정 이름 · 시각 여백 · 원 안 "체크인"</li>
+        <li>Pretendard: 본문 · 칩 · 버튼 · 숫자 · 보조 글자 · 탭</li>
+        <li>작은 글자가 또렷하고 숫자 폭이 일정(강도 숫자가 안 흔들림). 대신 D보다 "일기장" 느낌은 덜함</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <p class="cap">S-02 오늘</p>
+        <div class="B D D2"><div class="phone">
+          <div class="status"><span>21:40</span><span>●●● ▮</span></div>
+          <div class="scroll">
+            <div class="top"><span class="serif" style="font-weight:700;font-size:15px">CBT 저널</span><span class="muted">설정</span></div>
+            <div class="hero"><div class="d">2026년 11월 1일 일요일</div><h1>오늘은 어떤 하루였나요?</h1></div>
+            <div class="orbwrap">
+              <button class="orb"><b>체크인</b><span>10초면 돼요</span></button>
+              <span class="breath">숨 한 번 고르고 눌러요</span>
+              <button class="ghostp">사고 기록 쓰기</button>
+            </div>
+            <div class="sec"><h3>이어 쓰기</h3></div>
+            <div class="entries"><div class="entry"><time class="num">3/8</time><div class="what">회의 끝나고… <span class="muted" style="font-size:13px">· 2시간 전</span></div></div></div>
+            <div class="sec"><h3>오늘</h3><span class="muted" style="font-size:13px">기록 전체 ›</span></div>
+            <div class="entries">
+              <div class="entry"><time class="num">09:12</time><div class="what">불안 <span class="num">60</span><span class="dots" data-dots="60"></span><br>무기력 <span class="num">40</span><span class="dots" data-dots="40"></span></div></div>
+              <div class="entry"><time class="num">13:40</time><div class="what">짜증 <span class="num">70</span><span class="dots" data-dots="70"></span></div></div>
+              <div class="entry"><time class="num">18:05</time><div class="what">사고 기록 · 불안 <span class="num">80 → 35</span></div></div>
+            </div>
+            <div style="height:100px"></div>
+          </div>
+          <div class="tab"><span class="on">오늘</span><span>기록</span><span>통계</span><span>설정</span></div>
+        </div></div>
+      </div>
+      <div>
+        <p class="cap">S-03 체크인</p>
+        <div class="B D D2"><div class="phone">
           <div class="status"><span>21:40</span><span>●●● ▮</span></div>
           <div class="scroll">
             <div class="hdr"><button class="x">×</button><span class="t">체크인</span><button class="sv">저장</button></div>
