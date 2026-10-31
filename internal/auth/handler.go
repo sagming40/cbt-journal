@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/sagming40/cbt-journal/internal/apierr"
 	"github.com/sagming40/cbt-journal/internal/apigen"
 	"github.com/sagming40/cbt-journal/internal/clientip"
 )
@@ -34,12 +35,12 @@ func (h *Handler) Login(ctx context.Context, req apigen.LoginRequestObject) (api
 		var rl *RateLimitedError
 		switch {
 		case errors.As(err, &ve):
-			return apigen.Login400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(validationBody(ve))}, nil
+			return apigen.Login400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(apierr.Validation(ve))}, nil
 		case errors.As(err, &rl):
 			return apigen.Login429JSONResponse{TooManyRequestsJSONResponse: rateLimited(rl)}, nil
 		case errors.Is(err, ErrInvalidCredentials):
 			// 없는 이메일 · 틀린 비밀번호는 같은 문구 (DESIGN 4.8절).
-			return apigen.Login401JSONResponse{UnauthorizedJSONResponse: apigen.UnauthorizedJSONResponse(errorBody("INVALID_CREDENTIALS", err.Error()))}, nil
+			return apigen.Login401JSONResponse{UnauthorizedJSONResponse: apigen.UnauthorizedJSONResponse(apierr.Body("INVALID_CREDENTIALS", err.Error()))}, nil
 		}
 		return nil, err
 	}
@@ -54,14 +55,14 @@ func (h *Handler) Signup(ctx context.Context, req apigen.SignupRequestObject) (a
 		var rl *RateLimitedError
 		switch {
 		case errors.Is(err, ErrSignupDisabled):
-			return apigen.Signup403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse(errorBody("SIGNUP_DISABLED", err.Error()))}, nil
+			return apigen.Signup403JSONResponse{ForbiddenJSONResponse: apigen.ForbiddenJSONResponse(apierr.Body("SIGNUP_DISABLED", err.Error()))}, nil
 		case errors.As(err, &ve):
-			return apigen.Signup400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(validationBody(ve))}, nil
+			return apigen.Signup400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(apierr.Validation(ve))}, nil
 		case errors.As(err, &rl):
 			return apigen.Signup429JSONResponse{TooManyRequestsJSONResponse: rateLimited(rl)}, nil
 		case errors.Is(err, ErrEmailTaken):
 			// 가입이 열려 있을 때만 닿는다. 공개 전(M8)에 이메일 확인과 같이 다시 본다(가입 여부가 드러남).
-			return apigen.Signup409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse(errorBody("EMAIL_TAKEN", err.Error()))}, nil
+			return apigen.Signup409JSONResponse{ConflictJSONResponse: apigen.ConflictJSONResponse(apierr.Body("EMAIL_TAKEN", err.Error()))}, nil
 		}
 		return nil, err
 	}
@@ -108,7 +109,7 @@ func (h *Handler) UpdateMe(ctx context.Context, req apigen.UpdateMeRequestObject
 	var ve *ValidationError
 	switch {
 	case errors.As(err, &ve):
-		return apigen.UpdateMe400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(validationBody(ve))}, nil
+		return apigen.UpdateMe400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(apierr.Validation(ve))}, nil
 	case errors.Is(err, ErrUserNotFound):
 		return apigen.UpdateMe401JSONResponse{UnauthorizedJSONResponse: unauthorized()}, nil
 	case err != nil:
@@ -127,7 +128,7 @@ func (h *Handler) ChangePassword(ctx context.Context, req apigen.ChangePasswordR
 	var rl *RateLimitedError
 	switch {
 	case errors.As(err, &ve):
-		return apigen.ChangePassword400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(validationBody(ve))}, nil
+		return apigen.ChangePassword400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(apierr.Validation(ve))}, nil
 	case errors.As(err, &rl):
 		return apigen.ChangePassword429JSONResponse{TooManyRequestsJSONResponse: rateLimited(rl)}, nil
 	case errors.Is(err, ErrUserNotFound):
@@ -154,35 +155,16 @@ func toMe(u User) apigen.Me {
 	return apigen.Me{Id: u.ID.String(), Email: u.Email, Nickname: u.Nickname, Timezone: u.Timezone}
 }
 
-// errorBody는 오류 봉투(ARCHITECTURE 3.2절)를 계약서 타입으로 만든다.
-func errorBody(code, message string) apigen.Error {
-	var e apigen.Error
-	e.Error.Code = code
-	e.Error.Message = message
-	return e
-}
-
-// UnauthorizedBody는 세션 없음 401 봉투다. 인증 미들웨어도 같은 모양을 쓴다.
-func UnauthorizedBody() apigen.Error {
-	return errorBody("UNAUTHORIZED", "로그인이 필요해요")
-}
-
+// 오류 봉투는 apierr에서 만든다 (기능 패키지들이 같은 모양을 쓰게, ARCHITECTURE 2절).
 func unauthorized() apigen.UnauthorizedJSONResponse {
-	return apigen.UnauthorizedJSONResponse(UnauthorizedBody())
-}
-
-func validationBody(ve *ValidationError) apigen.Error {
-	e := errorBody("INVALID_INPUT", "입력한 내용을 다시 확인해 주세요")
-	fields := ve.Fields
-	e.Error.Fields = &fields
-	return e
+	return apigen.UnauthorizedJSONResponse(apierr.Unauthorized())
 }
 
 func rateLimited(rl *RateLimitedError) apigen.TooManyRequestsJSONResponse {
 	// 남은 시간은 초 단위로 올림한다 — 0초로 내려 주면 화면이 곧바로 다시 시도한다.
 	secs := int(math.Ceil(max(rl.RetryAfter, time.Second).Seconds()))
 	return apigen.TooManyRequestsJSONResponse{
-		Body:    errorBody("RATE_LIMITED", rl.Error()),
+		Body:    apierr.Body("RATE_LIMITED", rl.Error()),
 		Headers: apigen.TooManyRequestsResponseHeaders{RetryAfter: &secs},
 	}
 }

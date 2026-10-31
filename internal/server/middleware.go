@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/sagming40/cbt-journal/internal/apierr"
 	"github.com/sagming40/cbt-journal/internal/apigen"
 	"github.com/sagming40/cbt-journal/internal/auth"
 )
@@ -157,7 +158,7 @@ func sessionMiddleware(sessions *auth.Sessions, logger *slog.Logger) func(http.H
 func requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, locked := r.Context().Value(apigen.CookieAuthScopes).([]string); locked && auth.CurrentSession(r.Context()) == nil {
-			body := auth.UnauthorizedBody()
+			body := apierr.Unauthorized()
 			writeError(w, http.StatusUnauthorized, body.Error.Code, body.Error.Message, nil)
 			return
 		}

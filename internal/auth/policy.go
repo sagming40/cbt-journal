@@ -3,11 +3,12 @@ package auth
 import (
 	"fmt"
 	"net/mail"
-	"sort"
 	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/sagming40/cbt-journal/internal/apierr"
 
 	// 시간대 DB를 실행 파일에 넣는다. Windows에는 OS에 IANA 시간대 DB가 없어서 이게 없으면 LoadLocation이 실패한다.
 	_ "time/tzdata"
@@ -21,27 +22,12 @@ const (
 	maxNicknameLen = 30
 )
 
-// ValidationError는 입력 오류를 칸별 문구로 모은다. API에서 400 봉투의 fields가 된다 (ARCHITECTURE 3.2절).
-// 문구는 화면에 그대로 보이므로 부드러운 존댓말(해요체)로 쓴다 (DESIGN 8장).
-type ValidationError struct {
-	Fields map[string]string
-}
-
-func (e *ValidationError) Error() string {
-	keys := make([]string, 0, len(e.Fields))
-	for k := range e.Fields {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, fmt.Sprintf("%s: %s", k, e.Fields[k]))
-	}
-	return "입력 오류: " + strings.Join(parts, ", ")
-}
+// ValidationError는 입력 오류다. 모양은 기능 패키지들이 같이 쓰는 apierr에 있다 (ARCHITECTURE 2절).
+// 별칭이라 auth.ValidationError로 써도 같은 타입이다(errors.As도 그대로 맞는다).
+type ValidationError = apierr.ValidationError
 
 func fieldError(field, message string) *ValidationError {
-	return &ValidationError{Fields: map[string]string{field: message}}
+	return apierr.Field(field, message)
 }
 
 // NormalizeEmail은 이메일을 다듬고(앞뒤 공백 제거, 소문자) 형식을 확인한다.
