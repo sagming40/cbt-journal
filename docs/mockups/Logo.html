@@ -32,10 +32,11 @@
   .smalls > div:not(.tabbar) { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .tabbar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px 8px 0 0; background: var(--paper); font-size: 12px; width: 200px; border: 1px solid color-mix(in oklab, var(--text) 12%, transparent); border-bottom: 0; }
   svg { display: block; }
+  .group { grid-column: 1 / -1; margin: 8px 0 -8px; color: #fff; font-family: 'Gowun Batang', serif; font-size: 22px; }
 </style>
 </head>
 <body>
-<div class="bar"><strong>로고 시안 1 ~ 4</strong> · 위는 미색 종이(라이트), 아래는 먹색(다크). 앱 아이콘 · 가로 글자 조합 · 32px · 16px · 브라우저 탭</div>
+<div class="bar"><strong>로고 시안 5 ~ 9 (2차) · 1 ~ 4 (1차)</strong> · 위는 미색 종이(라이트), 아래는 먹색(다크). 앱 아이콘 · 가로 글자 조합 · 32px · 16px · 브라우저 탭</div>
 
 <!-- 상징 정의: 같은 그림을 여러 크기에 다시 쓴다. fill="currentColor"라 놓인 자리의 색을 따른다 -->
 <svg width="0" height="0" style="position:absolute">
@@ -66,12 +67,49 @@
       <rect x="0" y="35" width="64" height="40" fill="currentColor" clip-path="url(#m4c)"/>
       <line x1="16" y1="27" x2="48" y2="27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".45"/>
     </symbol>
+
+    <!-- ── 2차: "한 걸음 떨어져, 내 마음을 다시 보기" (2026-11-01 사용자가 고른 문장) ── -->
+    <!-- 5 · 한 걸음 비켜 선 두 원: 2번에서 원을 겹치지 않게 떼었다. 찬 원(지금 마음)과 빈 원(떨어져서 본 마음) 사이의 틈 = 한 걸음 -->
+    <symbol id="m5" viewBox="0 0 64 64">
+      <circle cx="22" cy="36" r="14" fill="currentColor"/>
+      <circle cx="43" cy="26" r="14" fill="none" stroke="currentColor" stroke-width="3.5"/>
+    </symbol>
+    <!-- 6 · 마음과 나: 큰 원(마음)을 작은 점(나)이 조금 떨어진 자리에서 바라본다. 점선 = 바라보는 눈길 -->
+    <symbol id="m6" viewBox="0 0 64 64">
+      <circle cx="26" cy="32" r="17" fill="currentColor"/>
+      <line x1="46" y1="32" x2="52" y2="32" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1 5.5" opacity=".7"/>
+      <circle cx="57" cy="32" r="4.5" fill="currentColor"/>
+    </symbol>
+    <!-- 7 · 물에 비친 원: 수면 위 원(마음)이 아래 물에 비친다. 다시 본다 = 비춰 본다. 1차 4번(수평선)과 숨 원의 결을 이음 -->
+    <symbol id="m7" viewBox="0 0 64 64">
+      <circle cx="32" cy="22" r="13" fill="currentColor"/>
+      <line x1="10" y1="39" x2="54" y2="39" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <path d="M21 45a11 7 0 0 0 22 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+      <path d="M25 52a7 4 0 0 0 14 0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
+    </symbol>
+    <!-- 8 · 떨어진 반원 둘: 한 원을 반으로 나눠 한쪽을 한 걸음 옆으로 옮겼다. 찬 반쪽(느낀 것) + 빈 반쪽(다시 본 것) = 떨어져서 보면 온전한 원 -->
+    <symbol id="m8" viewBox="0 0 64 64">
+      <path d="M28 12a20 20 0 0 0 0 40z" fill="currentColor"/>
+      <path d="M36 12a20 20 0 0 1 0 40z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+    </symbol>
+    <!-- 9 · 액자 속 마음: 찬 원을 조금 비켜 선 둥근 사각 테두리가 감싼다. 한 걸음 물러서 마음을 "한 장면"으로 본다 -->
+    <symbol id="m9" viewBox="0 0 64 64">
+      <circle cx="28" cy="36" r="14" fill="currentColor"/>
+      <rect x="22" y="10" width="34" height="34" rx="8" fill="none" stroke="currentColor" stroke-width="3.5"/>
+    </symbol>
   </defs>
 </svg>
 
 <div class="grid" id="grid"></div>
 
 <script>
+  const MARKS2 = [
+    { id: 'm5', name: '5 · 한 걸음 비켜 선 두 원', desc: '찬 원(지금 마음)과 빈 원(떨어져서 본 마음)을 겹치지 않게 뗐다. 둘 사이의 틈이 "한 걸음". 1차 2번을 문장에 맞게 다듬은 것.' },
+    { id: 'm6', name: '6 · 마음과 나', desc: '큰 원(마음)을 작은 점(나)이 조금 떨어진 자리에서 바라본다. 점선은 눈길. "떨어져서 본다"를 가장 곧게 그렸다. 16px에서는 점선이 흐려진다.' },
+    { id: 'm7', name: '7 · 물에 비친 원', desc: '수면 위 원이 아래 물에 비친다. "다시 보기"를 "비춰 보기"로. 숨 원 · 수평선의 고요한 결을 이었다. 작게 보면 원 + 선으로 단순해진다.' },
+    { id: 'm8', name: '8 · 떨어진 반원 둘', desc: '한 원을 반으로 나눠 한쪽을 한 걸음 옆으로. 찬 반쪽(느낀 것)과 빈 반쪽(다시 본 것)이 모여 온전한 원이 된다. 모양이 단단해 아이콘으로 강하다.' },
+    { id: 'm9', name: '9 · 액자 속 마음', desc: '찬 원을 조금 비켜 선 둥근 사각 테두리가 감싼다. 한 걸음 물러서 마음을 "한 장면"으로 보기. 앱 아이콘 안에서 사각이 겹쳐 보일 수 있다.' },
+  ];
   const MARKS = [
     { id: 'm1', name: '1 · 숨 원', desc: 'S-02의 체크인 원을 그대로 로고로. 앱을 열 때마다 보는 모양과 같아 기억하기 쉽다. 가장 단순해서 16px에서도 잘 보인다.' },
     { id: 'm2', name: '2 · 다시 보는 생각', desc: '찬 원(처음 떠오른 생각) 옆에 한 걸음 비켜 선 빈 원(다시 본 생각). 사고 기록이 하는 일 — 같은 일을 다른 자리에서 보기 — 을 담았다.' },
@@ -79,12 +117,12 @@
     { id: 'm4', name: '4 · 잔잔한 수평선', desc: '원 안에 물이 고요하게 차 있다. 출렁이던 마음이 가라앉은 상태. 감정을 좋고 나쁨으로 나누지 않고 "가라앉힘"만 말한다.' },
   ];
   const use = (id, s) => `<svg width="${s}" height="${s}" style="color:var(--m, var(--ink))"><use href="#${id}"/></svg>`;
-  const half = (m, theme) => `
+  const half = (m, theme, tagline = '생각을 붙잡고, 다시 보기') => `
     <div class="half ${theme}">
       <div class="appicon">${use(m.id, 84)}</div>
       <div class="right">
         <div class="lockup"><span style="color:var(--ink)">${use(m.id, 44).replace('var(--m, var(--ink))', 'var(--ink)')}</span>
-          <span class="word">CBT 저널<small>생각을 붙잡고, 다시 보기</small></span></div>
+          <span class="word">CBT 저널<small>${tagline}</small></span></div>
         <div class="smalls">
           <div><span style="color:var(--ink)">${use(m.id, 32).replace('var(--m, var(--ink))', 'var(--ink)')}</span>32</div>
           <div><span style="color:var(--ink)">${use(m.id, 16).replace('var(--m, var(--ink))', 'var(--ink)')}</span>16</div>
@@ -92,11 +130,15 @@
         </div>
       </div>
     </div>`;
-  document.getElementById('grid').innerHTML = MARKS.map(m => `
+  const cards = (list, tagline) => list.map(m => `
     <div class="card">
       <div class="head"><h2>${m.name}</h2><p>${m.desc}</p></div>
-      ${half(m, 'light')}${half(m, 'dark')}
+      ${half(m, 'light', tagline)}${half(m, 'dark', tagline)}
     </div>`).join('');
+  const group = t => `<h2 class="group">${t}</h2>`;
+  document.getElementById('grid').innerHTML =
+    group('2차 · "한 걸음 떨어져, 내 마음을 다시 보기"') + cards(MARKS2, '한 걸음 떨어져, 내 마음을 다시 보기') +
+    group('1차 (비교용)') + cards(MARKS);
 </script>
 </body>
 </html>
