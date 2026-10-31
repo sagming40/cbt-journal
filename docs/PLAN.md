@@ -16,7 +16,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 | M0 | 설계 문서 · 목업 | ✅ 2026-10-29 |
 | M1 | 개발 환경 · 뼈대 (한 줄기 관통) | ✅ 2026-10-30 |
 | M2 | 인증 | ✅ 2026-10-30 |
-| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 운영 파일 · `task deploy` 끝(서버에서는 아직), 다음은 백업 스크립트 |
+| M3 | 첫 배포 (인증만 있는 빈 앱) | 🔄 저장소 운영 파일 전부 끝(서버에서는 아직), 다음은 서버 작업 |
 | M4 | 체크인 | ⬜ |
 | M5 | 사고 기록 | ⬜ |
 | M6 | 기록 목록 · 통계 → **혼자 쓰기 시작** | ⬜ |
@@ -90,7 +90,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] `app version`(커밋 번호) · `task build:linux` (타이핑 학습 모드, 2026-10-31)
 - [x] 저장소 운영 파일 (타이핑 학습 모드 — 사용자가 치고 Claude 검수): 운영 compose · env 예시 · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 `release.sh` (2026-10-31)
 - [x] `scripts/deploy.ps1` · `task deploy` (자동, 사용자 지시 2026-10-31) — 거부 2가지 · `-DryRun` 확인, 실제 서버 배포는 아래 "첫 `task deploy`"에서
-- [ ] 백업 스크립트 · 타이머 · `task backup:pull`
+- [x] 백업 스크립트 · 타이머 · `task backup:pull` (타이핑 학습 모드, 2026-10-31)
 - [ ] 서버: 스왑 1GB · `cbt` 계정 · 폴더 · 비밀값 · 운영 compose · Caddy 설치 · `age` 열쇠(개인키는 PC에 보관)
 - [ ] Cloudflare: `cbt` A 레코드(회색 구름) → `nslookup` 확인 → Caddy 사이트 켜기 (ARCHITECTURE 7.5절 "DNS 먼저")
 - [ ] 첫 `task deploy` → `sudo cbtctl user create`로 내 계정
