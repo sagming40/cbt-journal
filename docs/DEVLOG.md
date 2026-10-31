@@ -9,7 +9,7 @@
 | 단계 | **M3 첫 배포 진행 중** — 저장소 운영 파일(`deploy/` · `task deploy` · `task backup:pull`) 끝, 서버에서는 아직 안 돌림 (PLAN 2장) |
 | 끝난 것 | M0 · M1 · M2 전부(회사 · 집 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | M3: 운영 파일은 단계마다 사용자가 타이핑하거나 자동으로 맡긴다(단계마다 사용자가 정함). 타이핑이면 "코드 검수!" → Claude 리뷰 → 커밋 · push |
-| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑~~ · ~~`cbt` 계정 · 폴더~~(끝, 4.7 · 4.8절) · 비밀값 · compose · Caddy · `age`) → DNS → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
+| 다음에 할 일 | 서버 작업(SERVER.md에 적으며: ~~스왑 · `cbt` 계정 · 폴더 · 비밀값 · compose~~(끝, 4.7 ~ 4.10절) · Caddy · `age`) → DNS → 첫 배포 → 완료 기준 확인 (PLAN M3). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
 | **서버에 접속되는 기기** | **집 PC · 노트북**(노트북은 2026-10-31 추가). 회사 PC에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC · 노트북으로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3 · 3.4절)로. 넣으면 이 칸을 고친다 |
 | 기기별로 할 일 | **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: 다 끝남(2026-10-31 — 처음 한 번 · 열쇠 `laptop` · 별명 `cbt` · `age` 1.3.2) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
@@ -51,13 +51,19 @@
 - 배운 것: 서버를 바꾸는 명령 앞에 **지금 상태를 보는 명령**을 둔다 — 이번에는 그 덕에 바로 잡혔다. "0%"는 사용률이지 크기가 아니다.
 
 ### 이번 세션 커밋
-`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / (이 커밋) `cbt` 계정 · 폴더 — 전부 문서만, 동작 변경 없음
+`e9083c2` 기기 표 / `db2460e` 웹 콘솔 / `a3f12c7` config.txt 함정 / `997858a` 노트북 접속 / `404668b` age / `d52b8c5` 스왑 / `2a5a8aa` `cbt` 계정 · 폴더 / (이 커밋) 비밀값 · 운영 compose — 전부 문서만, 동작 변경 없음
 
 ### 서버: 앱 전용 계정 `cbt` · 폴더
 - 사용자가 침(SERVER 4.8절). 본 값: `uid=999(cbt) gid=987(cbt)`, 셸 `nologin`, `sudo su - cbt` 거부, `/opt/cbt` · `/etc/cbt` 755 · `/srv/cbt` 700 전부 root.
 
+### 서버: 비밀값 · 운영 compose
+- 사용자가 침(SERVER 4.9 · 4.10절). 비밀번호는 서버에서 `openssl rand -hex 32`로 만들어 화면에 띄우지 않고 두 파일에 넣음.
+- 본 값: 비밀번호 길이 64 · 64, 두 파일 일치, 권한 `.env` 600 · `cbt.env` 640 root:cbt, `compose config` OK. Postgres · Valkey `Up (healthy)`, `PONG`, 로그 제한 `max-file:3 max-size:10m`, `ss`에서 127.0.0.1만 LISTEN, 노트북에서 `Test-NetConnection` 22 True · 5432 False · 6379 False(PLAN M3 완료 기준 "바깥에서 DB · Valkey 포트 접속 실패" 관찰).
+- **확인 못 한 것**: `psql … -c 'select version();'`이 아무것도 출력하지 않았다(오류도 없음). 상태 확인(`pg_isready -U cbt -d cbt_journal`)은 통과. 다음 접속 때 `exec -T … -tAc 'show server_version;'`로 다시 본다.
+- Claude 실수 두 개(확인 명령): `grep -c '<'`가 주석 줄의 `<…>`까지 세서 1, `ls -l`이 `.env`를 숨김 → `grep -n` · `ls -la`로 다시 봐서 정상 확인.
+
 ### 다음에 할 일
-- 서버 작업: 비밀값 → 운영 compose → Caddy → `age` 열쇠 (PLAN M3).
+- `psql` 버전 다시 보기 → Cloudflare `cbt` A 레코드(회색 구름) → `nslookup` → Caddy 설치 · Caddyfile (DNS 먼저 — ARCHITECTURE 7.5절) → `age` 열쇠 (PLAN M3).
 
 ---
 

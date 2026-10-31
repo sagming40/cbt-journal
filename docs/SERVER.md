@@ -176,6 +176,48 @@ sudo install -d -m 700 /srv/cbt    # 운영 compose · DB 비밀번호 .env — 
 - 결과: `uid=999(cbt) gid=987(cbt)`, `getent passwd cbt` → `…:/nonexistent:/usr/sbin/nologin`, `sudo su - cbt` → `This account is currently not available.`(로그인 거부가 정상, 앞의 `cannot change directory to /nonexistent` 경고도 정상).
 - 폴더 주인은 전부 root — 앱(`cbt`)은 읽기만 한다. 앱은 파일을 쓰지 않는다(로그는 journald).
 
+### 4.9 비밀값 · 설정 파일 (2026-10-31, 노트북에서)
+PC에서 원본을 보낸다:
+```powershell
+scp deploy/compose.prod.yaml deploy/compose.env.example deploy/cbt.env.example cbt:~/
+```
+서버에서 제자리에 놓고, 비밀번호를 만들어 **화면에 띄우지 않고** 바로 채운다(같은 터미널에서 이어서):
+```bash
+sudo install -m 644 -o root -g root ~/compose.prod.yaml   /srv/cbt/compose.yaml
+sudo install -m 600 -o root -g root ~/compose.env.example /srv/cbt/.env
+sudo install -m 640 -o root -g cbt  ~/cbt.env.example     /etc/cbt/cbt.env
+PG=$(openssl rand -hex 32); VK=$(openssl rand -hex 32)
+sudo sed -i "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$PG/; s/^VALKEY_PASSWORD=$/VALKEY_PASSWORD=$VK/" /srv/cbt/.env
+sudo sed -i "s/<POSTGRES_PASSWORD>/$PG/; s/<VALKEY_PASSWORD>/$VK/" /etc/cbt/cbt.env
+unset PG VK
+rm ~/compose.prod.yaml ~/compose.env.example ~/cbt.env.example
+```
+확인 — 내용은 보지 않고 길이 · 일치만(`cat`으로 열지 않는다):
+```bash
+sudo awk -F= '/PASSWORD/ {print $1, length($2)}' /srv/cbt/.env      # 둘 다 64
+sudo grep -n '<' /etc/cbt/cbt.env                                    # 2번 줄 주석 하나만(자리표 남지 않음)
+sudo bash -c 'source /srv/cbt/.env; grep -q ":$POSTGRES_PASSWORD@" /etc/cbt/cbt.env && grep -q ":$VALKEY_PASSWORD@" /etc/cbt/cbt.env && echo 두 파일 비밀번호 일치'
+sudo ls -la /srv/cbt /etc/cbt     # .env -rw------- root root / compose.yaml -rw-r--r-- / cbt.env -rw-r----- root cbt
+sudo docker compose -f /srv/cbt/compose.yaml config --quiet && echo compose 설정 OK
+```
+- 비밀번호는 서버 두 파일에만 있다. 잃어도 서버에서 다시 만들면 된다(DB 비밀번호를 바꾸려면 Postgres 안에서도 바꿔야 한다 — 볼륨을 처음 만들 때 한 번만 정해지므로).
+- `ls -l`은 점으로 시작하는 `.env`를 숨긴다 → `-a`.
+
+### 4.10 운영 Postgres · Valkey (2026-10-31, 노트북에서)
+```bash
+sudo docker compose -f /srv/cbt/compose.yaml up -d
+sudo docker compose -f /srv/cbt/compose.yaml ps                    # 둘 다 Up (healthy), 127.0.0.1:5432 · 127.0.0.1:6379
+sudo docker compose -f /srv/cbt/compose.yaml exec valkey valkey-cli ping   # PONG (VALKEYCLI_AUTH로 비밀번호)
+sudo docker inspect --format '{{.Name}} {{.HostConfig.LogConfig.Config}}' $(sudo docker compose -f /srv/cbt/compose.yaml ps -q)   # max-file:3 max-size:10m
+sudo ss -tlnp | grep -E ':5432|:6379'                               # 127.0.0.1만 LISTEN
+```
+- 이미지 `postgres:18` · `valkey/valkey:9`, 볼륨 `cbt_pgdata` · `cbt_valkeydata`.
+- 바깥에서 막혔는지 (PC에서, IP는 ssh 별명에서 읽어 저장소 · 화면에 적지 않는다):
+  ```powershell
+  $ip = ((ssh -G cbt | Select-String '^hostname ') -split ' ')[1]
+  Test-NetConnection $ip -Port 5432 | Select-Object RemotePort, TcpTestSucceeded   # False (6379도 False, 22는 True)
+  ```
+
 ## 5. 자주 쓰는 명령 (서버에서)
 
 | 하고 싶은 것 | 명령 |
@@ -201,7 +243,7 @@ sudo install -d -m 700 /srv/cbt    # 운영 compose · DB 비밀번호 .env — 
 - 이 문서 · 저장소 · 대화에 비밀값(root · sudo 비밀번호, DB 비밀번호, 개인 키, 서버 IP) 적기.
 
 ## 7. 앞으로 채울 것 (M3)
-운영 구성이 생기면 이 문서에 이어서 적는다: 비밀값 · 운영용 compose(Postgres · Valkey) · Caddy · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
+운영 구성이 생기면 이 문서에 이어서 적는다: Caddy · 앱 서비스(systemd) · 배포(`task deploy`) · 백업 · 복원 · 내 계정 만들기.
 
 ---
 
@@ -210,4 +252,4 @@ sudo install -d -m 700 /srv/cbt    # 운영 compose · DB 비밀번호 .env — 
 |---|---|
 | 2026-10-30 | 첫 작성: 접속 방법 · 새 PC 키 추가 · 지금까지 한 설정(업데이트 · 방화벽 · 일반 계정 · SSH 잠금 · 자동 업데이트 · Docker) · 자주 쓰는 명령 · 하지 말 것 |
 | 2026-10-31 | 3.2절 ssh 별명 `cbt`가 `task deploy`에 필요하다고 표시. 3.4절에 노트북 추가 |
-| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더 |
+| 2026-10-31 | 3.2절 `config.txt` 함정, 3.3 · 3.4절 웹 콘솔 찾는 곳 · root 경로, 노트북 열쇠 추가. 4.7절 스왑, 4.8절 `cbt` 계정 · 폴더, 4.9절 비밀값 · 설정 파일, 4.10절 운영 Postgres · Valkey |
