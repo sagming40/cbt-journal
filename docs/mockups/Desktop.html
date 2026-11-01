@@ -192,7 +192,7 @@ function shell(active, body) {
       <div class="brand">${LOGO(34)}<div><b>CBT 저널</b><small>한 걸음 떨어져, 내 마음을 다시 보기</small></div></div>
       <nav>${items.map(([k,l]) => `<a class="${k===active?'on':''}" data-go="${k}">${ICON[k]}${l}</a>`).join('')}</nav>
       <div class="grow"></div>
-      <button class="btn p block" data-go="checkin">+ 체크인 <span class="kbd" style="color:inherit;border-color:rgba(255,255,255,.4)">C</span></button>
+      <button class="btn p block" data-go="checkin">+ 체크인</button>
       <div class="who"><span class="avatar">하</span><div>하루<br><span class="muted" style="font-size:12px">Asia/Seoul</span></div></div>
     </aside><div class="main">${body}</div>`;
 }
@@ -217,7 +217,7 @@ const SCREENS = {
       <li>왼쪽 종이 한 장에 <b>체크인 원 + 사고 기록 쓰기 + 이어 쓰기</b>(지금 할 일), 오른쪽에 <b>오늘 일기</b>(한 일). 휴대폰은 같은 내용을 위아래로 쌓는다.</li>
       <li>머리 오른쪽 "이번 주" 7칸 — 날마다 기록 수만큼 점. 색 없이 개수만(빨강 · 초록 금지). 누르면 기록 목록 그날로.</li>
       <li>아래 "이번 주 한눈에" 타일은 통계(M6) 이후. 그 전에는 자리를 비운다.</li>
-      <li>단축키 <span class="kbd">C</span> = 체크인 (PC만, 입력칸에 있을 때는 안 먹음).</li></ul>`,
+      <li>글자 하나짜리 단축키(체크인 <span class="kbd">C</span>)는 처음 안에 있었지만 뺐다 — 화면 낭독기 키와 부딪힌다(DESIGN 8장).</li></ul>`,
     render: () => shell('today', `<div class="wrap">
       <div class="pagehead">
         <div><div class="d">2026년 11월 1일 일요일</div><h1>오늘은 어떤 하루였나요?</h1></div>
