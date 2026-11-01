@@ -143,12 +143,12 @@ notepad "$HOME\.ssh\config"                         # Host cbt / HostName cbt.sa
 ssh -G cbt | Select-String "^(hostname|user|identityfile) "   # 별명이 읽혔는지만 확인
 ssh cbt                                             # 지문이 3.2절 표와 같은지 보고 yes → passphrase → sagming40@cbt-1:~$
 ```
-- 첫 접속 화면의 `New release '26.04.1 LTS' available`은 따르지 않는다 — 판 올리기(`do-release-upgrade`)는 서버를 옮기는 일과 같은 무게라 정해 둔 때(24.04 지원 종료 전)에 새 서버로 한다(DEVLOG "기억할 날짜"). `4 additional security updates … ESM Apps`는 유료 확장 지원 안내라 무시한다(기본 보안 업데이트는 자동, 4.5절).
+- 첫 접속 화면의 `New release …` 안내는 따르지 않는다(6장). `4 additional security updates … ESM Apps`는 유료 확장 지원 안내라 무시한다(기본 보안 업데이트는 자동, 4.5절).
 
 ## 4. 지금까지 한 설정 (순서대로)
 
 > 각 절은 **상황**(왜 · 어디서 쳤나) → 친 명령(줄마다 뜻 · 옵션을 어떻게 줬나 · 나온 결과) → 메모 순서다. 헛디딘 명령도 남긴다 — 같은 실수를 안 하려고.
-> 4.1 ~ 4.6은 2026-10-30 집 PC에서, 4.7 ~ 4.19는 2026-10-31 ~ 11-01 노트북에서 쳤다. 노트북을 서버에 연결한 과정은 3.5절.
+> 4.1 ~ 4.6은 2026-10-30 집 PC에서, 4.7 ~ 4.19는 2026-10-31 ~ 11-01 노트북에서, 4.20은 2026-11-02 회사 PC에서 쳤다. 노트북 · 회사 PC를 서버에 연결한 과정은 3.5 · 3.6절.
 
 | 절 | 한 일 | 날짜 · 기기 |
 |---|---|---|
@@ -166,6 +166,7 @@ ssh cbt                                             # 지문이 3.2절 표와 �
 | 4.17 | README대로 새 버전 배포 · `Via` 빼기 | 2026-11-01 노트북 |
 | 4.18 | 재부팅 뒤 자동 복구 | 〃 |
 | 4.19 | 배포 실패 시 자동 되돌림 | 〃 |
+| 4.20 | 회사 PC에서 첫 배포 (`task deploy`) | 2026-11-02 회사 PC |
 
 ### 4.1 첫 접속 · 업데이트 · 재부팅 (root로, 이때만 root 접속 가능했음)
 **상황**: 서버를 막 만든 직후. Vultr가 준 root로 처음 들어가 밀린 업데이트부터 했다.
@@ -587,7 +588,28 @@ ls /opt/cbt/releases/              # → 1a04de8c6130  f925ad636013
 - 시험이 배포 직전 백업을 하나 더 만들었다(지우지 않음 — 14개만 남기는 규칙이 알아서 정리).
 
 
+### 4.20 회사 PC에서 첫 배포 (2026-11-02, 회사 PC)
+**상황**: 회사 PC를 서버에 연결한 뒤(3.6절) 배포 길이 끝까지 되는지 확인. 어제 노트북이 올린 `66007b5`와 지금 `3dd4e15` 사이에는 문서만 바뀌어서 앱 동작은 같다 — 안전한 상태에서 길만 시험했다.
+```powershell
+# ── 회사 PC PowerShell ──
+task lint; task test                    # (Claude가 먼저 돌림) 0 issues · Go ok · Vitest 16
+task deploy -- -DryRun                  # 빌드 → bin/cbt-deploy-3dd4e15af789 까지, 서버에는 안 보냄
+ssh cbt "sudo cbtctl version"           # ✗ sudo: a terminal is required to read the password
+                                        #   ssh로 한 줄 실행하면 서버에 터미널이 안 붙어 sudo가 비밀번호를 못 묻는다 → -t
+ssh -t cbt "sudo cbtctl version"        # → 66007b5d4815 (어제 노트북이 올린 것)
+task deploy                             # passphrase(scp) → passphrase(ssh) → sudo 비밀번호
+# [release] 넣음 → 배포 직전 백업(13505 바이트) → migrate up(적용할 마이그레이션 없음)
+# → 재시작 3dd4e15af789 → 헬스체크 통과(2번째) → 정리: 가장 오래된 1a04de8c6130 → 끝
+ssh -t cbt "sudo cbtctl version"        # → 3dd4e15af789
+curl.exe -sI https://cbt.sagming.com    # → HTTP/1.1 200 OK, 보안 헤더 그대로
+```
+- sudo 비밀번호를 한 번 틀려 `Sorry, try again.`이 나왔지만 두 번째에 들어갔다(3번까지 다시 묻는다).
+- PC에서 서버 명령을 한 줄로 부를 때 `sudo`가 있으면 **`ssh -t`**(5장 머리). `task deploy`는 처음부터 `ssh -t`로 부른다.
+
+
 ## 5. 자주 쓰는 명령 (서버에서)
+
+PC에서 서버에 들어가지 않고 한 줄만 실행할 때는 `ssh -t cbt "명령"`. `-t`가 없으면 서버에 터미널이 안 붙어 `sudo`가 비밀번호를 못 묻는다(`sudo: a terminal is required …`, 4.20절).
 
 | 하고 싶은 것 | 명령 |
 |---|---|
@@ -631,4 +653,4 @@ ls /opt/cbt/releases/              # → 1a04de8c6130  f925ad636013
 | 2026-10-31 | 사용자 요청: 서버 작업에서 친 명령을 전부 — 4장 머리에 순서 표, 절마다 **상황** · 줄마다 뜻 · 옵션 · 결과, 헛디딘 명령(✗)까지. 3.5절 노트북 추가 실제 순서. 5장에 운영 명령 줄 추가 |
 | 2026-10-31 | 4.16절 복원 연습 |
 | 2026-11-01 | 4.17절 README대로 새 버전 배포 · `Via` 빼기, 4.18절 재부팅 뒤 자동 복구, 4.19절 배포 실패 시 자동 되돌림. 1장 도메인 연결됨 |
-| 2026-11-02 | 3.2절 도메인으로 별명 · 서버 지문 표, 3.4절 회사 PC 추가, 3.6절 회사 PC 실제 순서 |
+| 2026-11-02 | 3.2절 도메인으로 별명 · 서버 지문 표, 3.4절 회사 PC 추가, 3.6절 회사 PC 실제 순서, 4.20절 회사 PC 첫 배포, 5장 머리 `ssh -t` |
