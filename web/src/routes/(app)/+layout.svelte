@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import House from '@lucide/svelte/icons/house';
+	import Plus from '@lucide/svelte/icons/plus';
 	import Settings from '@lucide/svelte/icons/settings';
 	import { api } from '#lib/api/client.js';
 	import { NETWORK_ERROR } from '#lib/api/errors.js';
@@ -44,38 +45,68 @@
 
 {#if auth.user}
 	<div class="min-h-dvh md:flex">
-		<!-- 데스크톱: 왼쪽 사이드바 / 모바일: 아래 탭 (기준 48rem = md, DESIGN 3.2절) -->
+		<!-- 데스크톱: 왼쪽 사이드바 (기준 48rem = md, DESIGN 3.2절). 스크롤해도 제자리에 붙어 있다 -->
+		<aside
+			class="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card px-4 pt-7 pb-5 md:flex"
+		>
+			<a href={resolve('/(app)')} class="px-1" aria-label="CBT 저널 — 오늘">
+				<Logo size={34} wordmark tagline />
+			</a>
+			<nav aria-label="메뉴" class="mt-8 flex flex-col gap-0.5">
+				{#each nav as item (item.href)}
+					<a
+						href={item.href}
+						aria-current={isActive(item.href) ? 'page' : undefined}
+						class={[
+							'flex min-h-11 items-center gap-2.5 rounded-md px-3 text-[15px]',
+							isActive(item.href) ? 'bg-accent-tint font-bold text-accent-text' : 'hover:bg-muted'
+						]}
+					>
+						<item.icon class="size-[18px]" aria-hidden="true" />
+						{item.label}
+					</a>
+				{/each}
+			</nav>
+			<!-- 가장 자주 하는 동작은 메뉴 사이에 묻지 않고 맨 아래 따로 (DESIGN 3.2절) -->
+			<Button href={resolve('/(app)/checkin')} class="mt-auto min-h-11 w-full font-semibold">
+				<Plus class="size-4" aria-hidden="true" />체크인
+			</Button>
+			<div class="mt-4 flex items-center gap-2.5 border-t border-dashed px-1 pt-4 text-sm">
+				<span
+					class="flex size-8 shrink-0 items-center justify-center rounded-full border border-input text-[13px] font-bold"
+					aria-hidden="true">{auth.user.nickname.slice(0, 1)}</span
+				>
+				<span class="min-w-0 leading-tight">
+					<span class="block truncate">{auth.user.nickname}</span>
+					<span class="block truncate text-xs text-muted-foreground">{auth.user.timezone}</span>
+				</span>
+			</div>
+		</aside>
+
+		<!-- 모바일: 아래 탭. 체크인 중에는 숨긴다(그 자리에 고정 [저장], DESIGN 3.2절) -->
 		<nav
 			aria-label="메뉴"
 			class={[
-				'fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:flex md:min-h-dvh md:w-56 md:flex-col md:gap-1 md:border-t-0 md:border-r md:p-4 md:pb-4',
-				// 체크인 중에는 모바일 하단 탭만 숨긴다(데스크톱 사이드바는 화면을 가리지 않아 둔다)
+				'fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden',
 				focusMode ? 'hidden' : 'flex'
 			]}
 		>
-			<a
-				href={resolve('/(app)')}
-				class="mb-6 hidden px-2 pt-1 md:block"
-				aria-label="CBT 저널 — 오늘"
-			>
-				<Logo size={30} wordmark />
-			</a>
 			{#each nav as item (item.href)}
 				<a
 					href={item.href}
 					aria-current={isActive(item.href) ? 'page' : undefined}
 					class={[
-						'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 text-xs md:min-h-11 md:flex-none md:flex-row md:justify-start md:gap-2.5 md:rounded-md md:px-3 md:text-sm',
+						'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 text-xs',
 						isActive(item.href)
-							? 'font-semibold text-accent-text md:bg-accent-tint'
+							? 'font-semibold text-accent-text'
 							: 'text-muted-foreground hover:text-foreground'
 					]}
 				>
-					<item.icon class="size-5 md:size-4" aria-hidden="true" />
-					<!-- 모바일 하단 탭: 고른 탭은 글자 아래 밑줄 2px (DESIGN 6장 "모양 D2"). 데스크톱은 옅은 바탕으로 -->
+					<item.icon class="size-5" aria-hidden="true" />
+					<!-- 고른 탭은 글자 아래 밑줄 2px (DESIGN 6장 "모양 D2") -->
 					<span
 						class={[
-							'border-b-2 pb-0.5 md:border-b-0 md:pb-0',
+							'border-b-2 pb-0.5',
 							isActive(item.href) ? 'border-primary dark:border-accent-text' : 'border-transparent'
 						]}>{item.label}</span
 					>
@@ -83,10 +114,10 @@
 			{/each}
 		</nav>
 
-		<!-- 본문은 최대 40rem — 글을 쓰는 앱이라 한 줄이 너무 길면 읽기 · 쓰기가 불편하다 (DESIGN 3.2절) -->
+		<!-- 틀은 최대 68rem, 화면마다 2단으로 나눈다. 글줄 한 줄은 각 화면에서 40rem 안으로 (DESIGN 3.2절) -->
 		<main
 			class={[
-				'mx-auto w-full max-w-[40rem] px-5 pt-6 md:px-8 md:pt-10 md:pb-10',
+				'mx-auto w-full max-w-[68rem] min-w-0 px-5 pt-6 md:px-12 md:pt-11 md:pb-16',
 				focusMode ? 'pb-6' : 'pb-28'
 			]}
 		>

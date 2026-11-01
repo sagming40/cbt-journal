@@ -2,6 +2,8 @@
 	// S-03 체크인 입력 — 작성 · 수정 화면이 같이 쓴다 (DESIGN 4.2절).
 	// 10초 안에 끝나야 한다(C1): 감정 칩 → (강도는 50에서 시작) → 저장. 메모 · 시각은 선택.
 	import { untrack } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { components } from '#lib/api/schema.js';
 	import { auth } from '#lib/auth.svelte.js';
 	import EmotionPicker, { type Picked } from '#lib/components/EmotionPicker.svelte';
@@ -48,72 +50,129 @@
 		when = toLocalInput(new Date(), tz);
 	}
 
-	function submit(event: SubmitEvent) {
-		event.preventDefault();
+	function send() {
 		const body: CheckinInput = { note, emotions: picked };
 		if (customTime && when) body.occurred_at = fromLocalInput(when, tz).toISOString();
 		onsubmit(body);
 	}
+
+	function submit(event: SubmitEvent) {
+		event.preventDefault();
+		send();
+	}
+
+	// 폼을 연 뒤 고친 게 있는지. Esc로 닫을 때 쓴다 — 고른 감정 · 메모를 실수로 날리지 않게
+	const snapshot = (p: Picked[], n: string, c: boolean, w: string) =>
+		JSON.stringify([p.map((x) => [x.emotion_id, x.intensity]), n, c, w]);
+	const pristine = untrack(() => snapshot(picked, note, customTime, when));
+	const dirty = $derived(snapshot(picked, note, customTime, when) !== pristine);
+
+	// 키보드 (DESIGN 4.2절 "키보드"): Ctrl(⌘) + Enter 저장, Esc 닫기.
+	// 한글 입력 중(isComposing)에는 마지막 글자가 아직 확정 전이라 둘 다 무시한다.
+	function onkeydown(event: KeyboardEvent) {
+		if (event.isComposing || event.defaultPrevented) return;
+		if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			if (!submitting && picked.length > 0) send();
+		} else if (event.key === 'Escape') {
+			// 확인 창(삭제 D-01)이 열려 있으면 Esc는 그 창만 닫는다
+			if (document.querySelector('[role="alertdialog"]')) return;
+			// 고친 게 있으면 닫지 않는다 — [×]는 그대로 있다
+			if (dirty) return;
+			goto(resolve('/(app)'));
+		}
+	}
 </script>
 
-<form class="pb-24 md:pb-0" onsubmit={submit} novalidate>
+<svelte:window {onkeydown} />
+
+<!-- 데스크톱 2단(64rem 이상): 왼쪽 고르기 | 오른쪽 종이에 정하기 · 저장 (DESIGN 4.2절 "데스크톱"). 모바일은 위아래로 -->
+<form
+	class="pb-24 md:pb-0 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-10 xl:grid-cols-[1fr_25rem] xl:gap-12"
+	onsubmit={submit}
+	novalidate
+>
 	<section aria-labelledby="q-emotion">
-		<h2 id="q-emotion" class="font-serif text-[26px] font-bold">지금 어떤 감정인가요?</h2>
-		<p class="mt-1 mb-4 text-sm text-muted-foreground">여러 개 골라도 돼요</p>
-		<EmotionPicker {emotions} bind:value={picked} />
+		<h2 id="q-emotion" class="font-serif text-[26px] font-bold md:text-[28px]">
+			지금 어떤 감정인가요?
+		</h2>
+		<p class="mt-1 mb-4 text-sm text-muted-foreground md:mb-6">여러 개 골라도 돼요</p>
+		<EmotionPicker {emotions} bind:value={picked} part="chips" />
 		<div class="mt-2"><FormError message={fields.emotions} /></div>
 	</section>
 
-	<!-- 메모는 공책 줄처럼 밑줄 하나 (DESIGN 6장 "모양 D2" — 기록 칸) -->
-	<div class="mt-6">
-		<label for="note" class="text-sm text-muted-foreground">메모 (선택)</label>
-		<input
-			id="note"
-			bind:value={note}
-			maxlength="200"
-			placeholder="한 줄로"
-			autocomplete="off"
-			aria-invalid={fields.note ? 'true' : undefined}
-			class="mt-1 h-11 w-full border-0 border-b border-input bg-transparent px-0.5 outline-none placeholder:text-muted-foreground focus-visible:border-b-2 focus-visible:border-primary"
-		/>
-		<FormError message={fields.note} />
-	</div>
-
-	<div class="mt-6">
-		<p class="text-sm text-muted-foreground" id="when-label">시각</p>
-		{#if customTime}
-			<input
-				type="datetime-local"
-				bind:value={when}
-				aria-labelledby="when-label"
-				aria-invalid={fields.occurred_at ? 'true' : undefined}
-				class="mt-1 h-11 rounded-md border border-input bg-card px-3 tabular-nums"
-			/>
-		{:else}
-			<div class="mt-1 flex items-center gap-3">
-				<span>지금</span>
-				<button
-					type="button"
-					class="min-h-11 text-sm text-accent-text underline-offset-4 hover:underline"
-					onclick={pickTime}>시각 바꾸기</button
-				>
-			</div>
-		{/if}
-		<FormError message={fields.occurred_at} />
-	</div>
-
-	<div class="mt-4"><FormError {message} /></div>
-
-	<!-- 저장: 모바일은 엄지가 닿는 화면 아래에 고정 (DESIGN 1장 원칙 1 · 4.2절) -->
 	<div
-		class="fixed inset-x-0 bottom-0 border-t bg-background px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static md:mt-8 md:border-0 md:p-0"
+		class="md:mt-8 md:rounded-lg md:border md:bg-card md:px-6 md:pt-5 md:pb-6 lg:sticky lg:top-8 lg:mt-0"
 	>
-		<Button
-			type="submit"
-			class="min-h-12 w-full text-base font-bold md:w-auto md:px-8"
-			disabled={submitting || picked.length === 0}
+		<div class="hidden items-baseline justify-between md:flex">
+			<h3 class="font-serif text-lg font-bold">얼마나 강한가요?</h3>
+			<span class="text-xs text-muted-foreground">0 ~ 100</span>
+		</div>
+		<div class="mt-4 md:mt-1">
+			<EmotionPicker {emotions} bind:value={picked} part="sliders" />
+		</div>
+		{#if picked.length === 0}
+			<p
+				class="hidden border-b border-dashed py-8 text-center text-sm text-muted-foreground md:block"
+			>
+				감정을 고르면 여기서 세기를 정해요
+			</p>
+		{/if}
+
+		<!-- 메모는 공책 줄처럼 밑줄 하나 (DESIGN 6장 "모양 D2" — 기록 칸) -->
+		<div class="mt-6 md:mt-5">
+			<label for="note" class="text-sm text-muted-foreground">메모 (선택)</label>
+			<input
+				id="note"
+				bind:value={note}
+				maxlength="200"
+				placeholder="한 줄로"
+				autocomplete="off"
+				aria-invalid={fields.note ? 'true' : undefined}
+				class="mt-1 h-11 w-full border-0 border-b border-input bg-transparent px-0.5 outline-none placeholder:text-muted-foreground focus-visible:border-b-2 focus-visible:border-primary"
+			/>
+			<FormError message={fields.note} />
+		</div>
+
+		<div class="mt-6 md:mt-5">
+			<p class="text-sm text-muted-foreground" id="when-label">시각</p>
+			{#if customTime}
+				<input
+					type="datetime-local"
+					bind:value={when}
+					aria-labelledby="when-label"
+					aria-invalid={fields.occurred_at ? 'true' : undefined}
+					class="mt-1 h-11 rounded-md border border-input bg-card px-3 tabular-nums md:w-full"
+				/>
+			{:else}
+				<div class="mt-1 flex items-center gap-3">
+					<span>지금</span>
+					<button
+						type="button"
+						class="min-h-11 text-sm text-accent-text underline-offset-4 hover:underline"
+						onclick={pickTime}>시각 바꾸기</button
+					>
+				</div>
+			{/if}
+			<FormError message={fields.occurred_at} />
+		</div>
+
+		<div class="mt-4"><FormError {message} /></div>
+
+		<!-- 저장: 모바일은 엄지가 닿는 화면 아래에 고정 (DESIGN 1장 원칙 1 · 4.2절), 데스크톱은 종이 맨 아래 -->
+		<div
+			class="fixed inset-x-0 bottom-0 border-t bg-background px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static md:mt-6 md:border-0 md:bg-transparent md:p-0"
 		>
-			{submitting ? '저장하는 중…' : '저장'}
-		</Button>
+			<Button
+				type="submit"
+				class="min-h-12 w-full text-base font-bold"
+				disabled={submitting || picked.length === 0}
+			>
+				{submitting ? '저장하는 중…' : '저장'}
+			</Button>
+			<p class="mt-2 hidden text-center text-xs text-muted-foreground md:block">
+				Ctrl + Enter로 저장 · Esc로 닫기
+			</p>
+		</div>
 	</div>
 </form>

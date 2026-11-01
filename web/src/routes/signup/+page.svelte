@@ -7,7 +7,7 @@
 	import { NETWORK_ERROR, errorMessage, fieldErrors, retryAfterText } from '#lib/api/errors.js';
 	import { auth } from '#lib/auth.svelte.js';
 	import FormError from '#lib/components/FormError.svelte';
-	import Logo from '#lib/components/Logo.svelte';
+	import AuthShell from '#lib/components/AuthShell.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -65,12 +65,7 @@
 	}
 </script>
 
-<!-- 로그인과 같은 결: 종이 위에 바로 (DESIGN 6장 "모양 D2") -->
-<main class="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-	<header class="mb-8">
-		<Logo size={44} wordmark tagline />
-		<h1 class="mt-8 font-serif text-2xl font-bold">가입하기</h1>
-	</header>
+<AuthShell title="가입하기">
 	<div>
 		<div>
 			{#if allowSignup === false}
@@ -137,4 +132,4 @@
 			>
 		</p>
 	</div>
-</main>
+</AuthShell>

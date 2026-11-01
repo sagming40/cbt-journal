@@ -8,7 +8,7 @@
 	import { NETWORK_ERROR, errorMessage, fieldErrors, retryAfterText } from '#lib/api/errors.js';
 	import { auth } from '#lib/auth.svelte.js';
 	import FormError from '#lib/components/FormError.svelte';
-	import Logo from '#lib/components/Logo.svelte';
+	import AuthShell from '#lib/components/AuthShell.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
@@ -76,12 +76,7 @@
 	}
 </script>
 
-<!-- 종이 위에 바로 쓴다 — 카드 상자 없이 로고 · 제목 · 입력 (DESIGN 6장 "모양 D2") -->
-<main class="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-	<header class="mb-8">
-		<Logo size={44} wordmark tagline />
-		<h1 class="mt-8 font-serif text-2xl font-bold">로그인하고 이어서 기록해 보세요</h1>
-	</header>
+<AuthShell title="로그인하고 이어서 기록해 보세요">
 	<div>
 		<div>
 			<form class="space-y-4" onsubmit={submit} novalidate>
@@ -132,4 +127,4 @@
 			</p>
 		{/if}
 	</div>
-</main>
+</AuthShell>

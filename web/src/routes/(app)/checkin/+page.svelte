@@ -58,7 +58,7 @@
 
 <svelte:head><title>체크인 · CBT 저널</title></svelte:head>
 
-<header class="mb-6 flex items-center gap-2">
+<header class="mb-6 flex items-center gap-2 md:mb-9 md:border-b md:pb-4">
 	<a
 		href={resolve('/(app)')}
 		class="-ml-2 flex size-11 items-center justify-center rounded-md hover:bg-muted"

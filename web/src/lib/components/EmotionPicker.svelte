@@ -8,12 +8,16 @@
 	export type Picked = { emotion_id: number; intensity: number };
 
 	// 오류 문구는 감싸는 폼의 FormError(role=alert)가 읽어 준다 — fieldset에는 aria-invalid를 달 수 없어서
+	// part: 데스크톱 체크인은 칩(왼쪽)과 슬라이더(오른쪽 종이)를 따로 놓는다 (DESIGN 4.2절 "데스크톱").
+	// 같은 value를 두 번 묶어 쓰면 된다 — 고르기 · 정하기가 한 상태를 본다.
 	let {
 		emotions,
-		value = $bindable([])
+		value = $bindable([]),
+		part = 'all'
 	}: {
 		emotions: Emotion[];
 		value?: Picked[];
+		part?: 'all' | 'chips' | 'sliders';
 	} = $props();
 
 	const START = 50;
@@ -36,27 +40,30 @@
 	}
 </script>
 
-<fieldset>
-	<legend class="sr-only">감정</legend>
-	<div class="flex flex-wrap gap-2">
-		{#each emotions as e (e.id)}
-			<button
-				type="button"
-				aria-pressed={picked(e.id)}
-				onclick={() => toggle(e.id)}
-				class={[
-					'h-11 rounded-md border px-4 text-[15px] transition-colors',
-					picked(e.id)
-						? 'border-primary bg-accent-tint font-bold text-accent-text shadow-[inset_0_-3px_0_var(--primary)] dark:border-accent-text dark:shadow-[inset_0_-3px_0_var(--accent-text)]'
-						: 'border-input bg-card hover:bg-muted'
-				]}>{e.name}</button
-			>
-		{/each}
-	</div>
-</fieldset>
+{#if part !== 'sliders'}
+	<fieldset>
+		<legend class="sr-only">감정</legend>
+		<!-- 넓은 화면(80rem 이상)은 5열 격자로 큼직하게 — 마우스로 넓은 화면을 가로지르지 않게 (DESIGN 4.2절) -->
+		<div class="flex flex-wrap gap-2 xl:grid xl:grid-cols-5 xl:gap-2.5">
+			{#each emotions as e (e.id)}
+				<button
+					type="button"
+					aria-pressed={picked(e.id)}
+					onclick={() => toggle(e.id)}
+					class={[
+						'h-11 rounded-md border px-4 text-[15px] transition-colors xl:h-14',
+						picked(e.id)
+							? 'border-primary bg-accent-tint font-bold text-accent-text shadow-[inset_0_-3px_0_var(--primary)] dark:border-accent-text dark:shadow-[inset_0_-3px_0_var(--accent-text)]'
+							: 'border-input bg-card hover:bg-muted'
+					]}>{e.name}</button
+				>
+			{/each}
+		</div>
+	</fieldset>
+{/if}
 
-{#if rows.length > 0}
-	<ul class="mt-4">
+{#if part !== 'chips' && rows.length > 0}
+	<ul class={part === 'all' ? 'mt-4' : ''}>
 		{#each rows as { emotion, pick } (emotion.id)}
 			<li
 				class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-dashed py-3.5"
