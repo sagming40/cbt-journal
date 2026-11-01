@@ -57,7 +57,13 @@ Host cbt
 ```powershell
 ssh cbt
 ```
-도메인(`cbt.sagming.com`)을 연결한 뒤에는 `HostName`을 도메인으로 바꿔도 된다.
+도메인(`cbt.sagming.com`)을 연결한 뒤에는 `HostName`을 도메인으로 적어도 된다 — 회사 PC는 처음부터 도메인으로 적었다(IP를 어디에도 옮겨 적지 않아도 된다). Cloudflare가 DNS만(회색 구름)이라 도메인이 서버로 바로 간다.
+
+**서버 지문**: 처음 접속할 때 `yes` 전에 아래와 같은지 본다. 다르면 접속하지 않는다(다른 서버가 끼어든 것일 수 있다). 지문은 비밀이 아니라 공개 정보다.
+
+| 종류 | 지문 |
+|---|---|
+| ED25519 (처음 접속 때 보이는 것) | `SHA256:hriG4HqpVEALwJi0HipXiMj8QpVWleBzLPlZzPOzOug` |
 
 ### 3.3 비상구: Vultr 웹 콘솔
 SSH가 막혔을 때(방화벽 · SSH 설정 실수) 쓰는 문이다.
@@ -65,7 +71,7 @@ SSH가 막혔을 때(방화벽 · SSH 설정 실수) 쓰는 문이다.
 - 웹 화면 안에서 `root`와 **Vultr 화면에 표시된 root 비밀번호**로 로그인한다. root 금지는 SSH에만 걸려 있어서 콘솔은 된다.
 - root 비밀번호는 이 비상구 말고는 쓰지 않는다. 어디에도 옮겨 적지 않는다.
 
-### 3.4 새 PC를 추가할 때 (노트북 `laptop` 2026-10-31 웹 콘솔로 추가, 회사 PC는 아직)
+### 3.4 새 PC를 추가할 때 (노트북 `laptop` 2026-10-31 · 회사 PC `company-pc` 2026-11-02, 둘 다 웹 콘솔로 추가)
 PC마다 열쇠를 따로 만든다 — 한 PC를 잃으면 그 열쇠만 지우면 된다. **서버는 이미 만들어져 있어서 Vultr에 키를 등록해도 이 서버에는 안 들어간다.** 서버의 `authorized_keys`에 직접 한 줄 추가해야 한다.
 
 1. **새 PC에서** 열쇠 만들기
@@ -114,6 +120,30 @@ age --version                                        # 새 터미널에서 설�
 ```
 - 나중에 `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!`가 뜨면 접속을 이어 가지 않는다 — 처음 `yes`로 저장한 서버 지문과 다르다는 뜻이다.
 - 어느 와이파이에서든 접속된다(22번은 어디서 오든 열려 있고 열쇠로만 들어온다). 22번을 막는 와이파이(회사 · 학교 등)면 `Connection timed out` → 휴대폰 핫스팟이나 웹 콘솔.
+
+### 3.6 실제로 친 순서: 회사 PC 추가 (2026-11-02)
+**상황**: 회사 PC에서도 배포 · 백업을 하려고. 여기서 접속되는 다른 기기가 없어 노트북 때처럼 웹 콘솔로 열쇠를 넣었다. 먼저 회사 네트워크가 22번을 막는지 봤다 — 열려 있었다(`Test-NetConnection cbt.sagming.com -Port 22` → `TcpTestSucceeded : True`).
+```powershell
+# ── 회사 PC PowerShell ──
+New-Item -ItemType Directory -Force "$HOME\.ssh"
+ssh-keygen -t ed25519 -C "cbt-journal company-pc" -f "$HOME\.ssh\cbt_vultr"   # passphrase 정함
+Get-Content "$HOME\.ssh\cbt_vultr.pub"                                     # 공개 키 한 줄 복사
+```
+```bash
+# ── Vultr 웹 콘솔 (root) ──
+echo 'ssh-ed25519 AAAA… cbt-journal company-pc' >> /home/sagming40/.ssh/authorized_keys
+tail -n 3 /home/sagming40/.ssh/authorized_keys      # home-pc · laptop · company-pc 세 줄
+exit
+```
+```powershell
+# ── 회사 PC PowerShell ──
+winget install --id FiloSottile.age -e                                      # → age v1.3.2
+if (-not (Test-Path "$HOME\.ssh\config")) { New-Item -ItemType File "$HOME\.ssh\config" }   # config.txt 함정 피하기 (3.2절)
+notepad "$HOME\.ssh\config"                         # Host cbt / HostName cbt.sagming.com (IP 대신 도메인) / User sagming40 / IdentityFile ~/.ssh/cbt_vultr
+ssh -G cbt | Select-String "^(hostname|user|identityfile) "   # 별명이 읽혔는지만 확인
+ssh cbt                                             # 지문이 3.2절 표와 같은지 보고 yes → passphrase → sagming40@cbt-1:~$
+```
+- 첫 접속 화면의 `New release '26.04.1 LTS' available`은 따르지 않는다 — 판 올리기(`do-release-upgrade`)는 서버를 옮기는 일과 같은 무게라 정해 둔 때(24.04 지원 종료 전)에 새 서버로 한다(DEVLOG "기억할 날짜"). `4 additional security updates … ESM Apps`는 유료 확장 지원 안내라 무시한다(기본 보안 업데이트는 자동, 4.5절).
 
 ## 4. 지금까지 한 설정 (순서대로)
 
@@ -601,3 +631,4 @@ ls /opt/cbt/releases/              # → 1a04de8c6130  f925ad636013
 | 2026-10-31 | 사용자 요청: 서버 작업에서 친 명령을 전부 — 4장 머리에 순서 표, 절마다 **상황** · 줄마다 뜻 · 옵션 · 결과, 헛디딘 명령(✗)까지. 3.5절 노트북 추가 실제 순서. 5장에 운영 명령 줄 추가 |
 | 2026-10-31 | 4.16절 복원 연습 |
 | 2026-11-01 | 4.17절 README대로 새 버전 배포 · `Via` 빼기, 4.18절 재부팅 뒤 자동 복구, 4.19절 배포 실패 시 자동 되돌림. 1장 도메인 연결됨 |
+| 2026-11-02 | 3.2절 도메인으로 별명 · 서버 지문 표, 3.4절 회사 PC 추가, 3.6절 회사 PC 실제 순서 |

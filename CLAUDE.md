@@ -107,7 +107,7 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 ## 기기
 | 기기 | Claude 계정 | 비고 |
 |---|---|---|
-| **회사 PC** (주 작업 기기) | 회사 계정 | Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, Miniconda(기본 Python 없음) |
+| **회사 PC** (주 작업 기기) | 회사 계정 | Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, Miniconda(기본 Python 없음), 서버 열쇠 `company-pc` · `age` (2026-11-02) |
 | 집 PC | 개인 계정 | Docker, PostgreSQL 18 직접 설치(5432 사용 중), Node 24 |
 | 노트북 (2026-10-31 추가) | 개인 계정 | Windows 11 Home, Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, 기본 Python 없음 |
 

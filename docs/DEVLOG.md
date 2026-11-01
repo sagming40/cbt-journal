@@ -10,8 +10,8 @@
 | 끝난 것 | **PC 배치**(2026-11-01): 사이드바 · 화면별 2단(64rem 이상) — DESIGN 3.2절. **M4 체크인**(2026-11-01, 운영 배포 · 휴대폰 5 ~ 6초): 감정 seed 10 · 체크인 API 6개(그날 = 사용자 시간대), S-02 오늘(체크인 원 · 오늘 목록) · S-03 작성 · 수정 · 삭제 확인, `apierr` 공용 패키지. **스타일 D2**(미색 종이 · 잉크 남색 · 제목만 고운바탕) · 로고(비켜 선 두 원) · 부제 "한 걸음 떨어져, 내 마음을 다시 보기" — DESIGN 6장. M3 첫 배포: `https://cbt.sagming.com`, 완료 기준 7개(휴대폰 · PC 로그인, DB · Valkey 포트 막힘, 실제 IP 요청 제한, 복원, README대로 재배포, 재부팅 복구, 실패 시 자동 되돌림) — SERVER 4.7 ~ 4.19절. M0 · M1 · M2 전부(회사 · 집 PC에서 확인). M2 인증: `users` · `sessions`, 세션 쿠키 로그인(로그인 유지 · 쿠키 재발급 · Valkey 캐시), 요청 제한 4종, 가입(플래그) · 내 정보 · 비밀번호 변경 · 다른 기기 로그아웃, 유출 비밀번호 거절, 기본 잠금(openapi security), `task user` 관리 명령, 프론트 로그인 · 가입 · 설정 · 401 처리 · 메뉴, Vitest, CI 통합 테스트 · 생성 코드 확인 |
 | 진행 중 | 없음 |
 | 다음에 할 일 | PC 배치 운영 배포(`task deploy`) 뒤 → **M5 사고 기록**(S-04는 PC 목업 `Desktop.html` 5단계가 D2 기준): REQUIREMENTS T1 ~ T6, DATA_MODEL 3.5 · 4.3절(초안 · `rev` 충돌), DESIGN 4.3절 · 목업(`Record.*.html` — 옛 결이라 D2로 다시 그릴지 먼저 정하기)을 읽고 사전 검증 → 설계 · 순서 · 의존성을 먼저 보여 주기. **사용자 할 일**: 인지 왜곡 11개 설명 · 예시, 단계 제목 · 도움말 문구(PLAN M5). **사용자가 정할 것**(급하지 않음): 새벽 자동 재부팅 켤지(ARCHITECTURE 7.5절 — 재부팅 복구는 확인됨), HSTS 하루 → 1년(7.2절). 서버 명령은 Claude가 이유와 함께 보여 주고 사용자가 친다 |
-| **서버에 접속되는 기기** | **집 PC · 노트북**(노트북은 2026-10-31 추가). 회사 PC에서 서버 작업을 하려면 먼저 그 기기 열쇠를 서버에 넣는다 — 집 PC · 노트북으로 접속해 추가하거나, 그 자리에서 Vultr 웹 콘솔(SERVER.md 3.3 · 3.4절)로. 넣으면 이 칸을 고친다 |
-| 기기별로 할 일 | **집 · 회사 PC**: `git pull` 뒤 `task setup`(새 의존성 `@fontsource/gowun-batang`) · `task migrate`(00003 체크인 테이블) — 2026-11-01. 집 PC 전역 설정(`~/.claude/CLAUDE.md`)의 공용 인프라 절을 드라이브 사본 `laptop_CLAUDE.md`에 맞추기(첫 배포 · `laptop` 열쇠 · 경로 표기). 백업 개인키 `$HOME\cbt-backup.key`를 노트북에서 USB로 옮기기(SERVER 4.13절). **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버용 SSH 열쇠(`company-pc`) 만들어 추가 — 3.4절. **노트북**: 다 끝남(2026-10-31 — 처음 한 번 · 열쇠 `laptop` · 별명 `cbt` · `age` 1.3.2) |
+| **서버에 접속되는 기기** | **집 PC · 노트북 · 회사 PC**(노트북 2026-10-31, 회사 PC 2026-11-02 추가 — 열쇠 메모 `home-pc` · `laptop` · `company-pc`). 셋 다 `ssh cbt` · `task deploy` · `task backup:pull` 가능. 새 기기는 SERVER.md 3.4절 |
+| 기기별로 할 일 | **집 · 회사 PC**: `git pull` 뒤 `task setup`(새 의존성 `@fontsource/gowun-batang`) · `task migrate`(00003 체크인 테이블) — 2026-11-01. 집 PC 전역 설정(`~/.claude/CLAUDE.md`)의 공용 인프라 절을 드라이브 사본 `laptop_CLAUDE.md`에 맞추기(첫 배포 · `laptop` 열쇠 · 경로 표기). 백업 개인키 `$HOME\cbt-backup.key`를 노트북에서 USB로 옮기기(SERVER 4.13절). **모든 PC**: `~/.ssh/config`에 별명 `cbt`(SERVER.md 3.2절, `task deploy` · `task backup:pull`이 씀) · `age` 설치 — README "운영 서버를 다루는 PC라면". 셸 · systemd 파일을 직접 칠 기기는 에디터 상태바를 "Indent Using Tabs"로(공백이 섞였던 일 — 2026-10-31 (2)). **회사 PC**: 서버 준비 끝남(2026-11-02 — 열쇠 `company-pc` · 별명 `cbt`(도메인) · `age` 1.3.2). 백업 개인키는 필요해지면 USB로. **노트북**: 다 끝남(2026-10-31 — 처음 한 번 · 열쇠 `laptop` · 별명 `cbt` · `age` 1.3.2) |
 | **기억할 날짜** | **2026-11-30 Vultr 크레딧 $250 만료** — 그 전에 테스트 서버 삭제(Destroy, 정지는 요금이 계속 나감), 12월부터 서버 한 대 값이 카드로. **같은 날 Vultr 자동 백업($1/월) 유지 여부 판단**(우리 DB 백업이 믿을 만하면 끔). 2027-10-30 `sagming.com` 자동 갱신 (Cloudflare). 2029-04 Ubuntu 24.04 지원 종료 → 새 서버로 옮기기 |
 
 ## 작성 규칙
@@ -21,6 +21,25 @@
 - 블록 끝에 **이번 세션 커밋**과 **다음에 할 일**을 꼭 쓴다.
 
 ---
+
+## 2026-11-02 · 회사 PC 서버 준비 (회사 PC)
+
+### 한 일
+- 회사 PC에서도 배포 · 백업을 하려고 서버 접속을 준비(SERVER.md 3.6절). 명령은 사용자가 직접 쳤다.
+- 회사 네트워크가 22번을 막는지 먼저 확인 → 열려 있음(`Test-NetConnection … -Port 22` → `True`). 핫스팟이 필요 없다.
+- 열쇠 `company-pc`(ed25519, passphrase) → Vultr 웹 콘솔에서 `authorized_keys`에 한 줄 덧붙임 → `age` v1.3.2 → `~/.ssh/config`에 별명 `cbt`.
+- [설계] 별명의 `HostName`을 **IP 대신 도메인**(`cbt.sagming.com`)으로 적었다: Cloudflare가 DNS만이라 바로 서버로 가고, IP를 어디에도 옮겨 적지 않아도 된다. SERVER.md 3.2절에 서버 지문(ED25519)을 적어, 새 기기에서 첫 접속 때 `yes` 전에 비교하게 했다(지문은 공개 정보).
+
+### 확인한 값
+- `ssh -G cbt` → `hostname cbt.sagming.com` · `user sagming40` · `identityfile ~/.ssh/cbt_vultr`.
+- `ssh cbt` → 지문 `SHA256:hriG4Hqp…` 확인 뒤 `yes` → passphrase → `sagming40@cbt-1:~$`.
+- 확인 못 한 것: 이 PC에서 `task deploy`는 아직 안 돌려 봄.
+
+### 이번 세션 커밋
+- `docs(M4): 회사 PC 서버 준비 기록`
+
+### 다음에 할 일
+- PC 배치 운영 배포가 아직이면 `task deploy`(이제 회사 PC에서도 됨) → M5 사고 기록.
 
 ## 2026-11-01 (5) · PC 배치 반영 — 사이드바 · 2단 (노트북, 자동 작업)
 
