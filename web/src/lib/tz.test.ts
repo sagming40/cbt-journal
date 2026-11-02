@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTime, fromLocalInput, toLocalInput } from './tz.js';
+import { formatAgo, formatDateTime, formatTime, fromLocalInput, toLocalInput } from './tz.js';
 
 describe('formatTime · toLocalInput', () => {
 	it('설정한 시간대 기준으로 보인다 (기기 시간대와 상관없이)', () => {
@@ -57,5 +57,21 @@ describe('fromLocalInput', () => {
 
 	it('형식이 틀리면 오류', () => {
 		expect(() => fromLocalInput('2026-11-01 00:30', 'Asia/Seoul')).toThrow();
+	});
+});
+
+describe('formatDateTime · formatAgo', () => {
+	it('설정한 시간대의 날짜 · 요일로 보인다', () => {
+		// 15:30Z = 서울 11월 2일(월) 00:30 · 뉴욕 11월 1일(일) 10:30
+		expect(formatDateTime('2026-11-01T15:30:00Z', 'Asia/Seoul')).toBe('11월 2일 (월) 00:30');
+		expect(formatDateTime('2026-11-01T15:30:00Z', 'America/New_York')).toBe('11월 1일 (일) 10:30');
+	});
+
+	it('지난 시간을 말로', () => {
+		const now = new Date('2026-11-02T12:00:00Z');
+		expect(formatAgo('2026-11-02T11:59:30Z', now)).toBe('방금');
+		expect(formatAgo('2026-11-02T11:57:00Z', now)).toBe('3분 전');
+		expect(formatAgo('2026-11-02T10:00:00Z', now)).toBe('2시간 전');
+		expect(formatAgo('2026-10-31T12:00:00Z', now)).toBe('2일 전');
 	});
 });

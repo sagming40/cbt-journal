@@ -58,3 +58,21 @@ export function fromLocalInput(value: string, tz: string): Date {
 	if (corrected !== guess) guess = corrected;
 	return new Date(guess);
 }
+
+/** 시각을 tz 기준 "11월 2일 (월) 18:05"로 (S-06 머리) */
+export function formatDateTime(iso: string | Date, tz: string): string {
+	const d = new Date(iso);
+	const w = wallClock(d, tz);
+	const weekday = new Intl.DateTimeFormat('ko-KR', { timeZone: tz, weekday: 'short' }).format(d);
+	return `${w.month}월 ${w.day}일 (${weekday}) ${pad(w.hour)}:${pad(w.minute)}`;
+}
+
+/** 지난 시간을 말로 ("방금", "3분 전", "2시간 전", "5일 전") — 저장 상태 · 이어 쓰기 목록 (DESIGN 4.3절 · 4.1절) */
+export function formatAgo(when: Date | string, now: Date): string {
+	const mins = Math.floor((now.getTime() - new Date(when).getTime()) / 60_000);
+	if (mins < 1) return '방금';
+	if (mins < 60) return `${mins}분 전`;
+	const hours = Math.floor(mins / 60);
+	if (hours < 24) return `${hours}시간 전`;
+	return `${Math.floor(hours / 24)}일 전`;
+}

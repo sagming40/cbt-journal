@@ -38,9 +38,13 @@
 		{ href: resolve('/(app)/settings'), label: '설정', icon: Settings }
 	];
 	const isActive = (href: string) => page.url.pathname === href;
-	// 체크인 쓰는 중에는 메뉴를 숨긴다: 화면 아래 고정 [저장] 자리이고, 실수로 다른 탭을 눌러 흐름이 끊기지 않게
-	// (DESIGN 3.2절 — S-04와 같은 이유)
-	const focusMode = $derived(page.url.pathname.startsWith(resolve('/(app)/checkin')));
+	// 체크인 · 사고 기록을 쓰는 중에는 메뉴를 숨긴다: 화면 아래 고정 버튼 자리이고,
+	// 실수로 다른 탭을 눌러 흐름이 끊기지 않게 (DESIGN 3.2절). 사고 기록 상세(/records/:id)는 읽는 화면이라 메뉴가 있다.
+	const focusMode = $derived(
+		page.url.pathname.startsWith(resolve('/(app)/checkin')) ||
+			page.url.pathname === resolve('/(app)/records/new') ||
+			page.url.pathname.endsWith('/edit')
+	);
 </script>
 
 {#if auth.user}
