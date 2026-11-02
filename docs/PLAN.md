@@ -100,7 +100,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - **완료 기준**
   - 휴대폰(모바일 데이터)과 회사 PC에서 접속해 로그인 · 로그아웃이 된다. — ✅ 2026-10-31 휴대폰(LTE) · 노트북 (회사 PC는 아직 — 같은 배포라 다를 것은 없다)
   - 바깥에서 DB · Valkey 포트 접속이 실패한다. — ✅ 2026-10-31 노트북 `Test-NetConnection` 5432 · 6379 False (SERVER 4.10절)
-  - 로그인 요청 제한이 프록시 IP가 아니라 실제 접속 IP 기준으로 걸린다(휴대폰 · PC가 서로의 제한에 걸리지 않음). — ✅ 2026-10-31: Valkey 키가 실제 IP별(127.0.0.1 없음), 한 IP가 429일 때 다른 IP는 401 (DEVLOG 2026-10-31 (5))
+  - 로그인 요청 제한이 프록시 IP가 아니라 실제 접속 IP 기준으로 걸린다(휴대폰 · PC가 서로의 제한에 걸리지 않음). — ✅ 2026-10-31: Valkey 키가 실제 IP별(127.0.0.1 없음), 한 IP가 429일 때 다른 IP는 401 ([archive/DEVLOG_M3.md](archive/DEVLOG_M3.md) 2026-10-31 (5))
   - 백업 파일로 빈 DB에 복원해 사용자 건수가 같다. — ✅ 2026-10-31 노트북 로컬 빈 DB에 `pg_restore`, `users` 1 · 마이그레이션 버전 2 (SERVER 4.16절. 운영 건수는 가입 꺼짐 + 만든 계정 1개로 갈음)
   - README 순서대로 새 버전을 한 번 올려 본다. — ✅ 2026-11-01 `f925ad6` (SERVER 4.17절)
   - 서버를 재부팅하면 손대지 않아도 앱 · DB · Caddy가 다시 살아나 health가 200이다. — ✅ 2026-11-01 1분 안에 서비스 넷 active · health 200 (SERVER 4.18절)
@@ -117,7 +117,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - **완료 기준**
   - 통합 테스트: 감정 0개 400 · 강도 101 400 · **다른 사용자의 체크인 조회 · 수정 · 삭제 404**. — ✅ 2026-11-01 `TestCheckinValidation` · `TestCheckinOtherUser404`
   - "오늘"이 사용자 시간대 기준: 시간대를 바꾸면 자정 근처 체크인이 다른 날로 간다(테스트). — ✅ 2026-11-01 `TestCheckinDayFollowsTimezone`(서머타임이 끝나는 25시간짜리 날 포함)
-  - 배포 서버에 올리고, 휴대폰에서 앱을 열어 체크인 저장까지 10초 안(직접 재서 DEVLOG에 기록). — ✅ 2026-11-01 5 ~ 6초 (사용자, DEVLOG 2026-11-01 (3))
+  - 배포 서버에 올리고, 휴대폰에서 앱을 열어 체크인 저장까지 10초 안(직접 재서 DEVLOG에 기록). — ✅ 2026-11-01 5 ~ 6초 (사용자, [archive/DEVLOG_M4.md](archive/DEVLOG_M4.md) 2026-11-01 (3))
 
 ### M5 · 사고 기록
 - [x] `distortions`(seed 11개, 이름만) · `thought_records` · `record_emotions` · `record_distortions` 마이그레이션

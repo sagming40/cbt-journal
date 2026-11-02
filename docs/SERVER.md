@@ -12,7 +12,7 @@
 | 서버 이름 | `cbt-1` |
 | 사양 | Shared CPU `vc2-1c-1gb` — 1 vCPU · 메모리 1GB · SSD 25GB · 월 $5 |
 | OS | Ubuntu 24.04 LTS (보안 업데이트 2029-04까지) |
-| 주소 | IPv4만 (IPv6 끔 — 이유는 DEVLOG 2026-10-30 "[설계] 정하면서 바꾼 것") |
+| 주소 | IPv4만 (IPv6 끔 — 이유는 [archive/DEVLOG_M3.md](archive/DEVLOG_M3.md) 2026-10-30 "[설계] 정하면서 바꾼 것") |
 | 접속 계정 | `sagming40` (sudo 가능). **root로는 SSH 접속 불가** |
 | 접속 방법 | SSH 키만 (비밀번호 로그인 불가) |
 | 열린 문 | 22(SSH) · 80 · 443 — 나머지는 방화벽(ufw)이 막는다 |

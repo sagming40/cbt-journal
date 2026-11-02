@@ -259,4 +259,4 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-11-01 | 7.2절 `Server` · `Via` 헤더 빼기(지우는 자리 포함) |
 | 2026-11-01 | M4 사전 검증: 2절 `apierr/` 공용 패키지, 기능 패키지에는 사용자 id를 함수로 넘김(`checkin`이 `auth`를 import하지 않게) |
 | 2026-11-02 | M5 사전 검증: 3.2절 503 · 오류 code `DRAFT_CONFLICT` · `DRAFT_LIMIT` · `DRAFTS_UNAVAILABLE`, 4절 Valkey 장애 때 초안 API는 503 |
-| 2026-10-31 | 7.5절 스왑: "1GB 만들기" → 이미 있던 2.3GB 유지 + swappiness 10 (서버에서 보니 스왑이 이미 있었음 — DEVLOG 2026-10-31 (5)) |
+| 2026-10-31 | 7.5절 스왑: "1GB 만들기" → 이미 있던 2.3GB 유지 + swappiness 10 (서버에서 보니 스왑이 이미 있었음 — archive/DEVLOG_M3.md 2026-10-31 (5)) |
