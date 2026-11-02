@@ -146,6 +146,8 @@ task user -- create --email … --nickname …   # 계정 만들기 (reset-passw
 - **Postgres 18 이미지 볼륨은 `/var/lib/postgresql`**: 17까지처럼 `.../data`에 묶는 예전 자료를 따라 하지 않는다(18 이미지의 `PGDATA`는 `/var/lib/postgresql/18/docker`라서 데이터가 볼륨 밖에 쌓이거나 시작이 실패한다).
 - **SvelteKit 3 구조는 예전 자료와 다르다**: `svelte.config.js`가 없고 adapter는 `web/vite.config.ts`의 `sveltekit({ adapter })` 안에 있다. 별칭은 `$lib`가 아니라 `#lib`(package.json `imports`)이고 import에 확장자를 붙인다(`#lib/api/client.js`, `#lib/components/ui/button/index.js`). 전역 CSS는 `src/routes/layout.css`.
 - **SvelteKit 3의 `resolve()`는 라우트 id를 받는다**: 라우트 묶음 폴더 `(app)`이 이름에 들어간다 — `resolve('/(app)/settings')`가 `/settings`가 된다. `resolve('/settings')`는 타입 오류. `goto`의 `replaceState`는 지원 중단 → `{ replace: true }`.
+- **SvelteKit 3의 `goto` 옵션**: `keepFocus` · `noScroll`이 없고 `reset: false` 하나다(커서 · 스크롤을 그대로).
+- **`AlertDialog.Action`은 창을 먼저 닫는다**: `onOpenChange`로 상태를 비우는 창이면 `onclick`이 돌 때 이미 비어 있다. 그런 창에서는 `Button`을 쓴다 (DEVLOG 2026-11-02 (2)).
 - **oapi-codegen의 `enable-auth-scopes-on-context`를 끄지 않는다** (`api/oapi-codegen.yaml`): 꺼지면 생성 코드가 "인증 필요" 표시를 안 넣어서, openapi.yaml에 잠금을 적어도 아무것도 안 잠긴다. `TestDefaultLock`이 지킨다.
 - **통합 테스트 · `task gen`은 Docker가 필요하다**: 통합 테스트는 testcontainers로 Postgres · Valkey를, sqlc는 Docker 이미지로 돈다. Docker Desktop이 꺼져 있으면 통합 테스트는 로컬에서 `SKIP`(CI에서는 실패), `task gen`은 실패한다.
 - **생성 코드는 포매터 · 린터에서도 뺀다**: `web/.prettierignore`와 `web/eslint.config.js`의 `ignores`에 `src/lib/components/ui/` · `src/lib/api/schema.d.ts`. 새 생성 위치가 생기면 두 곳에 같이 추가한다.
