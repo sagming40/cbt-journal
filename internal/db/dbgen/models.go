@@ -23,6 +23,16 @@ type CheckinEmotion struct {
 	Intensity int16
 }
 
+type Distortion struct {
+	ID          int16
+	Name        string
+	Description pgtype.Text
+	Example     pgtype.Text
+	SortOrder   int16
+	ArchivedAt  pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+}
+
 type Emotion struct {
 	ID         int16
 	UserID     pgtype.UUID
@@ -30,6 +40,18 @@ type Emotion struct {
 	SortOrder  int16
 	ArchivedAt pgtype.Timestamptz
 	CreatedAt  pgtype.Timestamptz
+}
+
+type RecordDistortion struct {
+	RecordID     pgtype.UUID
+	DistortionID int16
+}
+
+type RecordEmotion struct {
+	RecordID        pgtype.UUID
+	EmotionID       int16
+	IntensityBefore int16
+	IntensityAfter  int16
 }
 
 type Session struct {
@@ -40,6 +62,20 @@ type Session struct {
 	CreatedAt  pgtype.Timestamptz
 	LastSeenAt pgtype.Timestamptz
 	ExpiresAt  pgtype.Timestamptz
+}
+
+type ThoughtRecord struct {
+	ID                 pgtype.UUID
+	UserID             pgtype.UUID
+	OccurredAt         pgtype.Timestamptz
+	Situation          string
+	AutomaticThought   string
+	EvidenceFor        string
+	EvidenceAgainst    string
+	AlternativeThought string
+	SourceDraftID      pgtype.UUID
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
 }
 
 type User struct {
