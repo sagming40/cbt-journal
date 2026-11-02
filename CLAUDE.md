@@ -22,7 +22,7 @@ Go(`net/http` · pgx · sqlc · goose) + PostgreSQL + Valkey(asynq) / SvelteKit 
 | 이게 뭐고 어떻게 실행해? | [`README.md`](README.md) |
 | v1은? | [`docs/archive/`](docs/archive/README.md), 코드는 태그 `v1-legacy` |
 
-**문서 규칙**
+**문서 규칙** — 기본은 전역 설정의 "문서 체계" 절이다(이 저장소 `docs/`가 그 기준 모델). 아래는 이 저장소 세부이고, 전역 원본이 아직 없는 기기에서도 지키도록 남겨 둔다.
 - 같은 내용을 두 곳에 쓰지 않는다. 필요하면 링크나 "ARCHITECTURE 4절"처럼 절 번호로 가리킨다.
 - 설계가 바뀌면 **설계 문서를 코드보다 먼저** 고친다. 구현 중에 바꿨으면 DEVLOG `[설계]` 항목에 이유를 남긴다(결정을 뒤집었으면 decisions/). 문서에 변경 이력 표 · 버전 번호를 두지 않는다 — 언제 무엇이 바뀌었는지는 git이 원본이다.
 - 결정을 새로 하거나 뒤집으면 `docs/decisions/`에 새 파일. 지난 결정 파일은 상태만 `대체됨 → NNNN`으로 바꾼다.

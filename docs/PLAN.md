@@ -129,6 +129,7 @@ Go · SvelteKit · PostgreSQL · Valkey 전부 처음 쓰는 스택이라, **새
 - [x] 같은 초안 두 번 완료 방지(`source_draft_id`), Valkey 장애 503, 초안 없어짐 · 나가기 확인, S-02 오늘 목록에 사고 기록 *(계획에 없던 작업 — 사전 검증)*
 - [x] "그날" 계산 · 통계 버전을 공용 패키지로 *(계획에 없던 작업)*
 - [x] 시각 고르기(칸 전체를 누르는 달력) · 머리 뒤로 버튼 *(계획에 없던 작업 — 사용 의견)*
+- [x] `docs/`를 전역 문서 체계에 맞게 정리(변경 이력 삭제 · DEVLOG archive · 코드 원본 줄이기) *(계획에 없던 작업)*
 - **완료 기준**
   - 통합 테스트: 오래된 `rev`로 저장 409 · 초안 11개째 거절 · 만료된 초안이 개수에서 빠짐 · 완료 실패 시 초안이 남음 · 남의 기록 · 초안 404. — ✅ 2026-11-02 `TestDraftRevConflict` · `TestDraftLimitAndGhosts` · `TestRecordCompleteFailureKeepsDraft` · `TestRecordAndDraftOtherUser404`
   - 배포 서버에서 **휴대폰으로 1 ~ 3단계를 쓰고 [나중에 이어 쓰기] → PC에서 4단계부터 이어 써서 완료** (실제 두 기기로).
