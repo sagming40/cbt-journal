@@ -88,8 +88,8 @@ Taskfile.yml           자주 쓰는 명령 모음
 ### 3.2 응답 규칙
 - JSON 필드는 `snake_case`, 시각은 RFC 3339 UTC(`...Z`).
 - 오류는 한 가지 모양: `{"error": {"code": "NOT_FOUND", "message": "…", "fields": {"…": "…"}}}` (`fields`는 입력 오류일 때만).
-- 400 입력 오류 / 401 비로그인 · 로그인 실패 / 403 막힌 기능(가입 꺼짐) · 교차 출처 요청 / 404 없음 · 남의 것 / 409 충돌 / 413 본문 1MiB 초과 / 429 요청 제한(`Retry-After` 초) / 500 서버 오류.
-- 지금 쓰는 `code`: `INVALID_INPUT`(fields 있음) · `INVALID_REQUEST`(JSON 해석 실패) · `UNAUTHORIZED` · `INVALID_CREDENTIALS` · `SIGNUP_DISABLED` · `CROSS_ORIGIN` · `NOT_FOUND` · `EMAIL_TAKEN` · `PAYLOAD_TOO_LARGE` · `RATE_LIMITED` · `INTERNAL`.
+- 400 입력 오류 / 401 비로그인 · 로그인 실패 / 403 막힌 기능(가입 꺼짐) · 교차 출처 요청 / 404 없음 · 남의 것 / 409 충돌 / 413 본문 1MiB 초과 / 429 요청 제한(`Retry-After` 초) / 500 서버 오류 / 503 초안 저장소(Valkey)에 닿지 못함.
+- 지금 쓰는 `code`: `INVALID_INPUT`(fields 있음) · `INVALID_REQUEST`(JSON 해석 실패) · `UNAUTHORIZED` · `INVALID_CREDENTIALS` · `SIGNUP_DISABLED` · `CROSS_ORIGIN` · `NOT_FOUND` · `EMAIL_TAKEN` · `DRAFT_CONFLICT` · `DRAFT_LIMIT` · `DRAFTS_UNAVAILABLE` · `PAYLOAD_TOO_LARGE` · `RATE_LIMITED` · `INTERNAL`.
 - 요청 본문을 해석하지 못한 경우(잘못된 JSON 등)와 handler 안에서 난 예상 못 한 오류도 같은 봉투로 준다(400 · 500). mux가 직접 주는 405만 글자 응답이다.
 
 ### 3.3 실제 접속 IP
@@ -123,7 +123,7 @@ Taskfile.yml           자주 쓰는 명령 모음
   | 가입 · IP | 1시간에 5회 | 모든 시도 |
   | 비밀번호 변경 · 사용자 | 15분에 5회 | "현재 비밀번호" 틀림만 |
   - 계정별 제한은 남이 일부러 틀려서 15분 잠글 수 있다(M0 검토에서 감수하기로 함). 제한 검사는 비밀번호 검증 **전에** 해서, 잠긴 동안은 맞는 비밀번호도 429다(맞았는지 알려 주지 않게).
-- **Valkey가 응답하지 않을 때**: 세션은 Postgres에서 읽고, 요청 제한은 통과시킨다(로그만 남김). Postgres가 진실의 원천이고 Valkey는 없어도 돌아야 한다(decisions 0005). 감수할 점: Valkey가 잠깐 죽은 사이에 세션을 지우면 캐시 삭제가 실패해, Valkey가 돌아왔을 때 옛 캐시가 최대 10분 남을 수 있다(로그로 남김).
+- **Valkey가 응답하지 않을 때**: 세션은 Postgres에서 읽고, 요청 제한은 통과시킨다(로그만 남김). 초안 API만 503이다(DATA_MODEL 4.3절). Postgres가 진실의 원천이고 Valkey는 없어도 돌아야 한다(decisions 0005). 감수할 점: Valkey가 잠깐 죽은 사이에 세션을 지우면 캐시 삭제가 실패해, Valkey가 돌아왔을 때 옛 캐시가 최대 10분 남을 수 있다(로그로 남김).
 - 로그인할 때 그 사용자의 만료된 세션을 같이 지운다. 전체 정리는 worker가 생기면(M7) 하루 한 번.
 - **유출 비밀번호 검사**(REQUIREMENTS A10): 새 비밀번호를 정하는 곳은 전부 `auth` 패키지의 같은 검사기(인터페이스)를 거친다. SHA-1 해시 앞 5글자로 Pwned Passwords range API를 부르고 응답 목록과 나머지 35글자를 서버에서 비교한다. 짧은 타임아웃을 두고, 실패 · 타임아웃이면 경고 로그(비밀번호 · 해시는 남기지 않음)만 남기고 통과시킨다. 테스트에서는 가짜 검사기 또는 가짜 HTTP 서버를 꽂는다.
 - 프론트: API가 401을 주면 클라이언트 한 곳에서 로그인 상태를 지우고 `/login?next=지금주소`로 보낸다. 화면마다 따로 처리하지 않는다. **예외는 로그인 · 가입 요청의 401**(비밀번호 틀림)이다 — 그 화면에서 문구로 보여 준다. 안 빼면 로그인 화면에서 로그인 화면으로 튕긴다.
@@ -257,4 +257,5 @@ Taskfile.yml           자주 쓰는 명령 모음
 | 2026-10-31 | 7.2절 `http://IP` 동작을 실제 관찰대로 고침(빈 응답 → `https://IP`로 308 후 연결 끊김) |
 | 2026-11-01 | 7.2절 `Server` · `Via` 헤더 빼기(지우는 자리 포함) |
 | 2026-11-01 | M4 사전 검증: 2절 `apierr/` 공용 패키지, 기능 패키지에는 사용자 id를 함수로 넘김(`checkin`이 `auth`를 import하지 않게) |
+| 2026-11-02 | M5 사전 검증: 3.2절 503 · 오류 code `DRAFT_CONFLICT` · `DRAFT_LIMIT` · `DRAFTS_UNAVAILABLE`, 4절 Valkey 장애 때 초안 API는 503 |
 | 2026-10-31 | 7.5절 스왑: "1GB 만들기" → 이미 있던 2.3GB 유지 + swappiness 10 (서버에서 보니 스왑이 이미 있었음 — DEVLOG 2026-10-31 (5)) |

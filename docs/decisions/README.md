@@ -10,8 +10,9 @@
 |---|---|---|
 | [0001](0001-rewrite-v2.md) | v1을 버리고 전면 재작성, "CBT 연습 도구"로 방향 전환 | 채택 |
 | [0002](0002-backend-go.md) | 백엔드는 Go | 채택 |
-| [0003](0003-frontend-sveltekit-spa.md) | 프론트엔드는 SvelteKit SPA + shadcn-svelte | 채택 |
+| [0003](0003-frontend-sveltekit-spa.md) | 프론트엔드는 SvelteKit SPA + shadcn-svelte | 채택 (폼 라이브러리만 대체됨 → 0008) |
 | [0004](0004-db-postgresql.md) | 메인 DB는 PostgreSQL | 채택 |
 | [0005](0005-valkey.md) | Valkey를 붙이고 Postgres와 역할을 나눈다 | 채택 |
 | [0006](0006-ai-coach-deferred.md) | AI 코치는 핵심 기능 뒤 옵트인으로 보류 | 채택 |
 | [0007](0007-deploy-vultr-seoul.md) | 배포는 Vultr 서울, 도메인은 Cloudflare(DNS만) | 채택 |
+| [0008](0008-no-form-library.md) | 폼 라이브러리를 쓰지 않는다 | 채택 |
