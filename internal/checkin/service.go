@@ -17,10 +17,9 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/sagming40/cbt-journal/internal/apierr"
+	"github.com/sagming40/cbt-journal/internal/cache"
 	"github.com/sagming40/cbt-journal/internal/db/dbgen"
-
-	// 시간대 DB를 실행 파일에 넣는다. Windows에는 OS에 IANA 시간대 DB가 없어서 이게 없으면 LoadLocation이 실패한다.
-	_ "time/tzdata"
+	"github.com/sagming40/cbt-journal/internal/localday"
 )
 
 // 입력 규칙 (DATA_MODEL 3.4절 · DESIGN 4.2절). DB CHECK 제약과 숫자를 맞춘다.
@@ -29,9 +28,6 @@ const (
 	maxIntensity = 100
 	// 기기 시계가 조금 빨라도 "지금"이 거절되지 않게 앞으로 5분까지는 받는다 (DATA_MODEL 3.4절)
 	futureSlack = 5 * time.Minute
-	// 통계 캐시 버전 키의 수명 (DATA_MODEL 4.2절)
-	statsVerTTL = 30 * 24 * time.Hour
-	dateLayout  = "2006-01-02"
 )
 
 // ErrNotFound: 없는 체크인. 남의 것도 같은 오류다 — 있는지조차 알려 주지 않는다 (ARCHITECTURE 2절).
@@ -117,7 +113,7 @@ func (s *Service) Day(ctx context.Context, userID pgtype.UUID, date string) (str
 	if err != nil {
 		return "", nil, err
 	}
-	day, from, to, err := dayRange(date, tz, s.now())
+	day, from, to, err := localday.Range(date, tz, s.now())
 	if err != nil {
 		return "", nil, err
 	}
@@ -281,26 +277,6 @@ func (s *Service) validate(ctx context.Context, in Input) (valid, error) {
 	return v, nil
 }
 
-// dayRange는 사용자 시간대의 그날 0시 ~ 다음 날 0시를 UTC 범위로 바꾼다 (DATA_MODEL 3.4절).
-// 서머타임이 끝나는 날은 25시간, 시작하는 날은 23시간 — 날짜 계산을 time.Date에 맡겨 저절로 맞춘다.
-func dayRange(date, tz string, now time.Time) (string, time.Time, time.Time, error) {
-	loc, err := time.LoadLocation(tz)
-	if err != nil {
-		// users.timezone은 저장할 때 검사하므로 여기 올 일은 없다. 그래도 화면이 멈추지 않게 UTC로.
-		loc = time.UTC
-	}
-	if date == "" {
-		date = now.In(loc).Format(dateLayout)
-	}
-	d, err := time.ParseInLocation(dateLayout, date, loc)
-	if err != nil {
-		return "", time.Time{}, time.Time{}, apierr.Field("date", "날짜 형식이 맞지 않아요 (YYYY-MM-DD)")
-	}
-	from := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, loc)
-	to := time.Date(d.Year(), d.Month(), d.Day()+1, 0, 0, 0, 0, loc)
-	return date, from, to, nil
-}
-
 // one은 체크인 한 행에 감정을 붙인다.
 func (s *Service) one(ctx context.Context, userID pgtype.UUID, row dbgen.Checkin) (Checkin, error) {
 	items, err := s.withEmotions(ctx, userID, []dbgen.Checkin{row})
@@ -354,11 +330,7 @@ func (s *Service) bumpStats(ctx context.Context, userID pgtype.UUID) {
 	if s.rdb == nil {
 		return
 	}
-	key := "stats:ver:" + userID.String()
-	pipe := s.rdb.TxPipeline()
-	pipe.Incr(ctx, key)
-	pipe.Expire(ctx, key, statsVerTTL)
-	if _, err := pipe.Exec(ctx); err != nil {
+	if err := cache.BumpStatsVersion(ctx, s.rdb, userID.String()); err != nil {
 		s.logger.Warn("통계 캐시 버전을 올리지 못했다", "user_id", userID.String(), "err", err)
 	}
 }
