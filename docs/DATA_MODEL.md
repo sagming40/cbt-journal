@@ -59,14 +59,9 @@ erDiagram
 - `distortions`는 시스템 전용. `description` · `example`은 `NULL` 허용 — **문구는 사용자가 직접 쓴다**(2026-10-29 결정). 비어 있으면 화면은 이름만 보여 준다. 문구를 쓰면 새 마이그레이션의 `UPDATE`로 넣는다 — 모든 PC와 운영 DB가 같은 문구를 갖게.
 - 둘 다 `sort_order`로 화면 순서를 정한다. 기록이 참조 중인 마스터 행은 지우지 못한다(`ON DELETE RESTRICT`). 안 쓰게 된 항목은 `archived_at`으로 숨긴다.
 
-**seed (마이그레이션에 포함)**
-| 종류 | 항목 |
-|---|---|
-| 감정 10개 | 불안 · 두려움 · 슬픔 · 무기력 · 분노 · 짜증 · 수치심 · 죄책감 · 외로움 · 좌절 |
-| 인지 왜곡 11개 | 흑백논리 · 과도한 일반화 · 정신적 필터 · 긍정적인 것 무시하기 · 성급한 결론(독심술/예언자적 오류) · 확대와 축소 · 감정적 추론 · 당위적 진술 · 낙인찍기 · 개인화 · 파국화 (v1과 같음) |
+**seed**: 기본 감정 10개(2026-10-29 사용자 결정) · 인지 왜곡 11개(v1과 같음)는 마이그레이션에 넣었다. 목록은 `00003_emotions_checkins.sql` · `00004_thought_records.sql`이 원본이다.
 
 ### 3.4 `checkins` · `checkin_emotions`
-- `checkins`: `occurred_at`(기본 지금), `note`(선택, 한 줄).
 - `checkin_emotions`: 기본 키 `(checkin_id, emotion_id)` — 한 체크인에 같은 감정 중복 불가. 강도 1개.
 - "감정 1개 이상"은 앱(service)에서 검사한다. DB만으로는 "자식이 최소 1행"을 강제하기 어렵다. 만들기 · 고치기는 체크인 행과 감정 행을 **한 트랜잭션**으로 넣는다 — 감정 없는 체크인이 남지 않게.
 - 고치기(C4)는 통째로 바꾼다: 본문 `UPDATE … WHERE id AND user_id` + 감정 행 지우고 다시 넣기. **나중에 저장한 쪽이 이긴다**(사고 기록 초안 같은 `rev` 없음) — 몇 초짜리 기록이라 두 기기에서 동시에 고칠 일이 드물고, 지워진 걸 고치면 404로 알린다.
@@ -75,9 +70,8 @@ erDiagram
 
 ### 3.5 `thought_records` · `record_emotions` · `record_distortions`
 - `thought_records`에는 **완료된 기록만** 들어간다. 작성 중 초안은 Valkey에 있다(4.3절). 그래서 상태(`draft`/`done`) 컬럼이 없다.
-- 칸: `occurred_at`(T6) · `situation` · `automatic_thought` · `evidence_for` · `evidence_against` · `alternative_thought`.
-  - 필수: 상황 · 자동 사고 · 대안 사고. 근거 · 반대 근거는 빈 문자열 허용(못 찾는 날도 있다). `NULL` 대신 `''`로 통일한다.
-  - 글자 수: 상황 · 자동 사고 · 대안 사고 1,000자, 근거 · 반대 근거 2,000자. 서버에 OpenAPI 검증기가 없어 스펙의 `maxLength`는 문서일 뿐이므로 service가 직접 검사하고, DB `CHECK`가 마지막 방어선이다.
+- 필수: 상황 · 자동 사고 · 대안 사고. 근거 · 반대 근거는 빈 문자열 허용(못 찾는 날도 있다). `NULL` 대신 `''`로 통일한다.
+- 글자 수 제한(값은 마이그레이션 `CHECK` · openapi `maxLength`가 원본): 서버에 OpenAPI 검증기가 없어 스펙의 `maxLength`는 문서일 뿐이므로 service가 직접 검사하고, DB `CHECK`가 마지막 방어선이다.
 - `occurred_at`: 앞으로 5분까지만 받는다(3.4절과 같음). "그날" 범위 계산도 3.4절과 같다.
 - `source_draft_id`: 이 기록을 만든 초안 id. `UNIQUE (user_id, source_draft_id)`(초안 없이 만든 기록은 `NULL`) — **같은 초안을 두 번 완료해도 기록이 하나**다(버튼 연타 · 네트워크 재시도). 다시 오면 이미 만든 기록을 돌려준다(4.3절). 사용자별 UNIQUE라서 남의 초안 id를 넣어도 남의 기록과 부딪히지 않는다.
 - `record_emotions`: 기본 키 `(record_id, emotion_id)`, **`intensity_before` · `intensity_after` 둘 다 NOT NULL** — 고른 감정마다 전 · 후를 전부 매긴다(2026-10-29 결정). D2(평균 변화, 점)는 감정별 `intensity_after − intensity_before`의 평균이다. 비율로 나누지 않으므로 전 강도가 0이어도 계산된다.
@@ -95,14 +89,8 @@ erDiagram
 - `summary`를 `jsonb`로 둔 이유: 리포트 항목이 바뀌어도 마이그레이션이 필요 없고, 한 번 만들면 다시 계산하지 않는 스냅숏이라서.
 
 ### 3.8 인덱스
-| 인덱스 | 쓰는 곳 |
-|---|---|
-| `sessions (token_hash)` UNIQUE | 매 요청 세션 조회 |
-| `sessions (user_id)` | 비밀번호 변경 시 세션 정리 |
-| `checkins (user_id, occurred_at DESC)` | 목록 · 오늘 체크인 · 통계 기간 조회 |
-| `thought_records (user_id, occurred_at DESC)` | 같음 |
-| `push_subscriptions (user_id)` · `reminders (user_id)` | 사용자별 조회 |
-| `reminders (local_time) WHERE enabled` | worker가 "지금 보낼 것" 찾기 |
+- 원본은 마이그레이션이다. 원칙: 사용자 기록은 `(user_id, occurred_at DESC)` — 목록 · 그날 · 통계 기간 조회가 전부 이 순서로 읽는다. 세션은 `token_hash` UNIQUE(매 요청 조회)와 `user_id`(비밀번호 변경 시 정리).
+- 아직 없는 테이블(M7): `push_subscriptions (user_id)` · `reminders (user_id)`, `reminders (local_time) WHERE enabled`(worker가 "지금 보낼 것" 찾기).
 
 ### 3.9 삭제 정책
 | 관계 | 정책 | 이유 |

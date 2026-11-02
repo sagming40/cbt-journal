@@ -32,7 +32,7 @@
 ## 2. 디렉터리 구조
 
 ```
-cmd/app/               진입점 (serve · worker · migrate)
+cmd/app/               진입점 (serve · migrate · user, worker는 M7)
 internal/
   config/              환경변수 읽기 · 검증 (빠진 값이 있으면 시작하지 않는다)
   server/              라우터 조립, 미들웨어, 오류 응답 봉투
@@ -41,13 +41,13 @@ internal/
   clientip/            실제 접속 IP 미들웨어 (3.3절)
   localday/            "사용자 시간대의 그날" → UTC 범위 (체크인 · 사고 기록 · 통계가 같이 쓴다)
   checkin/  record/    기능별 패키지 ─ handler(HTTP ↔ 도메인) + service(규칙 · 트랜잭션)
-  stats/  reminder/
+  stats/  reminder/    (M6 ~ M8 예정)
   report/  account/
   db/                  queries/*.sql(직접 쓰는 SQL) · migrations/*.sql(goose) · 연결 · 마이그레이션 실행
     dbgen/             sqlc 생성 코드 ★
   testutil/            통합 테스트용 Postgres · Valkey 컨테이너 (testcontainers)
   cache/               Valkey 연결, 키 이름 함수
-  jobs/                asynq 작업 정의 · 핸들러 · 스케줄
+  jobs/                asynq 작업 정의 · 핸들러 · 스케줄 (M7 예정)
   apigen/              oapi-codegen 생성 코드 ★
   webdist/             프론트 빌드 결과를 embed하는 패키지
 api/openapi.yaml       API 계약의 원본
@@ -186,7 +186,7 @@ Taskfile.yml           자주 쓰는 명령 모음
 | `/var/backups/cbt/` | 암호화된 DB 백업. 최근 14개 |
 | `/usr/local/bin/cbtctl` | 운영 env를 읽고 `cbt` 계정으로 `app`을 실행하는 도우미 — `sudo cbtctl user create …` · `sudo cbtctl migrate status` |
 
-운영 env: `APP_ENV=production` · `HTTP_ADDR=127.0.0.1:8080` · `TRUSTED_PROXIES=127.0.0.1` · `ALLOW_SIGNUP=false` · DB · Valkey 주소(비밀번호는 서버에서 무작위로 만든다).
+운영 env 항목은 `deploy/cbt.env.example`이 원본이다(비밀번호는 서버에서 무작위로 만든다).
 
 저장소의 운영 파일: `deploy/`(운영 compose · Caddyfile · systemd 유닛 · `cbtctl` · 서버 쪽 배포 스크립트 · 백업 스크립트 · env 예시)와 `scripts/deploy.ps1`(PC 쪽). 서버에는 배포 때 필요한 것만 복사된다.
 
@@ -198,27 +198,22 @@ Taskfile.yml           자주 쓰는 명령 모음
 - IP로 `https://`에 들어오면 그 IP용 인증서가 없어 연결 자체가 안 된다. `http://IP`는 Caddy가 `https://IP`로 보내고(308) 거기서 연결이 끊긴다(2026-10-31 서버에서 확인). 어느 쪽이든 앱은 안 보인다(따로 "그 밖의 이름" 블록을 두지 않는다 — 자동 http→https 전환 규칙과 엉킬 수 있어서).
 
 ### 7.3 배포 흐름 (`task deploy`, PC에서)
-1. **확인**: 작업 트리가 깨끗하고, 지금 커밋이 `origin/main`과 같아야 한다(push 안 된 코드 · 커밋 안 된 변경은 거부). 여러 PC가 서로 다른 버전을 덮어쓰지 않는다.
-2. **빌드**: `task build:linux` → `bin/app-linux-amd64`(커밋 번호 포함).
-3. **복사** 1번: PC에서 `bin/cbt-deploy-<커밋>/`에 실행 파일 + `deploy/release.sh`를 모아 폴더째 서버 홈으로(`scp -r` → `~/cbt-deploy-<커밋>/`). 서버에서 임시 폴더를 따로 만들면 ssh가 한 번 더 들어서 이렇게 한다. 서버 주소는 `~/.ssh/config`의 별명 `cbt`(SERVER.md 3.2절)를 쓴다 — 저장소에 IP를 적지 않는다.
-4. **서버에서 실행** 1번(`ssh` → `sudo`, `deploy/release.sh <커밋>`): 아래를 한 번에 한다.
-   1. `releases/<커밋>/`에 넣는다. 넣기 전에 실행 파일의 `app version`이 넘겨받은 커밋과 같은지 본다(엉뚱한 파일 · `-dirty` 빌드 거부)
-   2. **배포 직전 DB 백업**(7.4절 백업 스크립트 `cbt-backup`). 백업이 실패하면 멈춘다. 백업 스크립트가 아직 없으면 **첫 배포(release가 하나도 없을 때)만** 건너뛴다 — 그때는 DB가 비어 있어 지킬 것이 없다
-   3. 새 실행 파일로 `migrate up`(`cbt` 계정 · 운영 env). 실패하면 여기서 멈춘다 — 링크를 안 바꿨으니 옛 앱이 그대로 돈다
-   4. `current` 링크 교체(새 링크를 만든 뒤 `mv`로 바꿔치기 — 링크가 없는 순간이 없다) → `systemctl restart cbt`
-   5. `127.0.0.1:8080/api/health`가 200인지 30초까지 확인 — **실패하면 옛 링크로 되돌리고 재시작**, 실패로 끝낸다. 마이그레이션은 되돌리지 않는다(7.5절 규칙으로 옛 버전도 맞는다)
-   6. 오래된 release 정리(지금 쓰는 것을 빼고 최근 5개 남김). 성공했을 때만
-   7. 성공 · 실패와 상관없이 서버의 `~/cbt-deploy-<커밋>/`을 지운다
-- `task deploy -- -DryRun`: 1~2와 보낼 폴더 만들기까지만 하고, 서버에 보낼 명령을 보여 주고 멈춘다.
-- PC 두 대가 동시에 배포하면 서버 쪽 잠금(`flock`)으로 하나만 돈다. 나중 것은 바로 실패한다.
-- 같은 커밋을 다시 배포하면 같은 폴더에 덮어쓰고 재시작한다(설정만 바꾼 뒤 다시 띄울 때).
-- 열쇠 passphrase는 복사 · 실행에 한 번씩, sudo 비밀번호는 한 번 묻는다.
+순서와 세부는 `scripts/deploy.ps1`(PC) · `deploy/release.sh`(서버)가 원본이다. 여기는 단계마다 왜 있는지만 적는다.
+1. **확인**: 작업 트리가 깨끗하고 지금 커밋이 `origin/main`과 같아야 한다(push 안 된 코드 · 커밋 안 된 변경은 거부). 여러 PC가 서로 다른 버전을 덮어쓰지 않게.
+2. **빌드 · 복사**: `task build:linux`(커밋 번호 포함) → 실행 파일과 `release.sh`를 PC에서 폴더로 모아 `scp -r` 한 번(서버에서 임시 폴더를 만들면 ssh가 한 번 더 든다). 서버 주소는 ssh 별명 `cbt`(SERVER.md 3.2절)라 저장소에 IP가 없다.
+3. **서버에서 `release.sh`** (ssh → sudo 한 번):
+   - 실행 파일의 `app version`이 넘겨받은 커밋과 같은지 본다 — 엉뚱한 파일 · `-dirty` 빌드 거부.
+   - **배포 직전 DB 백업**(7.4절). 실패하면 멈춘다. release가 하나도 없는 첫 배포만 건너뛴다 — 지킬 DB가 없다.
+   - `migrate up`. 실패하면 멈춘다 — 링크를 안 바꿨으니 옛 앱이 그대로 돈다.
+   - `current` 링크를 바꿔치기(`mv` — 링크가 없는 순간이 없다) → 재시작 → health 30초. **실패하면 옛 링크로 되돌리고** 실패로 끝낸다. 마이그레이션은 되돌리지 않는다(7.5절 규칙으로 옛 버전도 맞는다).
+   - 성공했을 때만 오래된 release를 정리한다(최근 5개). 서버의 받은 폴더는 성공 · 실패와 상관없이 지운다.
+- 두 PC가 동시에 배포하면 서버 쪽 잠금(`flock`)으로 하나만 돈다. 같은 커밋을 다시 배포하면 덮어쓰고 재시작한다(설정만 바꾼 뒤 다시 띄울 때). `task deploy -- -DryRun`은 서버에 보내기 전에 멈춘다.
 
 ### 7.4 백업 · 복원
-- 서버: systemd 타이머(`cbt-backup.timer`, **매일 04:00 KST**, 서버가 꺼져 있어 놓치면 켜진 뒤 바로)가 `cbt-backup`을 부른다 → `pg_dump -Fc`(compose 안 Postgres, 압축된 형식) → **`age`로 암호화** → `/var/backups/cbt/cbt-<UTC 시각>.dump.age`. 서버에는 **잠그는 열쇠(공개키 `/etc/cbt/backup.pub`)만** 있다.
-  - 임시 파일에 쓰고 끝까지 성공해야 이름을 바꾼다 → 덤프가 중간에 실패해도 반쪽짜리 백업이 남지 않는다. 0바이트도 실패로 친다.
-  - 최근 14개만 남긴다(배포 직전 백업도 같이 센다).
-  - 파일은 암호화돼 있어 644로 둔다 → 일반 계정(`sagming40`)이 `scp`로 가져갈 수 있다.
+- 서버: 타이머(`deploy/cbt-backup.timer`, 매일 새벽 · 서버가 꺼져 있어 놓치면 켜진 뒤 바로)가 `deploy/cbt-backup`을 부른다 — 시각 · 파일 이름 · 남기는 개수는 그 두 파일이 원본. DB를 덤프해 **`age`로 암호화**한다. 서버에는 **잠그는 열쇠(공개키)만** 있다.
+  - 임시 파일에 쓰고 끝까지 성공해야 이름을 바꾼다(0바이트도 실패) → 반쪽짜리 백업이 남지 않는다.
+  - 배포 직전 백업도 같은 개수에 센다.
+  - 암호화돼 있어 일반 계정(`sagming40`)이 읽을 수 있게 둔다 → `scp`로 가져갈 수 있다.
 - PC: `task backup:pull`이 서버의 백업을 **전부** `~/cbt-backups/`(저장소 밖)로 가져온다(`scp` 한 번 — 최신 하나만 고르려면 ssh가 한 번 더 들어서). 이미 있는 파일은 덮어쓴다. **여는 열쇠(개인키)는 PC에만** — 만들자마자 비밀번호 관리자나 종이에 따로 보관한다. **잃으면 모든 백업을 못 연다.** 복원할 PC마다 같은 개인키를 둔다.
 - 복원 연습: 백업을 풀어 로컬(또는 빈 DB)에 넣고 건수를 비교한다(PLAN M3 완료 기준).
 
