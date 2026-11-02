@@ -96,8 +96,8 @@ git pull --ff-only      # 다른 기기에서 push한 것 받기. 실패하면 �
 | 기기 | Claude 계정 | 비고 |
 |---|---|---|
 | **회사 PC** (주 작업 기기) | 회사 계정 | Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, Miniconda(기본 Python 없음), 서버 열쇠 `company-pc` · `age` (2026-11-02) |
-| 집 PC | 개인 계정 | Docker, PostgreSQL 18 직접 설치(5432 사용 중), Node 24 |
-| 노트북 (2026-10-31 추가) | 개인 계정 | Windows 11 Home, Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, 기본 Python 없음 |
+| 집 PC | 개인 계정 | Docker, PostgreSQL 18 직접 설치(5432 사용 중), Node 24, 서버 열쇠 `home-pc` (2026-10-30) |
+| 노트북 (2026-10-31 추가) | 개인 계정 | Windows 11 Home, Docker Desktop(WSL2), PostgreSQL 18 직접 설치(5432 사용 중), Node 24, 기본 Python 없음, 서버 열쇠 `laptop` · `age` · 백업 개인키 (2026-10-31) |
 
 - **새 기기 시작 순서**: README "처음 한 번" 0 ~ 4 → 배포 · 서버 일을 할 기기면 README "운영 서버를 다루는 PC라면" → 이 표에 그 기기 줄을 채운다.
 - Claude가 새 기기에서 처음 열리면 이 표에서 그 기기의 계정 · 도구를 사용자에게 물어 채운다.

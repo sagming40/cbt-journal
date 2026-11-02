@@ -67,6 +67,7 @@ task user -- create --email 내이메일 --nickname 내닉네임
 1. **SSH 열쇠**: PC마다 따로 만들고, 이미 접속되는 PC(또는 Vultr 웹 콘솔)로 서버 `authorized_keys`에 한 줄 추가 — [SERVER.md](docs/SERVER.md) 3.4절. Vultr 화면에 등록만 해서는 이미 만든 서버에 안 들어간다. 열쇠 메모는 기기 이름으로(`home-pc` · `company-pc` · `laptop`).
 2. **ssh 별명 `cbt`**: `~/.ssh/config` — SERVER.md 3.2절. `task deploy` · `task backup:pull`이 쓴다. 확인: `ssh cbt` 접속.
 3. **`age`**(백업을 열 때): `winget install --id FiloSottile.age -e`. 여는 열쇠(개인키)는 `$HOME\cbt-backup.key`에 둔다 — 노트북에서 만들었고 종이에 한 벌, 다른 PC에는 USB로 옮긴다. 저장소 · 대화 · 클라우드에 넣지 않는다 (ARCHITECTURE 7.4절, SERVER.md 4.13절).
+4. **셸 · systemd 파일을 직접 칠 PC**: 에디터 상태바를 "Indent Using Tabs"로 — 공백이 섞여 스크립트가 깨진 적이 있다([archive/DEVLOG_M3.md](docs/archive/DEVLOG_M3.md) 2026-10-31 (2)).
 
 ### 배포 (운영 서버에 새 버전 올리기)
 ```powershell
