@@ -16,6 +16,7 @@ import (
 	"github.com/sagming40/cbt-journal/internal/auth"
 	"github.com/sagming40/cbt-journal/internal/checkin"
 	"github.com/sagming40/cbt-journal/internal/clientip"
+	"github.com/sagming40/cbt-journal/internal/record"
 )
 
 // Checker는 연결 하나가 살아 있는지 확인한다. 살아 있으면 nil.
@@ -35,17 +36,22 @@ type Deps struct {
 	Web            fs.FS // 프론트 빌드 결과 (운영은 webdist.FS(), 테스트는 가짜 파일 묶음)
 	Auth           *auth.Service
 	Checkin        *checkin.Service
+	Record         *record.Service
 	TrustedProxies []netip.Prefix
 }
 
 // 기능 패키지들이 모두 Handler라는 이름이라, 임베드할 때 필드 이름이 겹치지 않게 별칭을 붙인다.
-type checkinHandler = checkin.Handler
+type (
+	checkinHandler = checkin.Handler
+	recordHandler  = record.Handler
+)
 
 // handler는 생성된 StrictServerInterface를 채운다.
 // 기능 패키지의 Handler를 임베드하면 그 메서드들이 위로 올라와 인터페이스를 채운다 (ARCHITECTURE 2절).
 type handler struct {
 	*auth.Handler
 	*checkinHandler
+	*recordHandler
 	logger *slog.Logger
 	checks Checks
 }
@@ -72,6 +78,7 @@ func New(d Deps) http.Handler {
 	h := &handler{
 		Handler:        auth.NewHandler(d.Auth),
 		checkinHandler: checkin.NewHandler(d.Checkin, currentUserID),
+		recordHandler:  record.NewHandler(d.Record, currentUserID),
 		logger:         d.Logger,
 		checks:         d.Checks,
 	}

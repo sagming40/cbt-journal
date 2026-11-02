@@ -95,6 +95,84 @@ type Config struct {
 	AllowSignup bool `json:"allow_signup"`
 }
 
+// Distortion defines model for Distortion.
+type Distortion struct {
+	// Description 쉬운 설명. 사용자가 쓰기 전에는 null (화면은 이름만, DATA_MODEL 3.3절)
+	Description *string `json:"description"`
+	Example     *string `json:"example"`
+	Id          int     `json:"id"`
+	Name        string  `json:"name"`
+}
+
+// Draft defines model for Draft.
+type Draft struct {
+	AlternativeThought string               `json:"alternative_thought"`
+	AutomaticThought   string               `json:"automatic_thought"`
+	DistortionIds      []int                `json:"distortion_ids"`
+	Emotions           []RecordEmotionInput `json:"emotions"`
+	EvidenceAgainst    string               `json:"evidence_against"`
+	EvidenceFor        string               `json:"evidence_for"`
+
+	// Id UUID
+	Id string `json:"id"`
+
+	// OccurredAt 쓰기 시작할 때 정한 "일어난 시각" (T6)
+	OccurredAt time.Time `json:"occurred_at"`
+	Rev        int       `json:"rev"`
+	Situation  string    `json:"situation"`
+
+	// Step 멈춘 단계
+	Step      int       `json:"step"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// DraftInput 작성 중인 사고 기록 전체. 빈 칸을 허용하고 길이 · 범위만 본다 (DATA_MODEL 4.3절)
+type DraftInput struct {
+	AlternativeThought string               `json:"alternative_thought"`
+	AutomaticThought   string               `json:"automatic_thought"`
+	DistortionIds      []int                `json:"distortion_ids"`
+	Emotions           []RecordEmotionInput `json:"emotions"`
+	EvidenceAgainst    string               `json:"evidence_against"`
+	EvidenceFor        string               `json:"evidence_for"`
+
+	// OccurredAt 쓰기 시작할 때 정한 "일어난 시각" (T6)
+	OccurredAt time.Time `json:"occurred_at"`
+	Situation  string    `json:"situation"`
+
+	// Step 멈춘 단계
+	Step int `json:"step"`
+}
+
+// DraftSummary defines model for DraftSummary.
+type DraftSummary struct {
+	Id string `json:"id"`
+
+	// SituationPreview 상황 칸 앞부분 (40자까지)
+	SituationPreview string    `json:"situation_preview"`
+	Step             int       `json:"step"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+// DraftUpdate defines model for DraftUpdate.
+type DraftUpdate struct {
+	AlternativeThought string               `json:"alternative_thought"`
+	AutomaticThought   string               `json:"automatic_thought"`
+	DistortionIds      []int                `json:"distortion_ids"`
+	Emotions           []RecordEmotionInput `json:"emotions"`
+	EvidenceAgainst    string               `json:"evidence_against"`
+	EvidenceFor        string               `json:"evidence_for"`
+
+	// OccurredAt 쓰기 시작할 때 정한 "일어난 시각" (T6)
+	OccurredAt time.Time `json:"occurred_at"`
+
+	// Rev 마지막으로 받은 rev. 서버와 다르면 409 (DATA_MODEL 4.3절)
+	Rev       int    `json:"rev"`
+	Situation string `json:"situation"`
+
+	// Step 멈춘 단계
+	Step int `json:"step"`
+}
+
 // Emotion defines model for Emotion.
 type Emotion struct {
 	Id   int    `json:"id"`
@@ -159,6 +237,96 @@ type Me struct {
 	Timezone string `json:"timezone"`
 }
 
+// Record defines model for Record.
+type Record struct {
+	AlternativeThought string    `json:"alternative_thought"`
+	AutomaticThought   string    `json:"automatic_thought"`
+	CreatedAt          time.Time `json:"created_at"`
+
+	// Distortions 왜곡 화면 순서대로
+	Distortions []RecordDistortion `json:"distortions"`
+
+	// Emotions 감정 화면 순서대로
+	Emotions        []RecordEmotion `json:"emotions"`
+	EvidenceAgainst string          `json:"evidence_against"`
+	EvidenceFor     string          `json:"evidence_for"`
+
+	// Id UUID
+	Id string `json:"id"`
+
+	// OccurredAt 사고가 일어난 때 (UTC)
+	OccurredAt time.Time `json:"occurred_at"`
+	Situation  string    `json:"situation"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// RecordCreate defines model for RecordCreate.
+type RecordCreate struct {
+	AlternativeThought string `json:"alternative_thought"`
+	AutomaticThought   string `json:"automatic_thought"`
+
+	// DistortionIds 0개도 된다
+	DistortionIds []int `json:"distortion_ids"`
+
+	// DraftId 이 기록을 쓴 초안. 같은 초안으로 다시 보내면 있던 기록을 돌려준다 (DATA_MODEL 3.5절)
+	DraftId *string `json:"draft_id,omitempty"`
+
+	// Emotions 감정 1개 이상, 전 · 후 강도 둘 다 필수
+	Emotions        []RecordEmotionInput `json:"emotions"`
+	EvidenceAgainst string               `json:"evidence_against"`
+	EvidenceFor     string               `json:"evidence_for"`
+
+	// OccurredAt 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.5절)
+	OccurredAt *time.Time `json:"occurred_at,omitempty"`
+	Situation  string     `json:"situation"`
+}
+
+// RecordDay defines model for RecordDay.
+type RecordDay struct {
+	// Date 내 시간대 기준 날짜 YYYY-MM-DD
+	Date  string   `json:"date"`
+	Items []Record `json:"items"`
+}
+
+// RecordDistortion defines model for RecordDistortion.
+type RecordDistortion struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// RecordEmotion defines model for RecordEmotion.
+type RecordEmotion struct {
+	EmotionId       int    `json:"emotion_id"`
+	IntensityAfter  int    `json:"intensity_after"`
+	IntensityBefore int    `json:"intensity_before"`
+	Name            string `json:"name"`
+}
+
+// RecordEmotionInput 고른 감정 하나. 초안에서는 강도가 null일 수 있고, 완료 · 수정은 둘 다 있어야 한다
+type RecordEmotionInput struct {
+	EmotionId       int  `json:"emotion_id"`
+	IntensityAfter  *int `json:"intensity_after"`
+	IntensityBefore *int `json:"intensity_before"`
+}
+
+// RecordInput defines model for RecordInput.
+type RecordInput struct {
+	AlternativeThought string `json:"alternative_thought"`
+	AutomaticThought   string `json:"automatic_thought"`
+
+	// DistortionIds 0개도 된다
+	DistortionIds []int `json:"distortion_ids"`
+
+	// Emotions 감정 1개 이상, 전 · 후 강도 둘 다 필수
+	Emotions        []RecordEmotionInput `json:"emotions"`
+	EvidenceAgainst string               `json:"evidence_against"`
+	EvidenceFor     string               `json:"evidence_for"`
+
+	// OccurredAt 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.5절)
+	OccurredAt *time.Time `json:"occurred_at,omitempty"`
+	Situation  string     `json:"situation"`
+}
+
 // SignupRequest defines model for SignupRequest.
 type SignupRequest struct {
 	Email    string `json:"email"`
@@ -177,6 +345,9 @@ type BadRequest = Error
 
 // Conflict 오류 봉투 (ARCHITECTURE 3.2절)
 type Conflict = Error
+
+// DraftsUnavailable 오류 봉투 (ARCHITECTURE 3.2절)
+type DraftsUnavailable = Error
 
 // Forbidden 오류 봉투 (ARCHITECTURE 3.2절)
 type Forbidden = Error
@@ -199,6 +370,12 @@ type ListCheckinsParams struct {
 	Date *string `form:"date,omitempty" json:"date,omitempty"`
 }
 
+// ListRecordsParams defines parameters for ListRecords.
+type ListRecordsParams struct {
+	// Date 내 시간대 기준 날짜 YYYY-MM-DD. 안 주면 오늘
+	Date *string `form:"date,omitempty" json:"date,omitempty"`
+}
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
@@ -211,11 +388,23 @@ type CreateCheckinJSONRequestBody = CheckinInput
 // UpdateCheckinJSONRequestBody defines body for UpdateCheckin for application/json ContentType.
 type UpdateCheckinJSONRequestBody = CheckinInput
 
+// CreateDraftJSONRequestBody defines body for CreateDraft for application/json ContentType.
+type CreateDraftJSONRequestBody = DraftInput
+
+// SaveDraftJSONRequestBody defines body for SaveDraft for application/json ContentType.
+type SaveDraftJSONRequestBody = DraftUpdate
+
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateMeRequest
 
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest
+
+// CreateRecordJSONRequestBody defines body for CreateRecord for application/json ContentType.
+type CreateRecordJSONRequestBody = RecordCreate
+
+// UpdateRecordJSONRequestBody defines body for UpdateRecord for application/json ContentType.
+type UpdateRecordJSONRequestBody = RecordInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -246,6 +435,24 @@ type ServerInterface interface {
 	// GetConfig 공개 설정
 	// (GET /api/config)
 	GetConfig(w http.ResponseWriter, r *http.Request)
+	// ListDistortions 고를 수 있는 인지 왜곡 (T4)
+	// (GET /api/distortions)
+	ListDistortions(w http.ResponseWriter, r *http.Request)
+	// ListDrafts 내 초안 목록 (최근 저장순, 만료된 id는 여기서 정리된다. DATA_MODEL 4.3절)
+	// (GET /api/drafts)
+	ListDrafts(w http.ResponseWriter, r *http.Request)
+	// CreateDraft 초안 만들기 (사용자당 10개까지. 넘으면 409 DRAFT_LIMIT)
+	// (POST /api/drafts)
+	CreateDraft(w http.ResponseWriter, r *http.Request)
+	// DeleteDraft 초안 지우기
+	// (DELETE /api/drafts/{id})
+	DeleteDraft(w http.ResponseWriter, r *http.Request, id string)
+	// GetDraft 초안 불러오기
+	// (GET /api/drafts/{id})
+	GetDraft(w http.ResponseWriter, r *http.Request, id string)
+	// SaveDraft 초안 저장 (rev가 맞을 때만. 다르면 409 DRAFT_CONFLICT)
+	// (PUT /api/drafts/{id})
+	SaveDraft(w http.ResponseWriter, r *http.Request, id string)
 	// ListEmotions 고를 수 있는 감정 목록 (기본 10개, DATA_MODEL 3.3절)
 	// (GET /api/emotions)
 	ListEmotions(w http.ResponseWriter, r *http.Request)
@@ -264,6 +471,21 @@ type ServerInterface interface {
 	// LogoutOtherSessions 다른 기기 모두 로그아웃 (A8)
 	// (POST /api/me/sessions/logout-others)
 	LogoutOtherSessions(w http.ResponseWriter, r *http.Request)
+	// ListRecords 그날의 사고 기록 (시간순)
+	// (GET /api/records)
+	ListRecords(w http.ResponseWriter, r *http.Request, params ListRecordsParams)
+	// CreateRecord 사고 기록 완료 (T1). 커밋 뒤에 초안을 지운다 (DATA_MODEL 4.3절)
+	// (POST /api/records)
+	CreateRecord(w http.ResponseWriter, r *http.Request)
+	// DeleteRecord 사고 기록 지우기 (T5)
+	// (DELETE /api/records/{id})
+	DeleteRecord(w http.ResponseWriter, r *http.Request, id string)
+	// GetRecord 사고 기록 하나
+	// (GET /api/records/{id})
+	GetRecord(w http.ResponseWriter, r *http.Request, id string)
+	// UpdateRecord 사고 기록 통째로 고치기 (T5, 나중에 저장한 쪽이 이긴다)
+	// (PUT /api/records/{id})
+	UpdateRecord(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -492,6 +714,162 @@ func (siw *ServerInterfaceWrapper) GetConfig(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// ListDistortions operation middleware
+func (siw *ServerInterfaceWrapper) ListDistortions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDistortions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDrafts operation middleware
+func (siw *ServerInterfaceWrapper) ListDrafts(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDrafts(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDraft operation middleware
+func (siw *ServerInterfaceWrapper) CreateDraft(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDraft(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDraft operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDraft(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDraft operation middleware
+func (siw *ServerInterfaceWrapper) GetDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDraft(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveDraft operation middleware
+func (siw *ServerInterfaceWrapper) SaveDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveDraft(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListEmotions operation middleware
 func (siw *ServerInterfaceWrapper) ListEmotions(w http.ResponseWriter, r *http.Request) {
 
@@ -597,6 +975,161 @@ func (siw *ServerInterfaceWrapper) LogoutOtherSessions(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.LogoutOtherSessions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRecords operation middleware
+func (siw *ServerInterfaceWrapper) ListRecords(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRecordsParams
+
+	// ------------- Optional query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRecords(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRecord operation middleware
+func (siw *ServerInterfaceWrapper) CreateRecord(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRecord(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRecord operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRecord(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRecord(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRecord operation middleware
+func (siw *ServerInterfaceWrapper) GetRecord(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRecord(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRecord operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRecord(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRecord(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -741,6 +1274,17 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/checkins/{id}", wrapper.DeleteCheckin)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/checkins/{id}", wrapper.GetCheckin)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/checkins/{id}", wrapper.UpdateCheckin)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/distortions", wrapper.ListDistortions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/drafts", wrapper.ListDrafts)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/drafts", wrapper.CreateDraft)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/drafts/{id}", wrapper.DeleteDraft)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/drafts/{id}", wrapper.GetDraft)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/drafts/{id}", wrapper.SaveDraft)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/records", wrapper.ListRecords)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/records", wrapper.CreateRecord)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/records/{id}", wrapper.DeleteRecord)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/records/{id}", wrapper.GetRecord)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/records/{id}", wrapper.UpdateRecord)
 
 	return m
 }
@@ -748,6 +1292,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 type BadRequestJSONResponse Error
 
 type ConflictJSONResponse Error
+
+type DraftsUnavailableJSONResponse Error
 
 type ForbiddenJSONResponse Error
 
@@ -1249,6 +1795,387 @@ func (response GetConfig200JSONResponse) VisitGetConfigResponse(w http.ResponseW
 	return err
 }
 
+type ListDistortionsRequestObject struct {
+}
+
+type ListDistortionsResponseObject interface {
+	VisitListDistortionsResponse(w http.ResponseWriter) error
+}
+
+type ListDistortions200JSONResponse struct {
+	Items []Distortion `json:"items"`
+}
+
+func (response ListDistortions200JSONResponse) VisitListDistortionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDistortions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDistortions401JSONResponse) VisitListDistortionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDraftsRequestObject struct {
+}
+
+type ListDraftsResponseObject interface {
+	VisitListDraftsResponse(w http.ResponseWriter) error
+}
+
+type ListDrafts200JSONResponse struct {
+	Items []DraftSummary `json:"items"`
+}
+
+func (response ListDrafts200JSONResponse) VisitListDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDrafts401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDrafts401JSONResponse) VisitListDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDrafts503JSONResponse struct{ DraftsUnavailableJSONResponse }
+
+func (response ListDrafts503JSONResponse) VisitListDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDraftRequestObject struct {
+	Body *CreateDraftJSONRequestBody
+}
+
+type CreateDraftResponseObject interface {
+	VisitCreateDraftResponse(w http.ResponseWriter) error
+}
+
+type CreateDraft201JSONResponse Draft
+
+func (response CreateDraft201JSONResponse) VisitCreateDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDraft400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateDraft400JSONResponse) VisitCreateDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateDraft401JSONResponse) VisitCreateDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDraft409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CreateDraft409JSONResponse) VisitCreateDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDraft503JSONResponse struct{ DraftsUnavailableJSONResponse }
+
+func (response CreateDraft503JSONResponse) VisitCreateDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDraftRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteDraftResponseObject interface {
+	VisitDeleteDraftResponse(w http.ResponseWriter) error
+}
+
+type DeleteDraft204Response struct {
+}
+
+func (response DeleteDraft204Response) VisitDeleteDraftResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteDraft401JSONResponse) VisitDeleteDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDraft404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteDraft404JSONResponse) VisitDeleteDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteDraft503JSONResponse struct{ DraftsUnavailableJSONResponse }
+
+func (response DeleteDraft503JSONResponse) VisitDeleteDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDraftRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetDraftResponseObject interface {
+	VisitGetDraftResponse(w http.ResponseWriter) error
+}
+
+type GetDraft200JSONResponse Draft
+
+func (response GetDraft200JSONResponse) VisitGetDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetDraft401JSONResponse) VisitGetDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDraft404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetDraft404JSONResponse) VisitGetDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDraft503JSONResponse struct{ DraftsUnavailableJSONResponse }
+
+func (response GetDraft503JSONResponse) VisitGetDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraftRequestObject struct {
+	Id   string `json:"id"`
+	Body *SaveDraftJSONRequestBody
+}
+
+type SaveDraftResponseObject interface {
+	VisitSaveDraftResponse(w http.ResponseWriter) error
+}
+
+type SaveDraft200JSONResponse Draft
+
+func (response SaveDraft200JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraft400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SaveDraft400JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SaveDraft401JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraft404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SaveDraft404JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraft409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SaveDraft409JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveDraft503JSONResponse struct{ DraftsUnavailableJSONResponse }
+
+func (response SaveDraft503JSONResponse) VisitSaveDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListEmotionsRequestObject struct {
 }
 
@@ -1500,6 +2427,279 @@ func (response LogoutOtherSessions401JSONResponse) VisitLogoutOtherSessionsRespo
 	return err
 }
 
+type ListRecordsRequestObject struct {
+	Params ListRecordsParams
+}
+
+type ListRecordsResponseObject interface {
+	VisitListRecordsResponse(w http.ResponseWriter) error
+}
+
+type ListRecords200JSONResponse RecordDay
+
+func (response ListRecords200JSONResponse) VisitListRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRecords400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRecords400JSONResponse) VisitListRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRecords401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRecords401JSONResponse) VisitListRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRecordRequestObject struct {
+	Body *CreateRecordJSONRequestBody
+}
+
+type CreateRecordResponseObject interface {
+	VisitCreateRecordResponse(w http.ResponseWriter) error
+}
+
+type CreateRecord200JSONResponse Record
+
+func (response CreateRecord200JSONResponse) VisitCreateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRecord201JSONResponse Record
+
+func (response CreateRecord201JSONResponse) VisitCreateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRecord400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CreateRecord400JSONResponse) VisitCreateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateRecord401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateRecord401JSONResponse) VisitCreateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRecordRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteRecordResponseObject interface {
+	VisitDeleteRecordResponse(w http.ResponseWriter) error
+}
+
+type DeleteRecord204Response struct {
+}
+
+func (response DeleteRecord204Response) VisitDeleteRecordResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteRecord401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteRecord401JSONResponse) VisitDeleteRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteRecord404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteRecord404JSONResponse) VisitDeleteRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecordRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetRecordResponseObject interface {
+	VisitGetRecordResponse(w http.ResponseWriter) error
+}
+
+type GetRecord200JSONResponse Record
+
+func (response GetRecord200JSONResponse) VisitGetRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecord401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRecord401JSONResponse) VisitGetRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecord404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetRecord404JSONResponse) VisitGetRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRecordRequestObject struct {
+	Id   string `json:"id"`
+	Body *UpdateRecordJSONRequestBody
+}
+
+type UpdateRecordResponseObject interface {
+	VisitUpdateRecordResponse(w http.ResponseWriter) error
+}
+
+type UpdateRecord200JSONResponse Record
+
+func (response UpdateRecord200JSONResponse) VisitUpdateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRecord400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateRecord400JSONResponse) VisitUpdateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRecord401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateRecord401JSONResponse) VisitUpdateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateRecord404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateRecord404JSONResponse) VisitUpdateRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Login 로그인
@@ -1529,6 +2729,24 @@ type StrictServerInterface interface {
 	// GetConfig 공개 설정
 	// (GET /api/config)
 	GetConfig(ctx context.Context, request GetConfigRequestObject) (GetConfigResponseObject, error)
+	// ListDistortions 고를 수 있는 인지 왜곡 (T4)
+	// (GET /api/distortions)
+	ListDistortions(ctx context.Context, request ListDistortionsRequestObject) (ListDistortionsResponseObject, error)
+	// ListDrafts 내 초안 목록 (최근 저장순, 만료된 id는 여기서 정리된다. DATA_MODEL 4.3절)
+	// (GET /api/drafts)
+	ListDrafts(ctx context.Context, request ListDraftsRequestObject) (ListDraftsResponseObject, error)
+	// CreateDraft 초안 만들기 (사용자당 10개까지. 넘으면 409 DRAFT_LIMIT)
+	// (POST /api/drafts)
+	CreateDraft(ctx context.Context, request CreateDraftRequestObject) (CreateDraftResponseObject, error)
+	// DeleteDraft 초안 지우기
+	// (DELETE /api/drafts/{id})
+	DeleteDraft(ctx context.Context, request DeleteDraftRequestObject) (DeleteDraftResponseObject, error)
+	// GetDraft 초안 불러오기
+	// (GET /api/drafts/{id})
+	GetDraft(ctx context.Context, request GetDraftRequestObject) (GetDraftResponseObject, error)
+	// SaveDraft 초안 저장 (rev가 맞을 때만. 다르면 409 DRAFT_CONFLICT)
+	// (PUT /api/drafts/{id})
+	SaveDraft(ctx context.Context, request SaveDraftRequestObject) (SaveDraftResponseObject, error)
 	// ListEmotions 고를 수 있는 감정 목록 (기본 10개, DATA_MODEL 3.3절)
 	// (GET /api/emotions)
 	ListEmotions(ctx context.Context, request ListEmotionsRequestObject) (ListEmotionsResponseObject, error)
@@ -1547,6 +2765,21 @@ type StrictServerInterface interface {
 	// LogoutOtherSessions 다른 기기 모두 로그아웃 (A8)
 	// (POST /api/me/sessions/logout-others)
 	LogoutOtherSessions(ctx context.Context, request LogoutOtherSessionsRequestObject) (LogoutOtherSessionsResponseObject, error)
+	// ListRecords 그날의 사고 기록 (시간순)
+	// (GET /api/records)
+	ListRecords(ctx context.Context, request ListRecordsRequestObject) (ListRecordsResponseObject, error)
+	// CreateRecord 사고 기록 완료 (T1). 커밋 뒤에 초안을 지운다 (DATA_MODEL 4.3절)
+	// (POST /api/records)
+	CreateRecord(ctx context.Context, request CreateRecordRequestObject) (CreateRecordResponseObject, error)
+	// DeleteRecord 사고 기록 지우기 (T5)
+	// (DELETE /api/records/{id})
+	DeleteRecord(ctx context.Context, request DeleteRecordRequestObject) (DeleteRecordResponseObject, error)
+	// GetRecord 사고 기록 하나
+	// (GET /api/records/{id})
+	GetRecord(ctx context.Context, request GetRecordRequestObject) (GetRecordResponseObject, error)
+	// UpdateRecord 사고 기록 통째로 고치기 (T5, 나중에 저장한 쪽이 이긴다)
+	// (PUT /api/records/{id})
+	UpdateRecord(ctx context.Context, request UpdateRecordRequestObject) (UpdateRecordResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1840,6 +3073,170 @@ func (sh *strictHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListDistortions operation middleware
+func (sh *strictHandler) ListDistortions(w http.ResponseWriter, r *http.Request) {
+	var request ListDistortionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDistortions(ctx, request.(ListDistortionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDistortions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDistortionsResponseObject); ok {
+		if err := validResponse.VisitListDistortionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDrafts operation middleware
+func (sh *strictHandler) ListDrafts(w http.ResponseWriter, r *http.Request) {
+	var request ListDraftsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDrafts(ctx, request.(ListDraftsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDrafts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDraftsResponseObject); ok {
+		if err := validResponse.VisitListDraftsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDraft operation middleware
+func (sh *strictHandler) CreateDraft(w http.ResponseWriter, r *http.Request) {
+	var request CreateDraftRequestObject
+
+	var body CreateDraftJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDraft(ctx, request.(CreateDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDraftResponseObject); ok {
+		if err := validResponse.VisitCreateDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteDraft operation middleware
+func (sh *strictHandler) DeleteDraft(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteDraftRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteDraft(ctx, request.(DeleteDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteDraftResponseObject); ok {
+		if err := validResponse.VisitDeleteDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDraft operation middleware
+func (sh *strictHandler) GetDraft(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetDraftRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDraft(ctx, request.(GetDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDraftResponseObject); ok {
+		if err := validResponse.VisitGetDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveDraft operation middleware
+func (sh *strictHandler) SaveDraft(w http.ResponseWriter, r *http.Request, id string) {
+	var request SaveDraftRequestObject
+
+	request.Id = id
+
+	var body SaveDraftJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveDraft(ctx, request.(SaveDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveDraftResponseObject); ok {
+		if err := validResponse.VisitSaveDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListEmotions operation middleware
 func (sh *strictHandler) ListEmotions(w http.ResponseWriter, r *http.Request) {
 	var request ListEmotionsRequestObject
@@ -1991,6 +3388,148 @@ func (sh *strictHandler) LogoutOtherSessions(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LogoutOtherSessionsResponseObject); ok {
 		if err := validResponse.VisitLogoutOtherSessionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRecords operation middleware
+func (sh *strictHandler) ListRecords(w http.ResponseWriter, r *http.Request, params ListRecordsParams) {
+	var request ListRecordsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRecords(ctx, request.(ListRecordsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRecords")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRecordsResponseObject); ok {
+		if err := validResponse.VisitListRecordsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateRecord operation middleware
+func (sh *strictHandler) CreateRecord(w http.ResponseWriter, r *http.Request) {
+	var request CreateRecordRequestObject
+
+	var body CreateRecordJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateRecord(ctx, request.(CreateRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateRecordResponseObject); ok {
+		if err := validResponse.VisitCreateRecordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRecord operation middleware
+func (sh *strictHandler) DeleteRecord(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteRecordRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRecord(ctx, request.(DeleteRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRecordResponseObject); ok {
+		if err := validResponse.VisitDeleteRecordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRecord operation middleware
+func (sh *strictHandler) GetRecord(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetRecordRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRecord(ctx, request.(GetRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRecordResponseObject); ok {
+		if err := validResponse.VisitGetRecordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateRecord operation middleware
+func (sh *strictHandler) UpdateRecord(w http.ResponseWriter, r *http.Request, id string) {
+	var request UpdateRecordRequestObject
+
+	request.Id = id
+
+	var body UpdateRecordJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateRecord(ctx, request.(UpdateRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateRecordResponseObject); ok {
+		if err := validResponse.VisitUpdateRecordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

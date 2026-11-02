@@ -39,6 +39,7 @@ internal/
   apierr/              오류 봉투(3.2절)를 만드는 함수 · 입력 오류(ValidationError) — 기능 패키지들이 같이 쓴다
   auth/                비밀번호 해시, 세션, 요청 제한, 유출 비밀번호 검사 + 인증 API handler
   clientip/            실제 접속 IP 미들웨어 (3.3절)
+  localday/            "사용자 시간대의 그날" → UTC 범위 (체크인 · 사고 기록 · 통계가 같이 쓴다)
   checkin/  record/    기능별 패키지 ─ handler(HTTP ↔ 도메인) + service(규칙 · 트랜잭션)
   stats/  reminder/
   report/  account/

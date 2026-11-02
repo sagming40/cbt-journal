@@ -224,6 +224,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/distortions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 고를 수 있는 인지 왜곡 (T4) */
+        get: operations["listDistortions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 초안 목록 (최근 저장순, 만료된 id는 여기서 정리된다. DATA_MODEL 4.3절) */
+        get: operations["listDrafts"];
+        put?: never;
+        /** 초안 만들기 (사용자당 10개까지. 넘으면 409 DRAFT_LIMIT) */
+        post: operations["createDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 초안 불러오기 */
+        get: operations["getDraft"];
+        /** 초안 저장 (rev가 맞을 때만. 다르면 409 DRAFT_CONFLICT) */
+        put: operations["saveDraft"];
+        post?: never;
+        /** 초안 지우기 */
+        delete: operations["deleteDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 그날의 사고 기록 (시간순) */
+        get: operations["listRecords"];
+        put?: never;
+        /** 사고 기록 완료 (T1). 커밋 뒤에 초안을 지운다 (DATA_MODEL 4.3절) */
+        post: operations["createRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/records/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** 사고 기록 하나 */
+        get: operations["getRecord"];
+        /** 사고 기록 통째로 고치기 (T5, 나중에 저장한 쪽이 이긴다) */
+        put: operations["updateRecord"];
+        post?: never;
+        /** 사고 기록 지우기 (T5) */
+        delete: operations["deleteRecord"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -331,6 +426,112 @@ export interface components {
                 intensity: number;
             }[];
         };
+        Distortion: {
+            id: number;
+            name: string;
+            /** @description 쉬운 설명. 사용자가 쓰기 전에는 null (화면은 이름만, DATA_MODEL 3.3절) */
+            description: string | null;
+            example: string | null;
+        };
+        /** @description 고른 감정 하나. 초안에서는 강도가 null일 수 있고, 완료 · 수정은 둘 다 있어야 한다 */
+        RecordEmotionInput: {
+            emotion_id: number;
+            intensity_before: number | null;
+            intensity_after: number | null;
+        };
+        /** @description 작성 중인 사고 기록 전체. 빈 칸을 허용하고 길이 · 범위만 본다 (DATA_MODEL 4.3절) */
+        DraftInput: {
+            /** @description 멈춘 단계 */
+            step: number;
+            /**
+             * Format: date-time
+             * @description 쓰기 시작할 때 정한 "일어난 시각" (T6)
+             */
+            occurred_at: string;
+            situation: string;
+            automatic_thought: string;
+            evidence_for: string;
+            evidence_against: string;
+            alternative_thought: string;
+            emotions: components["schemas"]["RecordEmotionInput"][];
+            distortion_ids: number[];
+        };
+        DraftUpdate: components["schemas"]["DraftInput"] & {
+            /** @description 마지막으로 받은 rev. 서버와 다르면 409 (DATA_MODEL 4.3절) */
+            rev: number;
+        };
+        Draft: components["schemas"]["DraftInput"] & {
+            /** @description UUID */
+            id: string;
+            rev: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DraftSummary: {
+            id: string;
+            step: number;
+            /** @description 상황 칸 앞부분 (40자까지) */
+            situation_preview: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RecordEmotion: {
+            emotion_id: number;
+            name: string;
+            intensity_before: number;
+            intensity_after: number;
+        };
+        RecordDistortion: {
+            id: number;
+            name: string;
+        };
+        Record: {
+            /** @description UUID */
+            id: string;
+            /**
+             * Format: date-time
+             * @description 사고가 일어난 때 (UTC)
+             */
+            occurred_at: string;
+            situation: string;
+            automatic_thought: string;
+            evidence_for: string;
+            evidence_against: string;
+            alternative_thought: string;
+            /** @description 감정 화면 순서대로 */
+            emotions: components["schemas"]["RecordEmotion"][];
+            /** @description 왜곡 화면 순서대로 */
+            distortions: components["schemas"]["RecordDistortion"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RecordDay: {
+            /** @description 내 시간대 기준 날짜 YYYY-MM-DD */
+            date: string;
+            items: components["schemas"]["Record"][];
+        };
+        RecordInput: {
+            /**
+             * Format: date-time
+             * @description 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.5절)
+             */
+            occurred_at?: string;
+            situation: string;
+            automatic_thought: string;
+            evidence_for: string;
+            evidence_against: string;
+            alternative_thought: string;
+            /** @description 감정 1개 이상, 전 · 후 강도 둘 다 필수 */
+            emotions: components["schemas"]["RecordEmotionInput"][];
+            /** @description 0개도 된다 */
+            distortion_ids: number[];
+        };
+        RecordCreate: components["schemas"]["RecordInput"] & {
+            /** @description 이 기록을 쓴 초안. 같은 초안으로 다시 보내면 있던 기록을 돌려준다 (DATA_MODEL 3.5절) */
+            draft_id?: string;
+        };
     };
     responses: {
         /** @description 입력 오류. fields에 칸별 문구 */
@@ -371,6 +572,15 @@ export interface components {
         };
         /** @description 충돌 (이미 있음 등) */
         Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description 초안 저장소(Valkey)에 닿지 못함 (DATA_MODEL 4.3절) */
+        DraftsUnavailable: {
             headers: {
                 [name: string]: unknown;
             };
@@ -753,6 +963,295 @@ export interface operations {
             header?: never;
             path: {
                 /** @description 체크인 UUID. 모양이 틀려도 404(없는 것과 같은 응답) */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 지움 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listDistortions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 왜곡 목록. 화면 순서대로 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Distortion"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 초안 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["DraftSummary"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            503: components["responses"]["DraftsUnavailable"];
+        };
+    };
+    createDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftInput"];
+            };
+        };
+        responses: {
+            /** @description 만듦 (rev 1) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["DraftsUnavailable"];
+        };
+    };
+    getDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 초안 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["DraftsUnavailable"];
+        };
+    };
+    saveDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftUpdate"];
+            };
+        };
+        responses: {
+            /** @description 저장함 (rev + 1) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Draft"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["DraftsUnavailable"];
+        };
+    };
+    deleteDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 지움 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["DraftsUnavailable"];
+        };
+    };
+    listRecords: {
+        parameters: {
+            query?: {
+                /** @description 내 시간대 기준 날짜 YYYY-MM-DD. 안 주면 오늘 */
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 그날의 사고 기록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordDay"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordCreate"];
+            };
+        };
+        responses: {
+            /** @description 같은 초안으로 이미 완료함 — 있던 기록을 돌려준다 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description 만듦 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 사고 기록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordInput"];
+            };
+        };
+        responses: {
+            /** @description 고침 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
                 id: string;
             };
             cookie?: never;

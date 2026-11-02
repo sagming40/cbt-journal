@@ -3,7 +3,7 @@
 openapi: 3.0.3
 info:
   title: CBT 저널 API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     인지행동치료 사고 기록 연습 앱의 API.
     JSON 필드는 snake_case, 시각은 RFC 3339 UTC (ARCHITECTURE 3.2절).
@@ -329,6 +329,236 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/distortions:
+    get:
+      operationId: listDistortions
+      summary: 고를 수 있는 인지 왜곡 (T4)
+      responses:
+        "200":
+          description: 왜곡 목록. 화면 순서대로
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Distortion"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/drafts:
+    get:
+      operationId: listDrafts
+      summary: 내 초안 목록 (최근 저장순, 만료된 id는 여기서 정리된다. DATA_MODEL 4.3절)
+      responses:
+        "200":
+          description: 초안 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DraftSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/DraftsUnavailable"
+    post:
+      operationId: createDraft
+      summary: 초안 만들기 (사용자당 10개까지. 넘으면 409 DRAFT_LIMIT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DraftInput"
+      responses:
+        "201":
+          description: 만듦 (rev 1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Draft"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/DraftsUnavailable"
+
+  /api/drafts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getDraft
+      summary: 초안 불러오기
+      responses:
+        "200":
+          description: 초안
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Draft"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DraftsUnavailable"
+    put:
+      operationId: saveDraft
+      summary: 초안 저장 (rev가 맞을 때만. 다르면 409 DRAFT_CONFLICT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DraftUpdate"
+      responses:
+        "200":
+          description: 저장함 (rev + 1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Draft"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/DraftsUnavailable"
+    delete:
+      operationId: deleteDraft
+      summary: 초안 지우기
+      responses:
+        "204":
+          description: 지움
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/DraftsUnavailable"
+
+  /api/records:
+    get:
+      operationId: listRecords
+      summary: 그날의 사고 기록 (시간순)
+      parameters:
+        - name: date
+          in: query
+          description: 내 시간대 기준 날짜 YYYY-MM-DD. 안 주면 오늘
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 그날의 사고 기록
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordDay"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createRecord
+      summary: 사고 기록 완료 (T1). 커밋 뒤에 초안을 지운다 (DATA_MODEL 4.3절)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCreate"
+      responses:
+        "200":
+          description: 같은 초안으로 이미 완료함 — 있던 기록을 돌려준다
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "201":
+          description: 만듦
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/records/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getRecord
+      summary: 사고 기록 하나
+      responses:
+        "200":
+          description: 사고 기록
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateRecord
+      summary: 사고 기록 통째로 고치기 (T5, 나중에 저장한 쪽이 이긴다)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordInput"
+      responses:
+        "200":
+          description: 고침
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteRecord
+      summary: 사고 기록 지우기 (T5)
+      responses:
+        "204":
+          description: 지움
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     cookieAuth:
@@ -374,6 +604,12 @@ components:
             $ref: "#/components/schemas/Error"
     Conflict:
       description: 충돌 (이미 있음 등)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    DraftsUnavailable:
+      description: 초안 저장소(Valkey)에 닿지 못함 (DATA_MODEL 4.3절)
       content:
         application/json:
           schema:
@@ -595,3 +831,238 @@ components:
                 type: integer
                 minimum: 0
                 maximum: 100
+
+    Distortion:
+      type: object
+      required: [id, name, description, example]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+          description: 쉬운 설명. 사용자가 쓰기 전에는 null (화면은 이름만, DATA_MODEL 3.3절)
+        example:
+          type: string
+          nullable: true
+
+    RecordEmotionInput:
+      type: object
+      required: [emotion_id, intensity_before, intensity_after]
+      description: 고른 감정 하나. 초안에서는 강도가 null일 수 있고, 완료 · 수정은 둘 다 있어야 한다
+      properties:
+        emotion_id:
+          type: integer
+        intensity_before:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        intensity_after:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+
+    DraftInput:
+      type: object
+      required: [step, occurred_at, situation, automatic_thought, evidence_for, evidence_against, alternative_thought, emotions, distortion_ids]
+      description: 작성 중인 사고 기록 전체. 빈 칸을 허용하고 길이 · 범위만 본다 (DATA_MODEL 4.3절)
+      properties:
+        step:
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: 멈춘 단계
+        occurred_at:
+          type: string
+          format: date-time
+          description: 쓰기 시작할 때 정한 "일어난 시각" (T6)
+        situation:
+          type: string
+          maxLength: 1000
+        automatic_thought:
+          type: string
+          maxLength: 1000
+        evidence_for:
+          type: string
+          maxLength: 2000
+        evidence_against:
+          type: string
+          maxLength: 2000
+        alternative_thought:
+          type: string
+          maxLength: 1000
+        emotions:
+          type: array
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/RecordEmotionInput"
+        distortion_ids:
+          type: array
+          maxItems: 30
+          items:
+            type: integer
+
+    DraftUpdate:
+      allOf:
+        - $ref: "#/components/schemas/DraftInput"
+        - type: object
+          required: [rev]
+          properties:
+            rev:
+              type: integer
+              description: 마지막으로 받은 rev. 서버와 다르면 409 (DATA_MODEL 4.3절)
+
+    Draft:
+      allOf:
+        - $ref: "#/components/schemas/DraftInput"
+        - type: object
+          required: [id, rev, updated_at]
+          properties:
+            id:
+              type: string
+              description: UUID
+            rev:
+              type: integer
+            updated_at:
+              type: string
+              format: date-time
+
+    DraftSummary:
+      type: object
+      required: [id, step, situation_preview, updated_at]
+      properties:
+        id:
+          type: string
+        step:
+          type: integer
+        situation_preview:
+          type: string
+          description: 상황 칸 앞부분 (40자까지)
+        updated_at:
+          type: string
+          format: date-time
+
+    RecordEmotion:
+      type: object
+      required: [emotion_id, name, intensity_before, intensity_after]
+      properties:
+        emotion_id:
+          type: integer
+        name:
+          type: string
+        intensity_before:
+          type: integer
+        intensity_after:
+          type: integer
+
+    RecordDistortion:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Record:
+      type: object
+      required: [id, occurred_at, situation, automatic_thought, evidence_for, evidence_against, alternative_thought, emotions, distortions, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: UUID
+        occurred_at:
+          type: string
+          format: date-time
+          description: 사고가 일어난 때 (UTC)
+        situation:
+          type: string
+        automatic_thought:
+          type: string
+        evidence_for:
+          type: string
+        evidence_against:
+          type: string
+        alternative_thought:
+          type: string
+        emotions:
+          type: array
+          description: 감정 화면 순서대로
+          items:
+            $ref: "#/components/schemas/RecordEmotion"
+        distortions:
+          type: array
+          description: 왜곡 화면 순서대로
+          items:
+            $ref: "#/components/schemas/RecordDistortion"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RecordDay:
+      type: object
+      required: [date, items]
+      properties:
+        date:
+          type: string
+          description: 내 시간대 기준 날짜 YYYY-MM-DD
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Record"
+
+    RecordInput:
+      type: object
+      required: [situation, automatic_thought, evidence_for, evidence_against, alternative_thought, emotions, distortion_ids]
+      properties:
+        occurred_at:
+          type: string
+          format: date-time
+          description: 안 주면 지금. 앞으로 5분까지만 (DATA_MODEL 3.5절)
+        situation:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        automatic_thought:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        evidence_for:
+          type: string
+          maxLength: 2000
+        evidence_against:
+          type: string
+          maxLength: 2000
+        alternative_thought:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        emotions:
+          type: array
+          minItems: 1
+          maxItems: 30
+          description: 감정 1개 이상, 전 · 후 강도 둘 다 필수
+          items:
+            $ref: "#/components/schemas/RecordEmotionInput"
+        distortion_ids:
+          type: array
+          maxItems: 30
+          description: 0개도 된다
+          items:
+            type: integer
+
+    RecordCreate:
+      allOf:
+        - $ref: "#/components/schemas/RecordInput"
+        - type: object
+          properties:
+            draft_id:
+              type: string
+              description: 이 기록을 쓴 초안. 같은 초안으로 다시 보내면 있던 기록을 돌려준다 (DATA_MODEL 3.5절)
