@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgo, formatDateTime, formatTime, fromLocalInput, toLocalInput } from './tz.js';
+import {
+	formatAgo,
+	formatDateTime,
+	formatLocalInput,
+	formatTime,
+	fromLocalInput,
+	toLocalInput
+} from './tz.js';
 
 describe('formatTime · toLocalInput', () => {
 	it('설정한 시간대 기준으로 보인다 (기기 시간대와 상관없이)', () => {
@@ -57,6 +64,13 @@ describe('fromLocalInput', () => {
 
 	it('형식이 틀리면 오류', () => {
 		expect(() => fromLocalInput('2026-11-01 00:30', 'Asia/Seoul')).toThrow();
+	});
+});
+
+describe('formatLocalInput', () => {
+	it('벽시계 값을 그대로 말로 (기기 시간대와 상관없이)', () => {
+		expect(formatLocalInput('2026-11-02T00:30')).toBe('2026년 11월 2일 (월) 00:30');
+		expect(formatLocalInput('2026-03-01T23:05')).toBe('2026년 3월 1일 (일) 23:05');
 	});
 });
 

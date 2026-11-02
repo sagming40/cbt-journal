@@ -4,6 +4,7 @@
 	import { auth } from '#lib/auth.svelte.js';
 	import AfterSliders from '#lib/components/AfterSliders.svelte';
 	import DistortionPicker from '#lib/components/DistortionPicker.svelte';
+	import DateTimePicker from '#lib/components/DateTimePicker.svelte';
 	import EmotionPicker, { type Picked } from '#lib/components/EmotionPicker.svelte';
 	import FormError from '#lib/components/FormError.svelte';
 	import RecordTextarea from '#lib/components/RecordTextarea.svelte';
@@ -47,9 +48,8 @@
 		}
 	};
 
-	// datetime-local은 지우면 ''을 준다. 시각을 비울 수는 없으니 그때는 이전 값을 둔다.
 	function setWhen(value: string) {
-		if (value) form.occurred_at = fromLocalInput(value, tz).toISOString();
+		form.occurred_at = fromLocalInput(value, tz).toISOString();
 	}
 </script>
 
@@ -64,14 +64,14 @@
 		/>
 		<div>
 			<label for="occurred-at" class="text-sm text-muted-foreground">일어난 시각</label>
-			<input
-				id="occurred-at"
-				type="datetime-local"
-				value={toLocalInput(form.occurred_at, tz)}
-				onchange={(ev) => setWhen(ev.currentTarget.value)}
-				aria-invalid={fields.occurred_at ? 'true' : undefined}
-				class="mt-1 block h-11 rounded-md border border-input bg-card px-3 tabular-nums"
-			/>
+			<div class="mt-1">
+				<DateTimePicker
+					id="occurred-at"
+					{tz}
+					invalid={Boolean(fields.occurred_at)}
+					bind:value={() => toLocalInput(form.occurred_at, tz), setWhen}
+				/>
+			</div>
 			<div class="mt-1"><FormError message={fields.occurred_at} /></div>
 		</div>
 	</div>

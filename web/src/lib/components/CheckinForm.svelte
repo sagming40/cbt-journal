@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import type { components } from '#lib/api/schema.js';
 	import { auth } from '#lib/auth.svelte.js';
+	import DateTimePicker from '#lib/components/DateTimePicker.svelte';
 	import EmotionPicker, { type Picked } from '#lib/components/EmotionPicker.svelte';
 	import FormError from '#lib/components/FormError.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -75,9 +76,9 @@
 			event.preventDefault();
 			if (!submitting && picked.length > 0) send();
 		} else if (event.key === 'Escape') {
-			// 확인 창(삭제 D-01)이 열려 있으면 Esc는 그 창만 닫는다
-			if (document.querySelector('[role="alertdialog"]')) return;
-			// 고친 게 있으면 닫지 않는다 — [×]는 그대로 있다
+			// 확인 창(삭제 D-01) · 달력이 열려 있으면 Esc는 그 창만 닫는다
+			if (document.querySelector('[role="alertdialog"], [data-slot="popover-content"]')) return;
+			// 고친 게 있으면 닫지 않는다 — [←]는 그대로 있다
 			if (dirty) return;
 			goto(resolve('/(app)'));
 		}
@@ -137,13 +138,14 @@
 		<div class="mt-6 md:mt-5">
 			<p class="text-sm text-muted-foreground" id="when-label">시각</p>
 			{#if customTime}
-				<input
-					type="datetime-local"
-					bind:value={when}
-					aria-labelledby="when-label"
-					aria-invalid={fields.occurred_at ? 'true' : undefined}
-					class="mt-1 h-11 rounded-md border border-input bg-card px-3 tabular-nums md:w-full"
-				/>
+				<div class="mt-1">
+					<DateTimePicker
+						bind:value={when}
+						{tz}
+						labelledby="when-label"
+						invalid={Boolean(fields.occurred_at)}
+					/>
+				</div>
 			{:else}
 				<div class="mt-1 flex items-center gap-3">
 					<span>지금</span>

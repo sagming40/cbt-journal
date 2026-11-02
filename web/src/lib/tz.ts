@@ -67,6 +67,15 @@ export function formatDateTime(iso: string | Date, tz: string): string {
 	return `${w.month}월 ${w.day}일 (${weekday}) ${pad(w.hour)}:${pad(w.minute)}`;
 }
 
+/** datetime-local 모양 값을 그대로 말로 ("2026년 11월 2일 (월) 12:54"). 이미 벽시계 값이라 시간대를 다시 계산하지 않는다 */
+export function formatLocalInput(value: string): string {
+	const [y, mo, d] = value.slice(0, 10).split('-').map(Number);
+	const weekday = new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', weekday: 'short' }).format(
+		new Date(Date.UTC(y, mo - 1, d))
+	);
+	return `${y}년 ${mo}월 ${d}일 (${weekday}) ${value.slice(11, 16)}`;
+}
+
 /** 지난 시간을 말로 ("방금", "3분 전", "2시간 전", "5일 전") — 저장 상태 · 이어 쓰기 목록 (DESIGN 4.3절 · 4.1절) */
 export function formatAgo(when: Date | string, now: Date): string {
 	const mins = Math.floor((now.getTime() - new Date(when).getTime()) / 60_000);
