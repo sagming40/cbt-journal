@@ -6,7 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import X from '@lucide/svelte/icons/x';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import { api } from '#lib/api/client.js';
 	import { NETWORK_ERROR, errorMessage } from '#lib/api/errors.js';
 	import type { components } from '#lib/api/schema.js';
@@ -93,9 +93,9 @@
 	<a
 		href={resolve('/(app)')}
 		class="-ml-2 flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted"
-		aria-label="닫기"
+		aria-label="뒤로"
 	>
-		<X class="size-5" aria-hidden="true" />
+		<ArrowLeft class="size-5" aria-hidden="true" />
 	</a>
 	<div class="min-w-0 flex-1">
 		<h1 class="font-serif text-lg font-bold">사고 기록</h1>

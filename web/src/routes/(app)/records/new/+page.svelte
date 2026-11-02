@@ -319,6 +319,7 @@
 		message={message || stopMessage}
 		nextLabel={step === LAST_STEP ? (finishing ? '완료하는 중…' : '완료') : '다음'}
 		{nextDisabled}
+		onback={() => (step > 1 ? go(step - 1) : goto(resolve('/(app)')))}
 		onprev={() => go(step - 1)}
 		onnext={() => (step === LAST_STEP ? finish() : go(step + 1))}
 		onjump={go}
@@ -328,7 +329,7 @@
 		{/snippet}
 
 		{#snippet later()}
-			{#if step >= 3 && step < LAST_STEP}
+			{#if step >= 3}
 				<!-- 1 ~ 3단계가 붙잡기, 그 뒤는 나중에 어디서든 (DESIGN 1장 원칙 1 · 4.3절) -->
 				<Button variant="ghost" class="min-h-12 px-3" onclick={saveForLater}
 					>나중에 이어 쓰기</Button

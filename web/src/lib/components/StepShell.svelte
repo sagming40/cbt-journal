@@ -2,9 +2,8 @@
 	// S-04의 틀 (DESIGN 4.3절, 5.2절): 머리(닫기 · 저장 상태) · 진행 막대 · 앞에서 쓴 답 · 제목 · 하단 이전/다음.
 	// 작성과 수정이 같이 쓰고, 다른 점(저장 상태 · [나중에 이어 쓰기])은 snippet으로 받는다.
 	import { tick, type Snippet } from 'svelte';
-	import { resolve } from '$app/paths';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import X from '@lucide/svelte/icons/x';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import type { components } from '#lib/api/schema.js';
 	import AnswersPanel from '#lib/components/AnswersPanel.svelte';
 	import FormError from '#lib/components/FormError.svelte';
@@ -15,7 +14,7 @@
 
 	let {
 		heading,
-		closeHref = resolve('/(app)'),
+		onback,
 		step,
 		form,
 		emotions,
@@ -31,7 +30,8 @@
 		children
 	}: {
 		heading: string;
-		closeHref?: string;
+		/** 머리 ←. 어디로 가는지는 화면마다 다르다 (DESIGN 4.3절 "뒤로") */
+		onback: () => void;
 		step: number;
 		form: RecordForm;
 		emotions: Named[];
@@ -93,15 +93,14 @@
 >
 	<div class="min-w-0">
 		<header class="flex items-center gap-2">
-			<!-- eslint-disable svelte/no-navigation-without-resolve -- closeHref는 부르는 쪽이 resolve로 만든다 -->
-			<a
-				href={closeHref}
+			<button
+				type="button"
+				onclick={onback}
 				class="-ml-2 flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted"
-				aria-label="닫기"
+				aria-label="뒤로"
 			>
-				<X class="size-5" aria-hidden="true" />
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				<ArrowLeft class="size-5" aria-hidden="true" />
+			</button>
 			<h1 class="flex-1 font-serif text-lg font-bold">{heading}</h1>
 			{@render status?.()}
 		</header>

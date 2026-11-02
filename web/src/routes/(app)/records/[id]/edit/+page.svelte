@@ -152,7 +152,7 @@
 {:else if ready && emotions && distortions}
 	<StepShell
 		heading="사고 기록 고치기"
-		closeHref={detailHref}
+		onback={() => goto(detailHref)}
 		{step}
 		{form}
 		{emotions}
